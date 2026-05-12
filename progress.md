@@ -95,3 +95,21 @@ TODO
   moved path.png into assets/tiles/path.png;
   added board.path to src/data/assets.js;
   path tiles now draw the dirt texture instead of the procedural brown fill, with the old orange route line kept only as a missing-asset fallback.
+
+- Skill tree implementation pass:
+  clicking the player level HUD chip now opens a paused character skill tree modal;
+  level-ups now grant 10 SP, and existing saved profiles are normalized to the new 10-SP-per-level budget;
+  added four spendable skills (damage, range, attack speed, reload) that update newly placed and already placed towers.
+- Skill tree verification:
+  ran the develop-web-game Playwright smoke client against http://127.0.0.1:4174 with no console errors;
+  seeded a level-3 profile, opened the tree, bought a skill, and confirmed SP/rank updates in screenshots and render_game_to_text;
+  placed a handgun after buying damage/range and confirmed boosted stats in render_game_to_text (range 180, damage 432).
+- Mobile skill tree check:
+  fixed the mobile game grid so the wrapped top HUD no longer sits under the canvas and the player-level chip can open the tree on phone-width viewports.
+
+- Skill system refactor:
+  extracted skill definitions/spend helpers to src/data/skills.js;
+  moved profile load/save/normalize/XP logic to src/systems/profile.js;
+  moved skill-based weapon stat calculation to src/systems/weaponStats.js;
+  moved skill-tree markup rendering and click-key parsing to src/ui/skillTreeView.js;
+  verified the refactor with syntax checks, a Playwright smoke run, and a seeded buy/place flow that preserved boosted handgun stats.

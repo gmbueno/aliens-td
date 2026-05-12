@@ -1,3 +1,5 @@
+import { createDefaultSkills } from "./skills.js";
+
 export const PLAYER_PROFILE_KEY = "aliens-tower-defense-profile";
 
 export function createDefaultProfile() {
@@ -5,6 +7,7 @@ export function createDefaultProfile() {
     level: 1,
     xp: 0,
     skillPoints: 0,
+    skills: createDefaultSkills(),
   };
 }
 

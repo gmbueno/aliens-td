@@ -1,7 +1,11 @@
 import { enemies, getEnemy } from "./data/enemies.js";
 import { weapons } from "./data/weapons.js";
-import { PLAYER_PROFILE_KEY, createDefaultProfile, xpNeeded } from "./data/player.js";
+import { xpNeeded } from "./data/player.js";
+import { buySkill } from "./data/skills.js";
 import { assets as assetPaths } from "./data/assets.js";
+import { addXp, loadProfile, saveProfile } from "./systems/profile.js";
+import { applySkillBonuses, effectiveWeaponByKey as findEffectiveWeaponByKey, refreshTowerSkillBonuses as refreshTowersWithSkills } from "./systems/weaponStats.js";
+import { renderSkillTree, skillKeyFromEvent } from "./ui/skillTreeView.js";
 
 const TWO_PI = Math.PI * 2;
 const BOARD_PAD = 12;
@@ -131,27 +135,8 @@ function playShotSound(weapon) {
   oscillator.stop(now + duration + 0.02);
 }
 
-function loadProfile() {
-  try {
-    return { ...createDefaultProfile(), ...JSON.parse(localStorage.getItem(PLAYER_PROFILE_KEY)) };
-  } catch {
-    return createDefaultProfile();
-  }
-}
-
-function saveProfile(profile) {
-  localStorage.setItem(PLAYER_PROFILE_KEY, JSON.stringify(profile));
-}
-
-function addXp(profile, amount) {
-  profile.xp += amount;
-  let needed = xpNeeded(profile.level);
-  while (profile.xp >= needed) {
-    profile.xp -= needed;
-    profile.level += 1;
-    profile.skillPoints += 1;
-    needed = xpNeeded(profile.level);
-  }
+function awardXp(profile, amount) {
+  addXp(profile, amount);
   saveProfile(profile);
 }
 
@@ -366,7 +351,7 @@ function updateProjectiles(state, dt) {
   for (const enemy of killed) {
     state.gold += enemy.gold;
     state.kills += 1;
-    addXp(state.profile, enemy.shape === "pentagon" ? 30 : 8);
+    awardXp(state.profile, enemy.shape === "pentagon" ? 30 : 8);
   }
   state.enemies = state.enemies.filter((enemy) => enemy.life > 0);
 }
@@ -401,7 +386,7 @@ function updateResult(state) {
   } else if (state.waveIndex >= state.level.waves.length && state.enemies.length === 0) {
     state.result = "victory";
     state.isPaused = true;
-    addXp(state.profile, 35);
+    awardXp(state.profile, 35);
   }
 }
 
@@ -778,6 +763,15 @@ export function createGame({ ui, levels }) {
     `).join("");
   }
 
+  function effectiveWeaponByKey(key) {
+    return findEffectiveWeaponByKey(weapons, key, profile);
+  }
+
+  function refreshTowerSkillBonuses() {
+    if (!state) return;
+    refreshTowersWithSkills(state.towers, weapons, profile);
+  }
+
   function syncTowerSidebar() {
     const tower = state?.towers.find((item) => item.id === state.selectedTowerId);
     if (!tower) {
@@ -819,7 +813,7 @@ export function createGame({ ui, levels }) {
           <span>${weapon.nickname}</span>
         </button>`
       : `<button class="inventory-slot empty" type="button" aria-label="Empty inventory slot"></button>`).join("");
-    ui.weaponStatList.innerHTML = weaponStatsMarkup(weapon);
+    ui.weaponStatList.innerHTML = weaponStatsMarkup(applySkillBonuses(weapon, profile));
     ui.weaponEquipButton.disabled = true;
     ui.weaponDestroyButton.disabled = true;
     ui.weaponInfoModal.classList.remove("hidden");
@@ -830,6 +824,24 @@ export function createGame({ ui, levels }) {
     ui.weaponInfoModal.classList.add("hidden");
     if (state) {
       state.isPaused = state.wasPausedBeforeWeaponInfo;
+      syncHud();
+    }
+  }
+
+  function openSkillTree() {
+    if (state) {
+      state.wasPausedBeforeSkillTree = state.isPaused;
+      state.isPaused = true;
+    }
+    renderSkillTree(ui, profile);
+    ui.skillTreeModal.classList.remove("hidden");
+    syncHud();
+  }
+
+  function closeSkillTree() {
+    ui.skillTreeModal.classList.add("hidden");
+    if (state) {
+      state.isPaused = state.wasPausedBeforeSkillTree;
       syncHud();
     }
   }
@@ -856,7 +868,7 @@ export function createGame({ ui, levels }) {
 
   function tryPlaceTower(row, col) {
     if (!state?.selectedWeaponKey) return;
-    const weapon = weapons.find((item) => item.key === state.selectedWeaponKey);
+    const weapon = effectiveWeaponByKey(state.selectedWeaponKey);
     const key = tileKey(row, col);
     const occupied = state.towers.some((tower) => tower.row === row && tower.col === col);
     if (state.gold < weapon.price || state.tileSets.path.has(key) || state.tileSets.blockers.has(key) || occupied) return;
@@ -915,6 +927,20 @@ export function createGame({ ui, levels }) {
   ui.weaponInfoCloseButton.addEventListener("click", closeWeaponInfo);
   ui.weaponInfoModal.addEventListener("click", (event) => {
     if (event.target === ui.weaponInfoModal) closeWeaponInfo();
+  });
+
+  ui.playerLevelButton.addEventListener("click", openSkillTree);
+  ui.skillTreeCloseButton.addEventListener("click", closeSkillTree);
+  ui.skillTreeModal.addEventListener("click", (event) => {
+    if (event.target === ui.skillTreeModal) closeSkillTree();
+  });
+  ui.skillTreeNodes.addEventListener("click", (event) => {
+    const skillKey = skillKeyFromEvent(event);
+    if (!skillKey || !buySkill(profile, skillKey)) return;
+    saveProfile(profile);
+    refreshTowerSkillBonuses();
+    renderSkillTree(ui, profile);
+    syncHud();
   });
 
   function canvasTileFromEvent(event) {
@@ -1002,11 +1028,23 @@ export function createGame({ ui, levels }) {
     lives: state?.lives,
     gold: state?.gold,
     player: { level: profile.level, xp: profile.xp, skillPoints: profile.skillPoints },
+    skills: profile.skills,
+    skillTreeOpen: !ui.skillTreeModal.classList.contains("hidden"),
     wave: state ? `${Math.min(state.waveIndex + 1, state.level.waves.length)}/${state.level.waves.length}` : null,
     kills: state ? `${state.kills}/${state.totalEnemies}` : null,
     selectedWeapon: state?.selectedWeaponKey,
     selectedTower: state?.selectedTowerId,
-    towers: state?.towers.map((tower) => ({ id: tower.id, weapon: tower.weapon.key, row: tower.row, col: tower.col, range: tower.range, ammo: tower.ammo })) || [],
+    towers: state?.towers.map((tower) => ({
+      id: tower.id,
+      weapon: tower.weapon.key,
+      row: tower.row,
+      col: tower.col,
+      range: tower.range,
+      damage: tower.weapon.directDamage,
+      atkSpeed: tower.weapon.atkSpeed,
+      reloadSpeed: tower.weapon.reloadSpeed,
+      ammo: tower.ammo,
+    })) || [],
     enemies: state?.enemies.map((enemy) => ({ key: enemy.key, x: Math.round(enemy.x), y: Math.round(enemy.y), life: Math.round(enemy.life) })) || [],
     result: state?.result,
   });

@@ -24,7 +24,7 @@
           <div class="hud-group">
             <div class="hud-chip lives-chip" title="Lives"><span class="icon heart"></span><strong id="lives-value">0</strong></div>
             <div class="hud-chip gold-chip" title="Gold"><span class="coin"></span><strong id="gold-value">0</strong></div>
-            <button class="hud-chip player-chip" id="player-level-button" type="button">
+            <button class="hud-chip player-chip" id="player-level-button" type="button" title="Skill Tree" aria-label="Open skill tree">
               <strong id="player-level-value">1</strong>
               <i id="player-xp-bar"></i>
             </button>
@@ -102,6 +102,23 @@
               </div>
             </section>
           </div>
+        </div>
+      </section>
+
+      <section class="modal-backdrop hidden" id="skill-tree-modal">
+        <div class="skill-tree-card">
+          <div class="skill-tree-head">
+            <div>
+              <p>Character Skill Tree</p>
+              <h2>Level <span id="skill-tree-level">1</span></h2>
+            </div>
+            <button class="icon-button" id="skill-tree-close-button" type="button" aria-label="Close skill tree">×</button>
+          </div>
+          <div class="skill-tree-summary">
+            <div><span>Available SP</span><strong id="skill-tree-sp">0</strong></div>
+            <div><span>Spent SP</span><strong id="skill-tree-spent">0</strong></div>
+          </div>
+          <div class="skill-tree-nodes" id="skill-tree-nodes"></div>
         </div>
       </section>
     </main>

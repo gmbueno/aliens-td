@@ -691,7 +691,7 @@ button:disabled {
   place-items: center;
   background: rgba(0, 0, 0, 0.62);
   backdrop-filter: blur(6px);
-  z-index: 10;
+  z-index: 2147483647;
 }
 
 .pause-card {
@@ -713,6 +713,17 @@ button:disabled {
   padding: 18px;
 }
 
+.skill-tree-card {
+  width: min(820px, calc(100vw - 28px));
+  max-height: calc(100vh - 28px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 24%), var(--panel);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
 .weapon-info-head {
   display: flex;
   align-items: start;
@@ -721,7 +732,8 @@ button:disabled {
   margin-bottom: 16px;
 }
 
-.weapon-info-head p {
+.weapon-info-head p,
+.skill-tree-head p {
   margin: 0 0 4px;
   color: var(--gold);
   text-transform: uppercase;
@@ -730,9 +742,102 @@ button:disabled {
   font-weight: 900;
 }
 
-.weapon-info-head h2 {
+.weapon-info-head h2,
+.skill-tree-head h2 {
   margin: 0;
   font-size: 1.7rem;
+}
+
+.skill-tree-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.skill-tree-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.skill-tree-summary div {
+  min-height: 72px;
+  border: 1px solid rgba(111, 213, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  padding: 12px;
+}
+
+.skill-tree-summary span {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.skill-tree-summary strong {
+  font-size: 1.55rem;
+  color: #f6efe0;
+}
+
+.skill-tree-nodes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.skill-node {
+  min-height: 152px;
+  border: 1px solid rgba(111, 213, 255, 0.22);
+  border-radius: 7px;
+  background: linear-gradient(145deg, rgba(22, 43, 54, 0.94), rgba(9, 16, 23, 0.96));
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 12px;
+  padding: 14px;
+}
+
+.skill-node.complete {
+  border-color: rgba(116, 224, 108, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(116, 224, 108, 0.18);
+}
+
+.skill-node h3 {
+  margin: 0 0 7px;
+  font-size: 1rem;
+  line-height: 1.15;
+}
+
+.skill-node p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.skill-node-meta {
+  display: grid;
+  grid-template-columns: auto minmax(96px, 124px);
+  align-items: center;
+  gap: 10px;
+}
+
+.skill-node-meta strong {
+  color: var(--green);
+  font-size: 0.95rem;
+}
+
+.skill-node-meta .secondary-button {
+  width: auto;
+  min-height: 38px;
+  margin: 0;
 }
 
 .icon-button {
@@ -850,6 +955,7 @@ button:disabled {
   .game-screen {
     position: static;
     min-height: 100%;
+    grid-template-rows: auto minmax(0, auto) auto;
   }
 
   .hud {
@@ -859,6 +965,7 @@ button:disabled {
   .hud-top {
     display: grid;
     grid-template-columns: 1fr;
+    height: auto;
   }
 
   .hud-group,
@@ -893,6 +1000,11 @@ button:disabled {
   }
 
   .weapon-info-body {
+    grid-template-columns: 1fr;
+  }
+
+  .skill-tree-summary,
+  .skill-tree-nodes {
     grid-template-columns: 1fr;
   }
 }

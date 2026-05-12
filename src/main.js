@@ -41,6 +41,12 @@ const ui = {
   weaponStatList: document.querySelector("#weapon-stat-list"),
   weaponEquipButton: document.querySelector("#weapon-equip-button"),
   weaponDestroyButton: document.querySelector("#weapon-destroy-button"),
+  skillTreeModal: document.querySelector("#skill-tree-modal"),
+  skillTreeLevel: document.querySelector("#skill-tree-level"),
+  skillTreeSp: document.querySelector("#skill-tree-sp"),
+  skillTreeSpent: document.querySelector("#skill-tree-spent"),
+  skillTreeNodes: document.querySelector("#skill-tree-nodes"),
+  skillTreeCloseButton: document.querySelector("#skill-tree-close-button"),
 };
 
 createGame({ ui, levels });
