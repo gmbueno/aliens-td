@@ -1,40 +1,57 @@
-# Aliens Tower Defense
+# Aliens Tower Defense — Frontier Campaign
 
-Top-down alien tower-defense MVP inspired by classic lane/path defense games.
+A static HTML/CSS/JavaScript tower-defense game. Play at **https://gmbueno.github.io/aliens-td/**.
 
-The game is a static HTML/CSS/JavaScript canvas app with:
+## Campaign
 
-- a 3x3 mission selector,
-- six weapon slots,
-- path-based alien waves,
-- placeable turrets with range inspection,
-- persistent player XP/level,
-- pause, speed, menu, restart, and Time Stop controls,
-- image assets for the board tiles, aliens, lower HUD cards, and turrets.
+- 18 individually authored missions across the Outpost, Frozen Frontier, and Hive.
+- Five to nine waves per mission, visible incoming enemy compositions, and manual preparation or optional auto waves.
+- Clearable cargo/ice/growth obstacles, permanent rocks, sensor pads (+18% range), power pads (+15% damage), and frost tiles (25% enemy slowdown).
+- Six complementary weapons: budget defense, sustained fire, suppression, armor penetration, crowd damage, and long-range armor-piercing shots.
+- Two tower upgrade branches: Firepower and Control. Four upgrades total per tower, with at most three in a branch. First/Strongest/Nearest targeting.
+- Sell towers for a full refund before the first wave, or 70% of the total investment afterward.
+- Three active abilities with an equipped loadout: Chrono Break, Rocket Launcher, Napalm.
+- Persistent XP, 10 skill points per commander level, free skill refunds, mission records, and first-clear/new-star bonuses. Existing profiles migrate automatically.
 
-Run locally:
+Mission difficulty is fixed. Investing in permanent skills makes earlier maps easier; later maps add stronger enemies and more demanding wave compositions. All missions are selectable so players can experiment without replay gates. Gold is local to each run; skills and records persist in this browser.
+
+Stars: 3 for no lost lives, 2 for at least 60% remaining, 1 for surviving. First-clear and newly earned star bonuses only pay once; kills, completed waves, and the ordinary clear reward remain repeatable. Defeat keeps earned XP.
+
+## Run and test
 
 ```bash
 npm run serve
 ```
 
-Then open http://localhost:4173.
-
-If that port is already in use, run a one-off server on another port:
+Open http://localhost:4173. Alternatively, `python3 -m http.server 4175`.
 
 ```bash
-python3 -m http.server 4181
+npm test
+npm run test:balance
+npm ci
+npx playwright install chromium
+GAME_URL=http://localhost:4173 npm run test:browser
 ```
 
-Then open http://localhost:4181.
+The unit/campaign tests use Node 22 without dependencies. The browser suite uses Playwright and saves screenshots under ignored `output/`. The balance runner uses a repeatable placement policy, reinvests between waves, and deliberately does not use active abilities. It is a regression benchmark, not a promise that every strategy wins.
 
-## GitHub Pages
+## Controls
 
-This repository is a static site. GitHub Pages deploys it from the
-`.github/workflows/deploy-pages.yml` workflow whenever `main` is pushed.
+- Click/tap a weapon, then a free tile to build. Click a placed tower to inspect, upgrade, change targeting, or sell.
+- Click a clearable obstacle to buy the position.
+- **1–6** select weapons; **Space** launches the next wave or pauses/resumes; **Q** uses the equipped ability.
+- **Escape** cancels selection, closes a popup, or opens the command menu; **F** toggles fullscreen.
+- Auto waves, speed, sound, and the skill tree are available in the interface. Hidden browser tabs pause the mission.
 
-## Swapping Art
+Abilities and cooldowns advance with combat time and game speed, stop while paused, and do not recharge during preparation. Changing the equipped active applies on the next mission; permanent tower skills update existing towers immediately.
 
-Most runtime asset paths are centralized in `src/data/assets.js`.
+## Structure and deployment
 
-To change visuals later, either replace the PNG at the existing path or update the matching entry in that file. The current asset groups cover board tiles, upper HUD plaques/buttons, alien sprites, placed tower parts, lower HUD slot cards, lower HUD weapon art, and price plaques.
+- `src/game.js`: simulation, rendering, and UI coordination.
+- `src/data/levels/level1.js` … `level18.js`: explicit mission tracks, obstacles, pads, and spawn schedules. No runtime random wave generation.
+- `src/data/weapons.js`, `enemies.js`, `skills.js`: tuning data.
+- `src/systems/profile.js`, `weaponStats.js`: persistence/rewards and composed skill/tower bonuses.
+- `src/data/assets.js`: centralized art paths.
+- `docs/design-notes.md`: research rationale and balance methodology.
+
+Pushing `main` runs `.github/workflows/deploy-pages.yml`: campaign tests must pass, then only runtime files are packaged and deployed to GitHub Pages. Tests, documentation, and development dependencies are excluded from the public bundle.

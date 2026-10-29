@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Aliens Tower Defese</title>
+    <title>Aliens Tower Defense · Frontier Campaign</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -11,11 +11,16 @@
       <section class="main-menu" id="main-menu">
         <div class="menu-card">
           <div class="menu-head">
-            <h1>Mission Selector</h1>
-            <script async src="https://vibej.am/2026/widget.js"></script>
+            <div><p class="eyebrow">ALIENS / FRONTIER COMMAND</p><h1>HOLD THE LINE<span>.</span></h1><p class="menu-subtitle">Build. Adapt. Push back the invasion.</p></div>
+            <button class="commander-button" id="menu-skills-button" type="button"></button>
           </div>
-          <div class="level-grid" id="level-grid"></div>
-          <button class="primary-button" id="menu-play-button" type="button" disabled>Play</button>
+          <div class="campaign-topline"><span id="campaign-progress"></span><span>18 missions · 3 sectors</span></div>
+          <nav class="sector-tabs" id="sector-tabs" aria-label="Campaign sector"></nav>
+          <div class="campaign-body">
+            <div class="level-grid" id="level-grid"></div>
+            <aside class="mission-briefing"><div id="mission-briefing"></div><button class="primary-button" id="menu-play-button" type="button">Deploy squad →</button></aside>
+          </div>
+          <div class="menu-foot"><span>Permanent skills. New tactics. One more try.</span><a class="jam-link" href="https://vibejam.com/" target="_blank" rel="noopener noreferrer">Vibe Jam 2026 ↗</a><span>FRONTIER UPDATE / 02</span></div>
         </div>
       </section>
 
@@ -41,9 +46,13 @@
           </div>
         </header>
 
+        <section class="mission-toolbar">
+          <div><strong id="battle-title"></strong><span id="wave-preview"></span></div>
+          <div class="wave-actions"><label><input id="auto-wave-toggle" type="checkbox"> Auto waves</label><button class="primary-button" id="launch-wave-button" type="button">Launch wave</button></div>
+        </section>
         <section class="arena-wrap">
-          <canvas id="game-canvas" width="1280" height="720"></canvas>
-          <aside class="tower-sidebar hidden" id="tower-sidebar">
+          <canvas id="game-canvas" width="1280" height="720" aria-label="Battlefield. Select a tower, then select a free tile to build."></canvas>
+          <aside class="tower-sidebar" id="tower-sidebar">
             <div class="tower-sidebar-head">
               <div>
                 <p>Tower Stats</p>
@@ -52,38 +61,42 @@
               <button class="icon-button compact" id="tower-sidebar-close-button" type="button" aria-label="Close tower stats">×</button>
             </div>
             <div class="weapon-stat-list" id="tower-stat-list"></div>
+            <div id="tower-actions" class="tower-actions"></div>
           </aside>
         </section>
 
+        <div class="battle-status"><span id="battle-message" role="status"></span><span class="keyboard-hint">1–6 build · Space wave/pause · Q ability · Esc cancel · F fullscreen</span></div>
         <footer class="hud hud-bottom">
-          <button class="ability-card" id="time-stop-button" type="button">
-            <span class="hourglass"></span>
-            <strong>Time Stop</strong>
-            <small id="time-stop-status">Ready</small>
-          </button>
+          <div class="ability-bar" id="ability-bar"></div>
           <div class="weapon-bar" id="weapon-bar"></div>
         </footer>
       </section>
 
-      <section class="modal-backdrop hidden" id="pause-modal">
+      <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="pause-modal" aria-label="Command menu">
         <div class="pause-card">
           <p>Command Menu</p>
           <button class="primary-button" id="resume-button" type="button">Resume</button>
           <button class="secondary-button" id="restart-button" type="button">Restart</button>
-          <button class="secondary-button" id="change-level-button" type="button">Change Level</button>
+          <button class="secondary-button" id="change-level-button" type="button">Mission select</button>
+          <button class="secondary-button" id="sound-button" type="button">Sound on</button>
+          <p class="controls-help">1–6: choose tower · Space: launch / pause<br>Q: ability · Escape: cancel / menu · F: fullscreen</p>
         </div>
       </section>
 
-      <section class="modal-backdrop hidden" id="result-modal">
+      <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="result-modal" aria-labelledby="result-title">
         <div class="pause-card">
           <p id="result-title">Mission Complete</p>
+          <div id="result-stars" class="result-stars"></div>
           <span id="result-copy"></span>
-          <button class="primary-button" id="result-restart-button" type="button">Restart</button>
+          <div id="result-rewards" class="result-rewards"></div>
+          <button class="primary-button" id="result-next-button" type="button">Next mission →</button>
+          <button class="secondary-button" id="result-skills-button" type="button">Spend skill points</button>
+          <button class="secondary-button" id="result-restart-button" type="button">Try again</button>
           <button class="secondary-button" id="result-levels-button" type="button">Change Level</button>
         </div>
       </section>
 
-      <section class="modal-backdrop hidden" id="weapon-info-modal">
+      <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="weapon-info-modal" aria-labelledby="weapon-info-title">
         <div class="weapon-info-card">
           <div class="weapon-info-head">
             <div>
@@ -105,7 +118,7 @@
         </div>
       </section>
 
-      <section class="modal-backdrop hidden" id="skill-tree-modal">
+      <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="skill-tree-modal" aria-label="Commander skills">
         <div class="skill-tree-card">
           <div class="skill-tree-head">
             <div>
@@ -118,7 +131,9 @@
             <div><span>Available SP</span><strong id="skill-tree-sp">0</strong></div>
             <div><span>Spent SP</span><strong id="skill-tree-spent">0</strong></div>
           </div>
+          <p class="skill-explainer">Every commander level earns 10 SP. Skills strengthen all missions; enemy difficulty stays fixed. Your active loadout is applied on your next deployment.</p>
           <div class="skill-tree-nodes" id="skill-tree-nodes"></div>
+          <button class="secondary-button" id="reset-skills-button" type="button">Refund all skills · free</button>
         </div>
       </section>
     </main>

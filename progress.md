@@ -113,3 +113,42 @@ TODO
   moved skill-based weapon stat calculation to src/systems/weaponStats.js;
   moved skill-tree markup rendering and click-key parsing to src/ui/skillTreeView.js;
   verified the refactor with syntax checks, a Playwright smoke run, and a seeded buy/place flow that preserved boosted handgun stats.
+
+- Active/passive skill expansion:
+  split the tree into Active Skills and Passive Skills while leaving the four existing passive skills unchanged;
+  added active upgrade tracks for Chrono Break, Rocket Launcher, and Napalm, each rank 0-10 with 5 SP per rank;
+  replaced the single Time Stop button with a three-button active ability bar;
+  Chrono Break now scales from 50s cooldown/2s duration to 30s/4s;
+  Rocket Launcher now enters map-target mode, then damages enemies in an area scaling from 40k/300 to 80k/600 with a fixed 30s cooldown;
+  Napalm now burns currently visible enemies, scaling from 50s cooldown/6s duration/1000 DPS to 30s/10s/1500 DPS;
+  verified active skill stats, skill-tree layout on desktop/mobile, Chrono/Napalm activation, and Rocket targeting/kills with Playwright screenshots and render_game_to_text.
+
+- Active equip/timer fixes:
+  active cooldowns and durations now pause while the game is paused and tick with game speed when running at 2x;
+  the profile now stores one equipped active ability, defaulting to Chrono Break;
+  changing the equipped active in the skill tree saves it for the next mission only, while the current mission keeps the active it started with;
+  verified pause timing, 2x timing, and next-game equip behavior with Playwright state captures.
+
+- Active card art pass:
+  wired Chrono Break to assets/slots/cards/time-stop.png, Rocket Launcher to assets/slots/cards/rocket_launcher.png, and Napalm to the provided napalm card asset currently present as assets/slots/cards/napalm.png.png;
+  the in-game active card now uses the card art directly with only the ready/cooldown plaque overlaid.
+
+## Campaign expansion — October 29, 2026
+- User authorized research, broad gameplay/balance/UI improvements, and production deployment.
+- Preserve the existing uncommitted skill/ability/card changes; starting diff backed up at /tmp/aliens-td-before-campaign.patch.
+- Research: George Fan's GDC 2012 tutorial talk (learn through play, gradual mechanics, visual clarity), Ninja Kiwi's BTD6 product page and official Netflix help (tower upgrades, selling, map variety and permanent progression).
+- Plan: 18 authored missions across 3 sectors; prepare/launch wave loop and enemy preview; obstacles with removal costs and strategic pads; two upgrade branches, targeting, sell; fixed mission difficulty, stars/first-clear rewards, bounded meta progression and free respec; desktop/mobile interface, deterministic balance and browser tests, GitHub Pages deployment.
+- Implemented 18 explicit missions, three terrain palettes, visible clearable obstacles, sensor/power pads, and frost slow tiles.
+- Implemented preparation/launch/auto-wave flow, previews/intel, supplies and flawless/early-launch bonuses, differentiated armor/shield/slow mechanics, homing shots, tower upgrade branches/target priorities/selling.
+- Campaign atlas, stars, first-clear/replay XP, free skill refunds, mobile layout, keyboard controls, sound toggle, background-tab pause, fixed simulation stepping added.
+- Initial deterministic balance run exposed overtuned sector 2/3 openings. Reduced opening density, increased later starting budgets, and retained stronger later waves. Baseline screenshots reviewed; inherited widget/client console error is being investigated alongside full browser validation.
+- Core regression suite passes: mission geometry, preparation, placement, obstacle removal, tower branch limits/refunds, meta/pad stacking, armor/shields, active abilities, pause/2x timing, legacy profiles, first-clear/star rewards, full victory and defeat.
+- Corrected target priority: single projectiles now actually fire at the selected First/Strongest/Nearest target (the cluster selection previously superseded it).
+- Adjusted final Mothership HP after max-trained simulation could reach but not defeat it; final trained benchmark wins with 11 lives.
+- Full UI test reached victory, persisted stars through reload, advanced to the next mission, and exercised all abilities. Found/fixed narrow-screen HUD overflow and added compact landscape layout.
+- Identified inherited browser error as invalid JavaScript served by the Vibe Jam widget. Replaced it with a static event attribution link; no game telemetry dependency remains.
+- GitHub Pages workflow now gates deployment on campaign tests and uploads runtime files only.
+- Final local validation: all 15 automated tests pass, including trained no-ability wins on all 18 missions. The complete Playwright UI suite passes with zero JavaScript errors and zero missing local assets; portrait, landscape and desktop screenshots inspected.
+- The required develop-web-game client passes after the widget fix; final screenshot/text show actual combat and no errors.
+- Research and tuning rationale documented in docs/design-notes.md; README now covers campaign, economy, controls and reproducible test commands.
+- Ready to deploy the integrated work (including pre-existing active-skill/card changes) to the existing GitHub Pages production site.

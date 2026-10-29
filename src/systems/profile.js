@@ -1,18 +1,29 @@
 import { PLAYER_PROFILE_KEY, createDefaultProfile, xpNeeded } from "../data/player.js";
-import { SP_PER_LEVEL, createDefaultSkills, skillTree, spentSkillPoints } from "../data/skills.js";
+import { DEFAULT_EQUIPPED_ACTIVE_KEY, SP_PER_LEVEL, createDefaultSkills, isActiveAbilityKey, skillTree, spentSkillPoints } from "../data/skills.js";
 
 export function normalizeProfile(rawProfile = {}) {
+  if (!rawProfile || typeof rawProfile !== "object") rawProfile = {};
+  const integer = (value, fallback = 0) => Number.isFinite(Number(value)) ? Math.max(0, Math.floor(Number(value))) : fallback;
   const base = createDefaultProfile();
   const skills = { ...createDefaultSkills(), ...(rawProfile.skills || {}) };
   for (const skill of skillTree) {
-    skills[skill.key] = Math.min(skill.maxRank, Math.max(0, Number(skills[skill.key]) || 0));
+    skills[skill.key] = Math.min(skill.maxRank, integer(skills[skill.key]));
   }
   const profile = {
     ...base,
     ...rawProfile,
-    level: Math.max(1, Number(rawProfile.level) || base.level),
-    xp: Math.max(0, Number(rawProfile.xp) || 0),
+    level: Math.max(1, integer(rawProfile.level, 1)),
+    xp: integer(rawProfile.xp),
     skills,
+    missions: Object.fromEntries(Object.entries(rawProfile.missions || {}).filter(([key]) => /^level_\d+$/.test(key)).map(([key, value]) => [key, {
+      stars: Math.min(3, integer(value?.stars)),
+      clears: integer(value?.clears),
+      bestLives: integer(value?.bestLives),
+    }])),
+    settings: { muted: Boolean(rawProfile.settings?.muted), autoWave: Boolean(rawProfile.settings?.autoWave) },
+    equippedActiveKey: isActiveAbilityKey(rawProfile.equippedActiveKey)
+      ? rawProfile.equippedActiveKey
+      : DEFAULT_EQUIPPED_ACTIVE_KEY,
   };
   const earned = Math.max(0, profile.level - 1) * SP_PER_LEVEL;
   const available = Math.max(Number(rawProfile.skillPoints) || 0, earned - spentSkillPoints(profile));
@@ -29,7 +40,32 @@ export function loadProfile(storage = localStorage) {
 }
 
 export function saveProfile(profile, storage = localStorage) {
-  storage.setItem(PLAYER_PROFILE_KEY, JSON.stringify(profile));
+  try {
+    storage.setItem(PLAYER_PROFILE_KEY, JSON.stringify(profile));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function missionStars(lives, maxLives) {
+  return lives <= 0 ? 0 : lives === maxLives ? 3 : lives >= maxLives * 0.6 ? 2 : 1;
+}
+
+export function recordVictory(profile, level, lives) {
+  const previous = profile.missions[level.id] || { stars: 0, clears: 0, bestLives: 0 };
+  const stars = missionStars(lives, level.lives);
+  const firstClear = previous.clears === 0;
+  const newStars = Math.max(0, stars - previous.stars);
+  const xp = level.clearXp + (firstClear ? level.firstClearXp : 0) + newStars * 15;
+  profile.missions[level.id] = { stars: Math.max(previous.stars, stars), clears: previous.clears + 1, bestLives: Math.max(previous.bestLives, lives) };
+  addXp(profile, xp);
+  return { stars, firstClear, newStars, xp };
+}
+
+export function resetSkills(profile) {
+  profile.skillPoints += spentSkillPoints(profile);
+  profile.skills = createDefaultSkills();
 }
 
 export function addXp(profile, amount) {

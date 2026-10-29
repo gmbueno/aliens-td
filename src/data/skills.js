@@ -1,39 +1,115 @@
 export const SP_PER_LEVEL = 10;
+export const DEFAULT_EQUIPPED_ACTIVE_KEY = "chronoBreak";
 
-export const skillTree = [
+const ACTIVE_MAX_RANK = 10;
+const PASSIVE_MAX_RANK = 5;
+
+export const activeSkillTree = [
+  {
+    key: "chronoBreak",
+    type: "active",
+    name: "Chrono Break",
+    description: "Stops alien movement. Cooldown 50s to 30s, duration 3s to 5s.",
+    maxRank: ACTIVE_MAX_RANK,
+    cost: 5,
+    active: "chronoBreak",
+  },
+  {
+    key: "rocketLauncher",
+    type: "active",
+    name: "Rocket Launcher",
+    description: "Target the map for heavy area damage. Damage 12k to 36k, radius 155 to 255.",
+    maxRank: ACTIVE_MAX_RANK,
+    cost: 5,
+    active: "rocketLauncher",
+  },
+  {
+    key: "napalm",
+    type: "active",
+    name: "Napalm",
+    description: "Burns all visible aliens. Cooldown 50s to 30s, duration 6s to 10s, damage 1000 to 1500/s.",
+    maxRank: ACTIVE_MAX_RANK,
+    cost: 5,
+    active: "napalm",
+  },
+];
+
+export const passiveSkillTree = [
   {
     key: "damage",
+    type: "passive",
     name: "Weapons Training",
     description: "+8% tower damage per rank.",
-    maxRank: 5,
+    maxRank: PASSIVE_MAX_RANK,
     cost: 5,
     weaponEffect: { stat: "directDamage", perRank: 0.08 },
   },
   {
     key: "range",
+    type: "passive",
     name: "Sensor Sweep",
     description: "+6% tower range per rank.",
-    maxRank: 5,
+    maxRank: PASSIVE_MAX_RANK,
     cost: 5,
     weaponEffect: { stat: "range", perRank: 0.06 },
   },
   {
     key: "fireRate",
+    type: "passive",
     name: "Trigger Discipline",
     description: "+5% attack speed per rank.",
-    maxRank: 5,
+    maxRank: PASSIVE_MAX_RANK,
     cost: 5,
     weaponEffect: { stat: "atkSpeed", perRank: 0.05, decimals: 2 },
   },
   {
     key: "reload",
+    type: "passive",
     name: "Rapid Reload",
     description: "-6% reload time per rank.",
-    maxRank: 5,
+    maxRank: PASSIVE_MAX_RANK,
     cost: 5,
     weaponEffect: { stat: "reloadSpeed", perRank: -0.06, decimals: 2, min: 0.35 },
   },
 ];
+
+export const skillTree = [...activeSkillTree, ...passiveSkillTree];
+
+export const activeAbilities = [
+  {
+    key: "chronoBreak",
+    skillKey: "chronoBreak",
+    name: "Chrono Break",
+    shortName: "Chrono",
+    targeting: "instant",
+    cooldown: { base: 50, perRank: -2 },
+    duration: { base: 3, perRank: 0.2 },
+  },
+  {
+    key: "rocketLauncher",
+    skillKey: "rocketLauncher",
+    name: "Rocket Launcher",
+    shortName: "Rocket",
+    targeting: "map",
+    cooldown: { base: 30, perRank: 0 },
+    damage: { base: 12000, perRank: 2400 },
+    area: { base: 155, perRank: 10 },
+  },
+  {
+    key: "napalm",
+    skillKey: "napalm",
+    name: "Napalm",
+    shortName: "Napalm",
+    targeting: "instant",
+    cooldown: { base: 50, perRank: -2 },
+    duration: { base: 6, perRank: 0.4 },
+    damage: { base: 1000, perRank: 50 },
+  },
+];
+
+export function isActiveAbilityKey(key) {
+  return activeAbilities.some((ability) => ability.key === key);
+}
 
 export function createDefaultSkills() {
   return Object.fromEntries(skillTree.map((skill) => [skill.key, 0]));
@@ -57,4 +133,19 @@ export function buySkill(profile, skillKey) {
   profile.skills[skill.key] = skillRank(profile, skill.key) + 1;
   profile.skillPoints -= skill.cost;
   return true;
+}
+
+function scaleRankedValue(config, rank) {
+  return Number((config.base + config.perRank * rank).toFixed(2));
+}
+
+export function activeAbilityStats(ability, profile) {
+  const rank = skillRank(profile, ability.skillKey);
+  return {
+    rank,
+    cooldown: scaleRankedValue(ability.cooldown, rank),
+    duration: ability.duration ? scaleRankedValue(ability.duration, rank) : 0,
+    damage: ability.damage ? Math.round(scaleRankedValue(ability.damage, rank)) : 0,
+    area: ability.area ? Math.round(scaleRankedValue(ability.area, rank)) : 0,
+  };
 }
