@@ -152,3 +152,6 @@ TODO
 - The required develop-web-game client passes after the widget fix; final screenshot/text show actual combat and no errors.
 - Research and tuning rationale documented in docs/design-notes.md; README now covers campaign, economy, controls and reproducible test commands.
 - Ready to deploy the integrated work (including pre-existing active-skill/card changes) to the existing GitHub Pages production site.
+- Production complete: runtime commit 1e4c17e deployed successfully to https://gmbueno.github.io/aliens-td/ via Actions run 40932058262 (2026-10-29).
+- Re-ran the entire Playwright suite against the public production URL: passed, with zero browser errors or failed runtime assets. Production title/campaign markup verified; production screenshots saved under output/production/.
+- No blocking TODOs remain for this release. Future optional tuning should use player feedback on short-route maps, specialization diversity, and boss pressure; do not assume the automated policy represents every human strategy.
