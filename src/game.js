@@ -1,3 +1,4 @@
+import { createWeaponAudio } from "./systems/weaponAudio.js";
 import { enemies, getEnemy } from "./data/enemies.js";
 import { weapons } from "./data/weapons.js";
 import { xpNeeded } from "./data/player.js";
@@ -10,8 +11,8 @@ import { equipActiveKeyFromEvent, renderSkillTree, skillKeyFromEvent } from "./u
 const TWO_PI = Math.PI * 2;
 const BOARD_PAD = 12;
 const NEXT_WAVE_DELAY = 8;
-let audioContext = null;
-const ASSET_CACHE_BUSTER = "armory-20261105";
+
+const ASSET_CACHE_BUSTER = "recorded-fire-20261105";
 
 function assetUrl(src) {
   return `${src}?v=${ASSET_CACHE_BUSTER}`;
@@ -89,49 +90,6 @@ function clamp(value, min, max) {
 
 function distance(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-function getAudioContext() {
-  if (typeof window === "undefined") return null;
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return null;
-  if (!audioContext) audioContext = new AudioContextClass();
-  if (audioContext.state === "suspended") audioContext.resume();
-  return audioContext;
-}
-
-function playShotSound(weapon) {
-  const context = getAudioContext();
-  if (!context) return;
-  const now = context.currentTime;
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-  const filter = context.createBiquadFilter();
-  const pitch = {
-    handgun: 660,
-    magnum: 440,
-    assault_rifle: 760,
-    machine_pistol: 880,
-    shotgun: 320,
-    sniper: 520,
-  }[weapon.key] || 620;
-  const duration = weapon.key === "shotgun" ? 0.09 : weapon.key === "sniper" ? 0.12 : 0.055;
-
-  oscillator.type = weapon.key === "magnum" || weapon.key === "shotgun" ? "sawtooth" : "square";
-  oscillator.frequency.setValueAtTime(pitch, now);
-  oscillator.frequency.exponentialRampToValueAtTime(Math.max(80, pitch * 0.45), now + duration);
-  filter.type = "lowpass";
-  filter.frequency.setValueAtTime(1800, now);
-  filter.frequency.exponentialRampToValueAtTime(420, now + duration);
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(0.08, now + 0.008);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-
-  oscillator.connect(filter);
-  filter.connect(gain);
-  gain.connect(context.destination);
-  oscillator.start(now);
-  oscillator.stop(now + duration + 0.02);
 }
 
 function awardRunXp(state, amount) {
@@ -344,35 +302,54 @@ export function damageEnemy(enemy, damage, armorPierce = 0) {
   enemy.life -= (damage - shieldHit) * (1 - enemy.armor * (1 - armorPierce));
 }
 
-function createProjectile(state, tower, target, angleOffset = 0) {
-  const angle = Math.atan2(target.y - tower.y, target.x - tower.x) + angleOffset;
+function createProjectile(state, tower, target, angleOffset = 0, aimAngle = null) {
+  const ballistic = Boolean(tower.weapon.ballistic);
+  const baseAngle = aimAngle ?? Math.atan2(target.y - tower.y, target.x - tower.x);
+  const angle = baseAngle + angleOffset;
+  const muzzle = ballistic ? 24 : 0;
   state.projectiles.push({
     id: `projectile-${state.nextProjectileId++}`,
     weaponKey: tower.weapon.key,
-    x: tower.x,
-    y: tower.y,
+    x: tower.x + Math.cos(baseAngle) * muzzle,
+    y: tower.y + Math.sin(baseAngle) * muzzle,
     vx: Math.cos(angle) * tower.weapon.projectileSpeed,
     vy: Math.sin(angle) * tower.weapon.projectileSpeed,
     damage: tower.weapon.directDamage,
     armorPierce: tower.weapon.armorPierce || 0,
     slow: tower.weapon.slow || 0,
     speed: tower.weapon.projectileSpeed,
-    targetId: target.id,
-    life: 1.2,
+    ballistic,
+    targetId: ballistic ? null : target.id,
+    life: ballistic ? tower.range * 1.7 / tower.weapon.projectileSpeed : 1.2,
   });
 }
 
-function fireTower(state, tower, target) {
+export function fireTower(state, tower, target) {
   const pelletCount = tower.weapon.pelletCount || 1;
-  const crowd = [target, ...state.enemies.filter((enemy) => enemy.id !== target.id && enemy.life > 0 && distance(tower, enemy) <= tower.range && distance(target, enemy) < 110)];
-  for (let i = 0; i < pelletCount; i += 1) createProjectile(state, tower, crowd[i % Math.max(1, crowd.length)] || target);
-  if (!state.profile.settings.muted) playShotSound(tower.weapon);
+  if (tower.weapon.ballistic) {
+    // Lead the target at firing time; pellets never steer after leaving the muzzle.
+    const flight = distance(tower, target) / tower.weapon.projectileSpeed;
+    const movement = activeStatus(state, "chronoBreak").timer > 0 ? 0 : target.speed * (target.slowTimer > 0 ? 0.75 : 1);
+    const aimX = target.x + Math.cos(target.angle || 0) * movement * flight;
+    const aimY = target.y + Math.sin(target.angle || 0) * movement * flight;
+    const angle = Math.atan2(aimY - tower.y, aimX - tower.x);
+    for (let i = 0; i < pelletCount; i += 1) {
+      createProjectile(state, tower, target, (i - (pelletCount - 1) / 2) * tower.weapon.spread, angle);
+    }
+    tower.angle = angle;
+  } else {
+    createProjectile(state, tower, target);
+    tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
+  }
+  if (!state.profile.settings.muted) state.audio?.play(tower.weapon.key, tower.x);
+  tower.muzzleFlash = 0.065;
   tower.cooldown = 1 / tower.weapon.atkSpeed;
   tower.ammo -= 1;
 }
 
 function updateTowers(state, dt) {
   for (const tower of state.towers) {
+    tower.muzzleFlash = Math.max(0, (tower.muzzleFlash || 0) - dt);
     if (tower.reloadTimer > 0) {
       tower.reloadTimer -= dt;
       if (tower.reloadTimer <= 0) tower.ammo = tower.weapon.capacity;
@@ -434,8 +411,42 @@ function collectKilledEnemies(state) {
   state.enemies = state.enemies.filter((enemy) => enemy.life > 0);
 }
 
-function updateProjectiles(state, dt) {
+// Earliest impact along a swept pellet segment, so fast projectiles cannot tunnel
+// through an alien at 2x speed and overlapping aliens are hit in physical order.
+export function segmentCircleHitTime(from, to, enemy, radius = enemy.radius + 3) {
+  const dx = to.x - from.x, dy = to.y - from.y;
+  const ox = from.x - enemy.x, oy = from.y - enemy.y;
+  const c = ox * ox + oy * oy - radius * radius;
+  if (c <= 0) return 0;
+  const a = dx * dx + dy * dy;
+  if (a === 0) return null;
+  const b = 2 * (ox * dx + oy * dy);
+  const discriminant = b * b - 4 * a * c;
+  if (discriminant < 0) return null;
+  const t = (-b - Math.sqrt(discriminant)) / (2 * a);
+  return t >= 0 && t <= 1 ? t : null;
+}
+
+export function updateProjectiles(state, dt) {
   for (const projectile of state.projectiles) {
+    if (projectile.ballistic) {
+      const travelTime = Math.min(dt, Math.max(0, projectile.life));
+      const end = { x: projectile.x + projectile.vx * travelTime, y: projectile.y + projectile.vy * travelTime };
+      let hit = null, hitTime = Infinity;
+      for (const enemy of state.enemies) {
+        if (enemy.life <= 0) continue;
+        const t = segmentCircleHitTime(projectile, end, enemy);
+        if (t !== null && t < hitTime) { hit = enemy; hitTime = t; }
+      }
+      projectile.life -= dt;
+      if (hit) {
+        damageEnemy(hit, projectile.damage, projectile.armorPierce);
+        projectile.x += (end.x - projectile.x) * hitTime;
+        projectile.y += (end.y - projectile.y) * hitTime;
+        projectile.life = 0;
+      } else { projectile.x = end.x; projectile.y = end.y; }
+      continue;
+    }
     projectile.life -= dt;
     const target = state.enemies.find((enemy) => enemy.id === projectile.targetId && enemy.life > 0);
     if (!target) { projectile.life = 0; continue; }
@@ -936,8 +947,13 @@ function drawGame(ctx, state, assets) {
 
   state.towers.forEach((tower) => {
     const target = targetForTower(tower, state.enemies);
-    if (target) tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
+    if (target && !(tower.muzzleFlash > 0)) tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
     drawTower(ctx, tower, assets);
+    if (tower.muzzleFlash > 0) {
+      ctx.save(); ctx.translate(tower.x, tower.y); ctx.rotate(tower.angle);
+      ctx.fillStyle = "#fff3b5"; ctx.shadowColor = "#ffbb48"; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.moveTo(26,-5); ctx.lineTo(43,0); ctx.lineTo(26,5); ctx.closePath(); ctx.fill(); ctx.restore();
+    }
     const ranks = (tower.upgrades?.power || 0) + (tower.upgrades?.tactical || 0);
     for (let i = 0; i < ranks; i++) {
       ctx.fillStyle = i < tower.upgrades.power ? "#ffc24c" : "#7ce1f7";
@@ -957,8 +973,12 @@ function drawGame(ctx, state, assets) {
 
   state.projectiles.forEach((projectile) => {
     ctx.fillStyle = "#ffe57c";
+    if (projectile.ballistic) {
+      ctx.strokeStyle = "#fff1b0"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(projectile.x-projectile.vx*.025,projectile.y-projectile.vy*.025); ctx.lineTo(projectile.x,projectile.y); ctx.stroke();
+    }
     ctx.beginPath();
-    ctx.arc(projectile.x, projectile.y, 4, 0, TWO_PI);
+    ctx.arc(projectile.x, projectile.y, projectile.ballistic ? 2.5 : 4, 0, TWO_PI);
     ctx.fill();
   });
 
@@ -1018,8 +1038,10 @@ function drawGame(ctx, state, assets) {
 export function createGame({ ui, levels }) {
   const ctx = ui.canvas.getContext("2d");
   const assets = createAssetStore();
+  const audio = createWeaponAudio();
   applyAssetCssVariables(document.documentElement);
   let profile = loadProfile();
+  audio.sync(profile.settings.muted, true);
   let selectedLevel = levels.find(level => !profile.missions[level.id]?.clears) || levels[0];
   let selectedSector = selectedLevel.sector;
   let state = null;
@@ -1091,6 +1113,7 @@ export function createGame({ ui, levels }) {
 
   function syncHud() {
     if (!state) return;
+    audio.sync(profile.settings.muted, state.isPaused || Boolean(state.result));
     ui.livesValue.textContent = Math.max(0, state.lives);
     ui.goldValue.textContent = state.gold;
     ui.playerLevelValue.textContent = profile.level;
@@ -1344,6 +1367,7 @@ export function createGame({ ui, levels }) {
     ui.weaponInfoModal.classList.add("hidden");
     ui.skillTreeModal.classList.add("hidden");
     state = createInitialState(level, profile, ui.canvas);
+    state.audio = audio;
     actionsPanelKey = null;
     ui.mainMenu.classList.add("hidden");
     ui.gameScreen.classList.remove("hidden");
@@ -1355,6 +1379,7 @@ export function createGame({ ui, levels }) {
   }
 
   function openMenu() {
+    audio.sync(profile.settings.muted, true);
     saveProfile(profile);
     state = null;
     ui.weaponInfoModal.classList.add("hidden");
@@ -1640,11 +1665,15 @@ export function createGame({ ui, levels }) {
   document.addEventListener("visibilitychange", () => {
     if (document.hidden && state && !state.result) { state.isPaused = true; saveProfile(profile); syncHud(); }
   });
-  window.addEventListener("pagehide", () => saveProfile(profile));
+  window.addEventListener("pagehide", () => { audio.sync(true, true); saveProfile(profile); });
+  const unlockAudio = () => { if (!profile.settings.muted) void audio.unlock().catch(() => {}); };
+  document.addEventListener("pointerdown", unlockAudio, { capture: true });
+  document.addEventListener("keydown", unlockAudio, { capture: true });
 
   window.render_game_to_text = () => JSON.stringify({
     mode: ui.mainMenu.classList.contains("hidden") ? "game" : "menu",
     coordinateSystem: "canvas origin top-left, x right, y down",
+    audio: audio.diagnostics(),
     board: state?.board,
     phase: state?.phase,
     paused: state?.isPaused,
@@ -1695,7 +1724,14 @@ export function createGame({ ui, levels }) {
       targeting: tower.targeting,
       pad: tower.pad,
     })) || [],
+    projectiles: state?.projectiles.map(projectile => ({
+      id: projectile.id, weapon: projectile.weaponKey, ballistic: projectile.ballistic,
+      x: Number(projectile.x.toFixed(1)), y: Number(projectile.y.toFixed(1)),
+      vx: Number(projectile.vx.toFixed(1)), vy: Number(projectile.vy.toFixed(1)),
+      target: projectile.targetId,
+    })) || [],
     enemies: state?.enemies.map((enemy) => ({
+      id: enemy.id,
       key: enemy.key,
       x: Math.round(enemy.x),
       y: Math.round(enemy.y),

@@ -32,6 +32,7 @@ npm ci
 npx playwright install chromium
 GAME_URL=http://localhost:4173 npm run test:browser
 GAME_URL=http://localhost:4173 npm run test:controls
+GAME_URL=http://localhost:4173 npm run test:audio
 ```
 
 The unit/campaign tests use Node 22 without dependencies. The browser suite uses Playwright and saves screenshots under ignored `output/`. The balance runner uses a repeatable placement policy, reinvests between waves, and deliberately does not use active abilities. It is a regression benchmark, not a promise that every strategy wins.
@@ -60,3 +61,11 @@ Pushing `main` runs `.github/workflows/deploy-pages.yml`: campaign tests must pa
 ## Interaction update (November 2026)
 
 Target and upgrade controls keep their DOM identity while gold/ammo updates. The controls regression suite holds the pointer down across several HUD refreshes and live kills, checks all four priorities, purchases upgrades, and distinguishes insufficient funds from branch/tower upgrade caps. Weapon selection uses native keyboard-accessible buttons with separate info actions.
+
+## Recorded sound and shotgun ballistics
+
+Weapon audio uses 14 self-hosted recordings from The Free Firearm Sound Library (CC0). Sources, editing notes, license and output hashes are under `assets/audio/`. Two or three recorded shots per weapon alternate without immediate repeats, with small pitch/gain variation, restrained stereo positioning, compression and a 24-voice ceiling. Audio unlocks after player interaction, stops on pause/mute/menu, and is never queued to play later. The old oscillator sound generator has been removed.
+
+The shotgun emits four physical pellets per shell in a fixed cone. It aims before firing, then each pellet travels straight, can hit any live alien crossing its path, and survives the original target's death. Swept collision picks the first physical impact and prevents tunneling at 2x speed. Other weapons retain their guided shots. Damage and shell capacity are unchanged; close positioning is rewarded because more pellets connect.
+
+`npm run test:audio` runs an isolated, OS-muted headless browser while testing real sample decoding/playback, variation, mute/pause behavior and a visible shotgun volley. It does not play through the user's speakers.

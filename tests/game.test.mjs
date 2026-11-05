@@ -178,3 +178,55 @@ test('First, Last, Strongest and Nearest choose their actual in-range target', a
   assert.equal(targetForTower(tower,[]),null);
   assert.equal(aliens[0].id,'front','targeting must not reorder the live enemy array');
 });
+
+test('shotgun emits its whole fan at one enemy, using one shell and one sound', async()=>{
+  const {fireTower}=await import('../src/game.js');
+  const state=make();state.gold=1000;
+  const tower=placeTower(state,'shotgun',1,1);
+  const target={id:'only',x:tower.x+100,y:tower.y,life:5000,speed:0,angle:0,slowTimer:0};
+  state.enemies=[target];const before=tower.ammo;let sounds=0;
+  state.profile.settings.muted=false;state.audio={play(){sounds++;}};
+  fireTower(state,tower,target);
+  assert.equal(state.projectiles.length,4);assert.equal(tower.ammo,before-1);assert.equal(sounds,1);
+  assert.ok(state.projectiles.every(p=>p.ballistic&&p.targetId===null));
+  assert.equal(new Set(state.projectiles.map(p=>p.vy.toFixed(3))).size,4);
+});
+
+test('ballistic pellets keep their trajectory after target movement or death', async()=>{
+  const {fireTower,updateProjectiles}=await import('../src/game.js');
+  const state=make();state.gold=1000;const tower=placeTower(state,'shotgun',1,1);
+  const target={id:'original',x:tower.x+100,y:tower.y,life:5000,speed:0,angle:0,slowTimer:0};
+  state.enemies=[target];fireTower(state,tower,target);
+  const trajectories=state.projectiles.map(p=>({x:p.x,y:p.y,vx:p.vx,vy:p.vy}));
+  state.enemies=[];updateProjectiles(state,.1);
+  assert.equal(state.projectiles.length,4,'death of the original target must not erase pellets');
+  state.projectiles.forEach((p,i)=>{assert.equal(p.vx,trajectories[i].vx);assert.equal(p.vy,trajectories[i].vy);assert.ok(Math.abs(p.x-trajectories[i].x-p.vx*.1)<.001);});
+});
+
+test('a different alien crossing the fan is hit after the original target disappears', async()=>{
+  const {fireTower,updateProjectiles}=await import('../src/game.js');
+  const state=make();state.gold=1000;const tower=placeTower(state,'shotgun',1,1);
+  fireTower(state,tower,{id:'gone',x:tower.x+110,y:tower.y,life:5000,speed:0,angle:0,slowTimer:0});
+  const pellet=state.projectiles[0];
+  const crossing={id:'crossing',x:pellet.x+pellet.vx*.2,y:pellet.y+pellet.vy*.2,life:5000,shield:0,armor:0,radius:10};
+  state.enemies=[crossing];updateProjectiles(state,.25);
+  assert.ok(crossing.life<5000);
+});
+
+test('swept pellet collision chooses the first live alien, even across a large time step', async()=>{
+  const {updateProjectiles}=await import('../src/game.js');
+  const state=make();
+  const enemy=(id,x)=>({id,x,y:100,life:2000,shield:0,armor:0,radius:10});
+  const far=enemy('far',180),near=enemy('near',80);state.enemies=[far,near];
+  state.projectiles=[{id:'pellet',ballistic:true,x:0,y:100,vx:1000,vy:0,damage:700,armorPierce:0,life:1}];
+  updateProjectiles(state,.3);assert.equal(near.life,1300);assert.equal(far.life,2000);assert.equal(state.projectiles.length,0);
+});
+
+test('pellets expire and never damage the same alien repeatedly', async()=>{
+  const {updateProjectiles}=await import('../src/game.js');
+  const state=make();const enemy={id:'one',x:80,y:100,life:2000,shield:0,armor:0,radius:10};
+  state.enemies=[enemy];state.projectiles=[{id:'p',ballistic:true,x:0,y:100,vx:1000,vy:0,damage:700,armorPierce:0,life:1}];
+  updateProjectiles(state,.1);updateProjectiles(state,.1);assert.equal(enemy.life,1300);
+  state.projectiles=[{id:'expired',ballistic:true,x:0,y:100,vx:1000,vy:0,damage:700,armorPierce:0,life:.02}];
+  updateProjectiles(state,.3);assert.equal(enemy.life,1300);assert.equal(state.projectiles.length,0);
+});

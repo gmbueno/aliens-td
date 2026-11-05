@@ -55,12 +55,19 @@ jobs:
           curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$GAME_URL" > /dev/null
           npm run test:controls
 
-      - name: Save interaction test screenshots on failure
+      - name: Validate recorded audio and shotgun gameplay
+        env:
+          GAME_URL: http://127.0.0.1:4173
+        run: npm run test:audio
+
+      - name: Save browser test artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: interaction-test-screenshots
-          path: output/ui-refresh/controls
+          name: browser-test-artifacts
+          path: |
+            output/ui-refresh/controls
+            output/audio-shotgun
 
       - name: Prepare production files
         run: |
