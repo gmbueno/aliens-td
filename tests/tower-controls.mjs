@@ -4,7 +4,7 @@ import {chromium} from 'playwright';
 const url=process.env.GAME_URL || 'http://127.0.0.1:4176';
 const out=process.env.GAME_OUTPUT || 'output/ui-refresh/controls';
 await fs.mkdir(out,{recursive:true});
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,...(process.env.GAME_BROWSER_EXECUTABLE ? {executablePath:process.env.GAME_BROWSER_EXECUTABLE} : {})});
 const errors=[];
 const state=p=>p.evaluate(()=>JSON.parse(window.render_game_to_text()));
 async function create(viewport={width:1440,height:1000},touch=false) {

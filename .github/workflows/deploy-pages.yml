@@ -34,9 +34,18 @@ jobs:
         run: npm test
 
       - name: Install browser test dependencies
+        timeout-minutes: 5
+        run: npm ci --no-audit --no-fund
+
+      - name: Select a headless browser
+        timeout-minutes: 5
         run: |
-          npm ci
-          npx playwright install --with-deps chromium
+          game_browser_path="$(command -v google-chrome || command -v chromium || true)"
+          if [ -n "$game_browser_path" ]; then
+            echo "GAME_BROWSER_EXECUTABLE=$game_browser_path" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
 
       - name: Validate target and upgrade controls in a browser
         env:
