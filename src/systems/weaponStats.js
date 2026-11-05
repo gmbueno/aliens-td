@@ -25,7 +25,7 @@ const upgradePaths = {
   assault_rifle: [path('power','Heavy rounds','+32% damage · +2 armor penetration points per rank'),path('tactical','Extended magazine','More ammo, faster reload and sustained fire',.65)],
   machine_pistol: [path('power','Hot barrel','+35% damage per rank'),path('tactical','Suppression','Stronger slow and longer duration',.65)],
   magnum: [path('power','Devastator','+50% damage · stronger armor penetration'),path('tactical','Speed loader','Faster reload and follow-up shots',.65)],
-  shotgun: [path('power','Buckshot','Pellets: 3 → 4 → 5 → 6'),path('tactical','Choke & pump','Tighter spread, longer reach, faster reload',.65)],
+  shotgun: [path('power','Buckshot','+1 pellet per shell per rank · +12% pellet damage'),path('tactical','Choke & pump','Tighter spread, longer reach, faster reload',.65)],
   sniper: [path('power','Anti-materiel','+50% damage per rank'),path('tactical','Long-range optics','+25% range per rank · faster follow-up',.65)],
   rocket_launcher: [path('power','High explosive','More blast damage and a larger radius'),path('tactical','Rapid loader','Faster rockets, reload and fire rate',.65)],
 };
