@@ -1,8 +1,8 @@
-// 2-1 · Frostline. Authored route, obstacles, and wave schedule.
+// 2-1 · Frostline. Authored route, terrain and waves.
 const level7 = {
   "id": "level_7",
   "name": "Frostline",
-  "description": "Blue frost tiles slow aliens by 25%. Cover them with your towers.",
+  "description": "Blue frost tiles slow aliens by 25%. Cover them with your towers. Water tiles accept weapons after Pontoon Engineering (+35 credits per raft).",
   "sector": 2,
   "stage": 1,
   "biome": "frost",
@@ -754,6 +754,40 @@ const level7 = {
           "at": 10.06
         }
       ]
+    }
+  ],
+  "water": [
+    {
+      "row": 2,
+      "col": 8
+    },
+    {
+      "row": 3,
+      "col": 7
+    },
+    {
+      "row": 3,
+      "col": 8
+    },
+    {
+      "row": 4,
+      "col": 6
+    },
+    {
+      "row": 4,
+      "col": 7
+    },
+    {
+      "row": 4,
+      "col": 8
+    },
+    {
+      "row": 4,
+      "col": 10
+    },
+    {
+      "row": 5,
+      "col": 7
     }
   ]
 };

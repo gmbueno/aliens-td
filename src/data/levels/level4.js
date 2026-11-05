@@ -1,8 +1,8 @@
-// 1-4 · Broken Relay. Authored route, obstacles, and wave schedule.
+// 1-4 · Broken Relay. Authored route, terrain and waves.
 const level4 = {
   "id": "level_4",
   "name": "Broken Relay",
-  "description": "Sensor platforms extend range. Armored bulwarks resist small arms.",
+  "description": "Sensor platforms extend range. Armored bulwarks resist small arms. Water tiles accept weapons after Pontoon Engineering (+35 credits per raft).",
   "sector": 1,
   "stage": 4,
   "biome": "outpost",
@@ -685,6 +685,36 @@ const level4 = {
           "at": 11.9
         }
       ]
+    }
+  ],
+  "water": [
+    {
+      "row": 3,
+      "col": 6
+    },
+    {
+      "row": 5,
+      "col": 6
+    },
+    {
+      "row": 5,
+      "col": 7
+    },
+    {
+      "row": 5,
+      "col": 8
+    },
+    {
+      "row": 6,
+      "col": 5
+    },
+    {
+      "row": 6,
+      "col": 6
+    },
+    {
+      "row": 6,
+      "col": 7
     }
   ]
 };

@@ -1,4 +1,4 @@
-// 1-6 · Outpost Siege. Authored route, obstacles, and wave schedule.
+// 1-6 · Outpost Siege. Authored route, terrain and waves.
 const level6 = {
   "id": "level_6",
   "name": "Outpost Siege",

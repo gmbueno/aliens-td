@@ -1,4 +1,4 @@
-// 2-6 · Cold Reactor. Authored route, obstacles, and wave schedule.
+// 2-6 · Cold Reactor. Authored route, terrain and waves.
 const level12 = {
   "id": "level_12",
   "name": "Cold Reactor",
@@ -422,7 +422,7 @@ const level12 = {
           "at": 1.84
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.56
         },
         {
@@ -506,7 +506,7 @@ const level12 = {
           "at": 1.71
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.36
         },
         {
@@ -598,7 +598,7 @@ const level12 = {
           "at": 1.58
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.17
         },
         {
@@ -698,7 +698,7 @@ const level12 = {
           "at": 1.45
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.98
         },
         {
@@ -810,7 +810,7 @@ const level12 = {
           "at": 1.5
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.78
         },
         {

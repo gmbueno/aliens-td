@@ -41,8 +41,8 @@ export function applyTowerUpgrades(weapon,tower) {
   const next={...weapon};
   const damagePerRank={handgun:.4,assault_rifle:.32,machine_pistol:.35,magnum:.5,shotgun:.12,sniper:.5,rocket_launcher:.35}[weapon.key] ?? .4;
   next.directDamage*=1+p*damagePerRank;
-  if(weapon.key==='shotgun') { next.pelletCount=3+p;next.spread=weapon.spread*(1-c*.14);next.range*=1+c*.1;next.reloadSpeed*=1-c*.13;next.atkSpeed*=1+c*.1; }
-  else if(weapon.key==='machine_pistol') {next.slowStrength=Number(Math.min(.65,.25+c*.10).toFixed(2));next.slow=Number((.7+c*.6).toFixed(1));next.atkSpeed*=1+c*.06;}
+  if(weapon.key==='shotgun') { next.pelletCount=weapon.pelletCount+p;next.spread=weapon.spread*(1-c*.14);next.range*=1+c*.1;next.reloadSpeed*=1-c*.13;next.atkSpeed*=1+c*.1; }
+  else if(weapon.key==='machine_pistol') {next.slowStrength=Number(Math.min(.65,(weapon.slowStrength||.25)+c*.10).toFixed(2));next.slow=Number(((weapon.slow||.7)+c*.6).toFixed(1));next.atkSpeed*=1+c*.06;}
   else if(weapon.key==='sniper') {next.range*=1+c*.25;next.atkSpeed*=1+c*.08;}
   else if(weapon.key==='magnum') {next.armorPierce=Math.min(1,(weapon.armorPierce||0)+p*.08);next.reloadSpeed*=1-c*.2;next.atkSpeed*=1+c*.1;}
   else if(weapon.key==='assault_rifle') {next.armorPierce=Math.min(1,(weapon.armorPierce||0)+p*.02);next.capacity+=c*15;next.reloadSpeed*=1-c*.12;next.atkSpeed*=1+c*.1;}

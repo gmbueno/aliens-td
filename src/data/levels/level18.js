@@ -1,4 +1,4 @@
-// 3-6 · Mothership. Authored route, obstacles, and wave schedule.
+// 3-6 · Mothership. Authored route, terrain and waves.
 const level18 = {
   "id": "level_18",
   "name": "Mothership",
@@ -381,7 +381,7 @@ const level18 = {
           "at": 1.74
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.41
         },
         {
@@ -473,7 +473,7 @@ const level18 = {
           "at": 1.61
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.21
         },
         {
@@ -573,7 +573,7 @@ const level18 = {
           "at": 1.48
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.02
         },
         {
@@ -681,7 +681,7 @@ const level18 = {
           "at": 1.35
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.82
         },
         {
@@ -797,7 +797,7 @@ const level18 = {
           "at": 1.22
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.63
         },
         {
@@ -921,7 +921,7 @@ const level18 = {
           "at": 1.1
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.45
         },
         {
@@ -1053,7 +1053,7 @@ const level18 = {
           "at": 1.1
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.45
         },
         {

@@ -1,10 +1,11 @@
+import { PONTOON_COST, initializeSupport, updateDrone, triggerMines, drawSupport } from './systems/fieldSupport.js';
 import { createWeaponAudio } from "./systems/weaponAudio.js";
 import { enemies, getEnemy } from "./data/enemies.js";
-import { equippedWeapons, classUnlocked, equipBlueprint, equipAttachment, arsenalChoice } from "./data/arsenal.js";
+import { equippedWeapons, classUnlocked, equipBlueprint, equipAttachment, arsenalChoice, blueprintsFor, purchaseBlueprint, purchaseAttachment, cacheReward, eliteDrop } from "./data/arsenal.js";
 import { renderArsenal, nextArsenalUnlock } from "./ui/arsenalView.js";
 import { weapons } from "./data/weapons.js";
 import { xpNeeded } from "./data/player.js";
-import { activeAbilities, activeAbilityStats, buySkill, isActiveAbilityKey } from "./data/skills.js";
+import { activeAbilities, activeAbilityStats, buySkill, isActiveAbilityKey, activeUnlocked, skillRank } from "./data/skills.js";
 import { assets as assetPaths } from "./data/assets.js";
 import { addXp, loadProfile, saveProfile, recordVictory, resetSkills } from "./systems/profile.js";
 import { applyTowerUpgrades, towerUpgradeCost, towerUpgradePaths, towerUpgradePathsFor, upgradePreview, applySkillBonuses, effectiveWeaponByKey as findEffectiveWeaponByKey, refreshTowerSkillBonuses as refreshTowersWithSkills } from "./systems/weaponStats.js";
@@ -14,7 +15,7 @@ const TWO_PI = Math.PI * 2;
 const BOARD_PAD = 12;
 const NEXT_WAVE_DELAY = 8;
 
-const ASSET_CACHE_BUSTER = "arsenal-20261105";
+const ASSET_CACHE_BUSTER = "doctrine-20261105";
 
 function assetUrl(src) {
   return `${src}?v=${ASSET_CACHE_BUSTER}`;
@@ -52,9 +53,9 @@ function createAssetStore() {
     ...weapons.map((weapon) => loadImage(weapon.asset).then((image) => {
       store.towers[weapon.key] = image;
     })),
-    ...weapons.map((weapon) => loadImage(weapon.placedAsset).then((image) => {
-      store.placedWeapons[weapon.key] = image;
-    })),
+    ...weapons.flatMap(weapon=>blueprintsFor(weapon.key).map(model=>loadImage(model.art).then(image=>{
+      store.placedWeapons[`${weapon.key}:${model.key}`]=image;
+    }))),
     ...Object.values(enemies).map((enemy) => loadImage(enemy.asset).then((image) => {
       store.enemies[enemy.key] = image;
     })),
@@ -137,6 +138,7 @@ function getTileSets(level) {
   return {
     path: new Set(level.track.map((tile) => tileKey(tile.row, tile.col))),
     blockers: new Set(level.blockers.map((tile) => tileKey(tile.row, tile.col))),
+    water: new Set((level.water || []).map(tile=>tileKey(tile.row,tile.col))),
   };
 }
 
@@ -160,6 +162,7 @@ function makeEnemy(spawn, state) {
     xp: definition.xp ?? 2,
     healthScale,
     immuneSlow: Boolean(definition.immuneSlow),
+    healer:Boolean(definition.healer),healTimer:2,healFlash:0,
     rageMultiplier: definition.rageMultiplier || 1,
     brood: Boolean(definition.brood),
     broodTimer: 8,
@@ -208,7 +211,7 @@ function canUseAbility(state, abilityKey) {
 
 export function activateChronoBreak(state) {
   if (!canUseAbility(state, "chronoBreak")) return false;
-  const stats = abilityStats(state.profile, "chronoBreak");
+  const stats = abilityStats(state.arsenalProfile, "chronoBreak");
   const status = activeStatus(state, "chronoBreak");
   status.timer = stats.duration;
   status.cooldown = stats.cooldown;
@@ -220,7 +223,7 @@ export function activateChronoBreak(state) {
 
 export function activateNapalm(state) {
   if (!canUseAbility(state, "napalm")) return false;
-  const stats = abilityStats(state.profile, "napalm");
+  const stats = abilityStats(state.arsenalProfile, "napalm");
   const status = activeStatus(state, "napalm");
   status.timer = stats.duration;
   status.damage = stats.damage;
@@ -237,7 +240,7 @@ export function activateNapalm(state) {
 
 export function activateArtillery(state, x, y) {
   if (!canUseAbility(state, 'artillery')) return false;
-  const stats = abilityStats(state.profile,'artillery');
+  const stats = abilityStats(state.arsenalProfile,'artillery');
   const status = activeStatus(state,'artillery');
   status.timer = stats.duration; status.cooldown = stats.cooldown;
   state.artillery = { x, y, elapsed: 0, next: .25, strikes: 0, duration: 5, damage: stats.damage, radius: stats.area };
@@ -271,7 +274,7 @@ function updateArtillery(state,dt) {
 
 export function createInitialState(level, profile, canvas) {
   const board = createBoard(level, canvas);
-  return {
+  const state = {
     mode: "game",
     level,
     board,
@@ -282,7 +285,8 @@ export function createInitialState(level, profile, canvas) {
     effects: [],
     artillery: null,
     visualTime: 0,
-    gold: level.startGold,
+    gold: level.startGold+skillRank(profile,'supplies')*25,
+    runSalvage:0, loot:[],
     lives: level.lives,
     selectedWeaponKey: null,
     selectedTowerId: null,
@@ -311,7 +315,7 @@ export function createInitialState(level, profile, canvas) {
     runMode: "play",
     gameSpeed: 1,
     isPaused: false,
-    equippedActiveKey: profile.equippedActiveKey,
+    equippedActiveKey: activeUnlocked(profile,profile.equippedActiveKey)?profile.equippedActiveKey:null,
     selectedActiveKey: null,
     activeAbilities: Object.fromEntries(activeAbilities.map((ability) => [ability.key, {
       cooldown: 0,
@@ -323,6 +327,8 @@ export function createInitialState(level, profile, canvas) {
     message: "Choose a tower, place it beside the route, then launch the wave.",
     messageTimer: 8,
   };
+  initializeSupport(state);
+  return state;
 }
 
 export function targetForTower(tower, enemies) {
@@ -371,13 +377,13 @@ function createProjectile(state, tower, target, angleOffset = 0, aimAngle = null
   });
 }
 
-export function fireTower(state, tower, target) {
+export function fireTower(state, tower, target, continuing=false) {
   tower.shotsFired = (tower.shotsFired || 0) + 1;
   const pelletCount = tower.weapon.pelletCount || 1;
   if (tower.weapon.ballistic) {
     // Lead the target at firing time; pellets never steer after leaving the muzzle.
     const flight = distance(tower, target) / tower.weapon.projectileSpeed;
-    const movement = activeStatus(state, "chronoBreak").timer > 0 ? 0 : target.speed * (target.slowTimer > 0 ? 0.75 : 1);
+    const movement = activeStatus(state, "chronoBreak").timer > 0 ? 0 : target.speed * (target.stunTimer>0?0:1) * (target.raged?target.rageMultiplier:1) * (target.slowTimer>0&&!target.immuneSlow?1-(target.slowStrength||.25):1);
     const aimX = target.x + Math.cos(target.angle || 0) * movement * flight;
     const aimY = target.y + Math.sin(target.angle || 0) * movement * flight;
     const angle = Math.atan2(aimY - tower.y, aimX - tower.x);
@@ -389,9 +395,10 @@ export function fireTower(state, tower, target) {
     createProjectile(state, tower, target);
     tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
   }
-  if (!state.profile.settings.muted) state.audio?.play(tower.weapon.key, tower.x);
+  if (!state.profile.settings.muted) state.audio?.play(tower.weapon.key,tower.x,1280,{model:tower.weapon.blueprint,pitch:tower.weapon.soundPitch,gain:tower.weapon.soundGain});
   tower.muzzleFlash = 0.065;
-  tower.cooldown = 1 / tower.weapon.atkSpeed;
+  if(!continuing){tower.cooldown=1/tower.weapon.atkSpeed;tower.burstLeft=(tower.weapon.burstCount||1)-1;}
+  tower.burstTimer=tower.weapon.burstGap||.08;
   tower.ammo -= 1;
 }
 
@@ -405,11 +412,15 @@ function updateTowers(state, dt) {
     }
     tower.cooldown = Math.max(0, tower.cooldown - dt);
     if (tower.ammo <= 0) {
+      tower.burstLeft=0;
       tower.reloadTimer = tower.weapon.reloadSpeed;
       continue;
     }
     const target = targetForTower(tower, state.enemies);
-    if (target && tower.cooldown <= 0) fireTower(state, tower, target);
+    if(tower.burstLeft>0){
+      tower.burstTimer-=dt;
+      if(tower.burstTimer<=0&&target){tower.burstLeft--;fireTower(state,tower,target,true);}
+    }else if (target && tower.cooldown <= 0) fireTower(state, tower, target);
   }
 }
 
@@ -417,11 +428,17 @@ function updateEnemies(state, dt) {
   const movementDt = activeStatus(state, "chronoBreak").timer > 0 ? 0 : dt;
   const births = [];
   for (const enemy of state.enemies) {
+    if(enemy.life<=0)continue;
     const tile = state.level.track[enemy.segment];
     const onIce = state.level.slowTiles?.some((item) => item.row === tile.row && item.col === tile.col);
     const frozen = enemy.stunTimer > 0;
     let remaining = enemy.speed * movementDt * (frozen ? 0 : 1) * (onIce && !enemy.immuneSlow ? .75 : 1) * (enemy.raged ? enemy.rageMultiplier : 1) * (enemy.slowTimer > 0 && !enemy.immuneSlow ? 1-(enemy.slowStrength || .25) : 1);
     enemy.stunTimer = Math.max(0,(enemy.stunTimer || 0)-dt);
+    enemy.healFlash=Math.max(0,(enemy.healFlash||0)-dt);
+    if(enemy.healer&&movementDt>0&&!frozen){
+      enemy.healTimer-=dt;
+      if(enemy.healTimer<=0){enemy.healTimer=2;enemy.healFlash=.6;for(const ally of state.enemies)if(ally!==enemy&&ally.life>0&&distance(enemy,ally)<110)ally.life=Math.min(ally.maxLife,ally.life+500);}
+    }
     if(enemy.brood && movementDt > 0 && !frozen && enemy.births < 3) {
       enemy.broodTimer -= dt;
       if(enemy.broodTimer<=0) { enemy.births++; enemy.broodTimer=8; births.push(...spawnHatchlings(state,enemy,1)); }
@@ -444,9 +461,11 @@ function updateEnemies(state, dt) {
         enemy.progress = 0;
       }
     }
-    if (enemy.segment >= state.path.length - 1) enemy.reachedEnd = true;
+    triggerMines(state,enemy,damageEnemy,addEffect);
+    if (enemy.segment >= state.path.length - 1 && enemy.life>0) enemy.reachedEnd = true;
   }
 
+  collectKilledEnemies(state);
   for (const enemy of state.enemies.filter((item) => item.reachedEnd)) {
     state.lives -= enemy.damage;
     state.waveLeaks += enemy.damage;
@@ -471,6 +490,8 @@ function collectKilledEnemies(state) {
   for(const enemy of killed) {
     state.gold+=enemy.gold;state.kills++;
     awardRunXp(state,enemy.xp);
+    const drop=eliteDrop(state.profile,enemy);
+    if(drop){state.runSalvage+=drop.salvage;state.loot.push(drop);notify(state,drop.weapon?`ELITE DROP · ${drop.name} / ${drop.weapon.replaceAll("_"," ")} · saved to your arsenal`:`ELITE DROP · +${drop.salvage} Salvage banked`);saveProfile(state.profile);}
     if(enemy.brood)children.push(...spawnHatchlings(state,enemy,3));
   }
   state.enemies=[...state.enemies.filter(enemy=>enemy.life>0),...children];
@@ -563,7 +584,7 @@ export function launchWave(state) {
   state.phase = "combat";
   state.waveDelay = 0;
   state.waveLeaks = 0;
-  notify(state, `Wave ${state.waveIndex + 1} · ${state.level.waves[state.waveIndex].name}${bonus ? ` · +${bonus}g early launch` : ""}`);
+  notify(state, `Wave ${state.waveIndex + 1} · ${state.level.waves[state.waveIndex].name}${bonus ? ` · +${bonus}cr early launch` : ""}`);
   return true;
 }
 
@@ -587,8 +608,12 @@ function updateWaves(state, dt) {
     state.gold += wave.reward + cleanBonus;
     awardRunXp(state, 8 + state.level.sector * 2);
     saveProfile(state.profile);
-    notify(state, `Wave cleared · +${wave.reward}g supplies${cleanBonus ? " · +15g flawless defense" : ""}`);
+    notify(state, `Wave cleared · +${wave.reward}cr supplies${cleanBonus ? " · +15cr flawless defense" : ""}`);
     state.waveIndex += 1;
+    if(!state.cache.opened && state.waveIndex>=state.cache.wave){
+      state.cache.opened=true;const reward=cacheReward(state.profile,state.level);
+      if(reward){state.runSalvage+=reward.salvage;state.loot.push(reward);notify(state,reward.tier?`CACHE OPENED · ${reward.name} / ${reward.weapon.replaceAll("_"," ")} blueprint · +${reward.salvage} Salvage`:`CACHE OPENED · +${reward.salvage} Salvage banked`);saveProfile(state.profile);}
+    }
     state.waveTime = 0;
     state.spawnedInWave = new Set();
     state.waveDelay = NEXT_WAVE_DELAY;
@@ -609,6 +634,7 @@ function updateResult(state) {
     state.isPaused = true;
     state.reward = recordVictory(state.profile, state.level, state.lives);
     state.runXp += state.reward.xp;
+    state.runSalvage+=state.reward.salvage;
     saveProfile(state.profile);
   }
 }
@@ -618,18 +644,22 @@ export function placeTower(state, weaponKey, row, col) {
   const weapon = findEffectiveWeaponByKey(weapons, weaponKey, { ...state.profile, arsenal: state.arsenalProfile.arsenal });
   if(!classUnlocked(state.profile,weaponKey))return null;
   const key = tileKey(row, col);
-  if (!weapon || state.gold < weapon.price || state.tileSets.path.has(key) || state.tileSets.blockers.has(key) || state.towers.some(t => t.row === row && t.col === col)) return null;
+  const water=state.tileSets.water.has(key),platform=water?PONTOON_COST:0;
+  if(water&&!skillRank(state.profile,'pontoons'))return null;
+  if(state.drone?.base.row===row&&state.drone.base.col===col)return null;
+  if(!state.cache.opened&&state.cache.row===row&&state.cache.col===col)return null;
+  if (!weapon || state.gold < weapon.price+platform || state.tileSets.path.has(key) || state.tileSets.blockers.has(key) || state.towers.some(t => t.row === row && t.col === col)) return null;
   const tower = {
     id: `tower-${state.nextTowerId++}`, weapon, row, col,
     x: state.board.x + col * state.board.tile + state.board.tile / 2,
     y: state.board.y + row * state.board.tile + state.board.tile / 2,
     tile: state.board.tile, range: weapon.range, cooldown: 0, ammo: weapon.capacity, reloadTimer: 0, angle: 0,
-    upgrades: { power: 0, tactical: 0 }, invested: weapon.price, targeting: "first",
+    upgrades: { power: 0, tactical: 0 }, invested: weapon.price+platform, platform, targeting: "first",
     pad: state.level.pads?.find(pad => pad.row === row && pad.col === col)?.type,
   };
   tower.weapon = applyTowerUpgrades(weapon, tower);
   tower.range = tower.weapon.range;
-  state.gold -= weapon.price;
+  state.gold -= weapon.price+platform;
   state.towers.push(tower);
   return tower;
 }
@@ -657,10 +687,11 @@ export function sellTower(state, tower) {
   return true;
 }
 
+export function obstacleCost(state,obstacle){return Math.ceil((obstacle?.cost||0)*(1-skillRank(state.profile,'salvage')*.15));}
 export function clearObstacle(state, obstacle) {
   const key = obstacle && tileKey(obstacle.row, obstacle.col);
-  if (!obstacle?.cost || state.result || state.gold < obstacle.cost || !state.tileSets.blockers.has(key)) return false;
-  state.gold -= obstacle.cost;
+  if (!obstacle?.cost || state.result || state.gold < obstacleCost(state,obstacle) || !state.tileSets.blockers.has(key)) return false;
+  state.gold -= obstacleCost(state,obstacle);
   state.tileSets.blockers.delete(key);
   state.clearedBlockers.add(key);
   state.selectedObstacle = null;
@@ -683,6 +714,7 @@ export function stepState(state, dt) {
   updateWaves(state, scaledDt);
   if (state.phase === "combat") {
     updateArtillery(state, scaledDt);
+    updateDrone(state,scaledDt,damageEnemy);
     updateTowers(state, scaledDt);
     updateProjectiles(state, scaledDt);
     updateBurningEnemies(state, scaledDt);
@@ -779,12 +811,12 @@ function drawTowerFallback(ctx, tower) {
 
 function drawTower(ctx, tower, assets) {
   const baseImage = assets.placedBase;
-  const weaponImage = assets.placedWeapons[tower.weapon.key];
+  const weaponImage = assets.placedWeapons[`${tower.weapon.key}:${tower.weapon.rarity}`];
   if (!baseImage || !weaponImage) {
     drawTowerFallback(ctx, tower);
     return;
   }
-  const baseSize = Math.min(70, tower.tile * 0.9);
+  const baseSize = Math.min(70, tower.tile * 0.9)*(tower.platform ? .72 : 1);
   const weaponHeight = Math.min(76, tower.tile * (tower.weapon.key === "sniper" ? 1.08 : 0.95));
   const weaponScale = weaponHeight / weaponImage.height;
   const weaponW = weaponImage.width * weaponScale;
@@ -798,7 +830,7 @@ function drawTower(ctx, tower, assets) {
   ctx.shadowBlur = 8;
   ctx.shadowOffsetY = 4;
   ctx.rotate(tower.angle || 0);
-  ctx.rotate(tower.weapon.key === "rocket_launcher" ? Math.PI / 2 : -Math.PI / 2);
+  ctx.rotate(-Math.PI / 2);
   ctx.drawImage(weaponImage, -weaponW / 2, -weaponH / 2, weaponW, weaponH);
   ctx.restore();
 }
@@ -882,7 +914,7 @@ function drawPlacementIndicator(ctx, board, row, col, isValid = true) {
   ctx.restore();
 }
 
-function drawObstacle(ctx, x, y, size, obstacle, selected) {
+function drawObstacle(ctx, x, y, size, obstacle, selected, cost=obstacle.cost) {
   ctx.save();
   ctx.translate(x + size / 2, y + size / 2);
   ctx.shadowColor = "#0009"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 6;
@@ -911,7 +943,7 @@ function drawObstacle(ctx, x, y, size, obstacle, selected) {
   ctx.shadowColor = "transparent";
   if (obstacle.cost) {
     ctx.fillStyle = "#141c24"; ctx.fillRect(-18, size*.22, 36, 17);
-    ctx.fillStyle = "#efd6a3"; ctx.font = "bold 12px monospace"; ctx.textAlign = "center"; ctx.fillText(`${obstacle.cost}g`, 0, size*.22 + 13);
+    ctx.fillStyle = "#efd6a3"; ctx.font = "bold 12px monospace"; ctx.textAlign = "center"; ctx.fillText(`${cost}cr`, 0, size*.22 + 13);
   }
   if (selected) { ctx.strokeStyle = "#ffdd88"; ctx.lineWidth = 3; ctx.strokeRect(-size*.4,-size*.4,size*.8,size*.8); }
   ctx.restore();
@@ -976,6 +1008,7 @@ function drawGame(ctx, state, assets) {
       const key = tileKey(row, col);
       const isPath = tileSets.path.has(key);
       const isBlocked = tileSets.blockers.has(key);
+      const water=tileSets.water.has(key);
       if (isPath && assets.path) {
         ctx.drawImage(assets.path, x + 1, y + 1, board.tile - 2, board.tile - 2);
       } else if (!isPath && assets.tile) {
@@ -987,6 +1020,10 @@ function drawGame(ctx, state, assets) {
       } else {
         ctx.fillStyle = isPath ? "#6b543b" : isBlocked ? "#1a2026" : "#193241";
         ctx.fillRect(x + 2, y + 2, board.tile - 4, board.tile - 4);
+      }
+      if(water){
+        ctx.fillStyle='#184b61';ctx.fillRect(x+1,y+1,board.tile-2,board.tile-2);ctx.strokeStyle='#6ab3c166';ctx.lineWidth=2;
+        for(let n=0;n<3;n++){const wy=y+18+n*18;ctx.beginPath();for(let k=0;k<=board.tile;k+=6){const yy=wy+Math.sin(k*.12+state.visualTime*1.5+n)*3;if(k===0)ctx.moveTo(x+k,yy);else ctx.lineTo(x+k,yy);}ctx.stroke();}
       }
       ctx.strokeStyle = isPath ? "rgba(247, 163, 69, 0.38)" : "rgba(90, 205, 255, 0.18)";
       ctx.lineWidth = 1;
@@ -1009,7 +1046,7 @@ function drawGame(ctx, state, assets) {
       }
       if (isBlocked) {
         const obstacle = level.blockers.find(tile => tile.row === row && tile.col === col);
-        drawObstacle(ctx, x, y, board.tile, obstacle, state.selectedObstacle === obstacle);
+        drawObstacle(ctx, x, y, board.tile, obstacle, state.selectedObstacle === obstacle,obstacleCost(state,obstacle));
       }
     }
   }
@@ -1037,6 +1074,8 @@ function drawGame(ctx, state, assets) {
   }
   ctx.restore();
 
+  drawSupport(ctx,state);
+
   const selected = findEffectiveWeaponByKey(weapons, state.selectedWeaponKey, { ...state.profile, arsenal: state.arsenalProfile.arsenal });
   if (selected) {
     ctx.fillStyle = "rgba(120, 226, 127, 0.12)";
@@ -1044,7 +1083,7 @@ function drawGame(ctx, state, assets) {
       for (let col = 0; col < level.cols; col += 1) {
         const key = tileKey(row, col);
         const occupied = state.towers.some((tower) => tower.row === row && tower.col === col);
-        if (!tileSets.path.has(key) && !tileSets.blockers.has(key) && !occupied) {
+        if (!tileSets.path.has(key) && !tileSets.blockers.has(key) && (!tileSets.water.has(key)||skillRank(state.profile,'pontoons')) && !occupied) {
           ctx.fillRect(board.x + col * board.tile + 7, board.y + row * board.tile + 7, board.tile - 14, board.tile - 14);
         }
       }
@@ -1052,7 +1091,7 @@ function drawGame(ctx, state, assets) {
     if (state.hoverTile) {
       const key = tileKey(state.hoverTile.row, state.hoverTile.col);
       const occupied = state.towers.some((tower) => tower.row === state.hoverTile.row && tower.col === state.hoverTile.col);
-      const canPlace = state.gold >= selected.price && !tileSets.path.has(key) && !tileSets.blockers.has(key) && !occupied;
+      const canPlace = state.gold >= selected.price+(tileSets.water.has(key)?PONTOON_COST:0) && (!tileSets.water.has(key)||skillRank(state.profile,'pontoons')) && !tileSets.path.has(key) && !tileSets.blockers.has(key) && !occupied;
       const x = board.x + state.hoverTile.col * board.tile + board.tile / 2;
       const y = board.y + state.hoverTile.row * board.tile + board.tile / 2;
       const pad = level.pads?.find(tile => tile.row === state.hoverTile.row && tile.col === state.hoverTile.col);
@@ -1062,13 +1101,14 @@ function drawGame(ctx, state, assets) {
   }
 
   if (state.selectedActiveKey === "artillery" && state.hoverPoint) {
-    const stats = abilityStats(state.profile, "artillery");
+    const stats = abilityStats(state.arsenalProfile, "artillery");
     drawRangeCircle(ctx, state.hoverPoint.x, state.hoverPoint.y, stats.area, "rgba(255, 194, 76, 0.92)");
   }
 
   state.towers.forEach((tower) => {
     const target = targetForTower(tower, state.enemies);
     if (target && !(tower.muzzleFlash > 0)) tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
+    if(tower.platform){ctx.save();ctx.translate(tower.x,tower.y);ctx.fillStyle='#b4955b';ctx.strokeStyle='#edcf8c';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(-32,-29,64,58,10);ctx.fill();ctx.stroke();ctx.fillStyle='#536b62';ctx.fillRect(-34,-23,8,46);ctx.fillRect(26,-23,8,46);ctx.restore();}
     drawTower(ctx, tower, assets);
     if (tower.muzzleFlash > 0) {
       ctx.save(); ctx.translate(tower.x, tower.y); ctx.rotate(tower.angle);
@@ -1115,6 +1155,7 @@ function drawGame(ctx, state, assets) {
   state.enemies.forEach((enemy) => {
     drawAlien(ctx, enemy, assets);
     const radius=(enemy.visualSize || 50)*.42;
+    if(enemy.healer){ctx.strokeStyle="#92edb3";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(enemy.x-5,enemy.y-30);ctx.lineTo(enemy.x+5,enemy.y-30);ctx.moveTo(enemy.x,enemy.y-35);ctx.lineTo(enemy.x,enemy.y-25);ctx.stroke();if(enemy.healFlash){ctx.globalAlpha=enemy.healFlash;ctx.beginPath();ctx.arc(enemy.x,enemy.y,110*(1-enemy.healFlash/.6),0,TWO_PI);ctx.stroke();ctx.globalAlpha=1;}}
     if(enemy.immuneSlow || enemy.raged || enemy.brood) {
       const color=enemy.immuneSlow?'#72dbe2':enemy.raged?'#ff6c58':'#d4acff';
       ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();
@@ -1215,6 +1256,7 @@ export function createGame({ ui, levels }) {
     return `<svg viewBox="0 0 160 90" aria-hidden="true" class="map-preview">
       <defs><pattern id="grid-${level.id}" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="#ffffff" stroke-opacity=".06" stroke-width=".6"/></pattern></defs>
       <rect width="160" height="90" fill="url(#grid-${level.id})"/>
+      ${(level.water||[]).map(tile=>`<rect x="${tile.col*10+1}" y="${tile.row*10+1}" width="8" height="8" fill="#4eabc2" opacity=".6"/>`).join("")}
       ${level.blockers.map(tile => `<rect x="${tile.col * 10 + 2}" y="${tile.row * 10 + 2}" width="6" height="6" rx="1" fill="${color}" opacity=".25"/>`).join("")}
       <polyline points="${level.track.map(tile => `${tile.col * 10 + 5},${tile.row * 10 + 5}`).join(" ")}" fill="none" stroke="${color}" stroke-width="5" stroke-linejoin="round" opacity=".85"/>
       ${level.pads.map(tile => `<circle cx="${tile.col * 10 + 5}" cy="${tile.row * 10 + 5}" r="2.8" fill="${tile.type === "power" ? "#ffc24c" : "#78e9ff"}"/>`).join("")}
@@ -1224,7 +1266,7 @@ export function createGame({ ui, levels }) {
   }
 
   function syncMenu() {
-    ui.arsenalNextUnlock.textContent = nextArsenalUnlock(profile.level);
+    ui.arsenalNextUnlock.textContent = nextArsenalUnlock(profile);
     ui.menuSkillsButton.innerHTML = `<span>COMMANDER / LV ${profile.level}</span><strong>${profile.skillPoints} SP available ↗</strong><i style="--xp:${Math.round(profile.xp / xpNeeded(profile.level) * 100)}%"></i>`;
     const stars = Object.values(profile.missions).reduce((total, item) => total + item.stars, 0);
     ui.campaignProgress.textContent = `CAMPAIGN RECORD / ${stars} ★ of 54`;
@@ -1239,7 +1281,7 @@ export function createGame({ ui, levels }) {
     const level = selectedLevel;
     const cleared = profile.missions[level.id]?.clears;
     ui.missionBriefing.innerHTML = `<p class="eyebrow">MISSION ${missionLabel(level)} / BRIEFING</p><h2>${level.name}</h2><p>${level.description}</p>
-      <div class="brief-stats"><div><span>Starting funds</span><strong>${level.startGold}g</strong></div><div><span>Base integrity</span><strong>${level.lives} lives</strong></div><div><span>Recommended</span><strong>Lv ${level.recommendedLevel}+</strong></div><div><span>${cleared ? "Clear reward" : "First clear"}</span><strong>+${level.clearXp + (cleared ? 0 : level.firstClearXp)} XP</strong></div></div>
+      <div class="brief-stats"><div><span>Starting funds</span><strong>${level.startGold+skillRank(profile,'supplies')*25}cr</strong></div><div><span>Base integrity</span><strong>${level.lives} lives</strong></div><div><span>Recommended</span><strong>Lv ${level.recommendedLevel}+</strong></div><div><span>${cleared ? "Clear reward" : "First clear"}</span><strong>+${level.clearXp + (cleared ? 0 : level.firstClearXp)} XP</strong></div></div>
       <div class="brief-tip">${cleared ? "Improve your record: 3 stars for no leaks, 2 for 60%+ lives, 1 for surviving." : "Kills and completed waves earn permanent XP, even if you lose. Each level grants 10 skill points."}</div>`;
     ui.menuPlayButton.disabled = false;
     ui.menuPlayButton.textContent = `Deploy to ${missionLabel(level)} →`;
@@ -1271,12 +1313,12 @@ export function createGame({ ui, levels }) {
     ui.speedToggleButton.textContent = `${state.gameSpeed}x`;
     ui.speedToggleButton.className = `control-button speed-state ${state.gameSpeed === 2 ? "fast" : "normal"}`;
     ui.battleTitle.textContent = `${missionLabel(state.level)} / ${state.level.name}`;
-    ui.wavePreview.textContent = `${state.phase === "prepare" ? "UP NEXT" : "INCOMING"} · ${wavePreview()}`;
+    ui.wavePreview.textContent = `${state.cache.opened?"CACHE CLAIMED":"CACHE / W"+state.cache.wave}${state.mines.length?" · MINES "+state.mines.filter(m=>!m.spent).length+"/"+state.mines.length:""}${state.drone?" · UAV":""} · ${state.phase === "prepare" ? "UP NEXT" : "INCOMING"} · ${wavePreview()}`;
     ui.launchWaveButton.disabled = state.phase !== "prepare" || state.isPaused || Boolean(state.result);
-    const bonus = state.waveIndex > 0 && state.waveDelay > 0 ? ` (+${Math.ceil(state.waveDelay) * 2}g)` : "";
+    const bonus = state.waveIndex > 0 && state.waveDelay > 0 ? ` (+${Math.ceil(state.waveDelay) * 2}cr)` : "";
     ui.launchWaveButton.textContent = state.phase === "combat" ? "Wave in progress" : `Launch wave ${state.waveIndex + 1}${bonus}`;
     ui.autoWaveToggle.checked = profile.settings.autoWave;
-    ui.battleMessage.textContent = state.messageTimer > 0 ? state.message : state.selectedActiveKey ? "Mark an area for a 5-second artillery barrage. Escape to cancel." : state.selectedWeaponKey ? "Choose a free tile. Blue pads extend range; amber pads boost damage." : state.phase === "prepare" ? "Prepare your defense. Click a tower to upgrade it or a crate to clear space." : "Click a tower to upgrade, change target, or sell.";
+    ui.battleMessage.textContent = state.selectedWeaponKey ? `${effectiveWeaponByKey(state.selectedWeaponKey).blueprint} / ${effectiveWeaponByKey(state.selectedWeaponKey).fireMode} · choose a free tile. Water adds a 35-credit raft.` : state.messageTimer > 0 ? state.message : state.selectedActiveKey ? "Mark an area for a 5-second artillery barrage. Escape to cancel." : state.selectedWeaponKey ? "Choose a free tile. Blue pads extend range; amber pads boost damage." : state.phase === "prepare" ? "Prepare your defense. Click a tower to upgrade it or a crate to clear space." : "Click a tower to upgrade, change target, or sell.";
     ui.playerLevelButton.title = `Commander Lv ${profile.level} · ${profile.xp}/${xpNeeded(profile.level)} XP · ${profile.skillPoints} SP available`;
     ui.playerLevelButton.classList.toggle("has-points", profile.skillPoints >= 5);
     ui.soundButton.textContent = profile.settings.muted ? "Sound off" : "Sound on";
@@ -1292,7 +1334,7 @@ export function createGame({ ui, levels }) {
       select.setAttribute("aria-pressed", String(selected));
       select.setAttribute("aria-disabled", String(missing > 0));
       // Keep the info action usable even when the weapon is unaffordable.
-      card.querySelector(".weapon-state").textContent = selected ? "PLACE ON MAP" : missing > 0 ? `NEED ${missing}g` : "READY";
+      card.querySelector(".weapon-state").textContent = selected ? "SELECTED" : missing > 0 ? `NEED ${missing}cr` : "READY";
     });
     syncTowerSidebar();
   }
@@ -1300,7 +1342,8 @@ export function createGame({ ui, levels }) {
   function weaponStatsMarkup(weapon) {
     const stats = [
       ["Damage", weapon.directDamage],
-      ["ATK Speed", `${weapon.atkSpeed}/s`],
+      ["Fire mode", weapon.fireMode || "Single shot"],
+      ["Fire rate", `${weapon.atkSpeed}/s${weapon.burstCount?` × ${weapon.burstCount}`:""}`],
       ["Capacity", weapon.capacity],
       ["Reload Time", `${weapon.reloadSpeed}s`],
       ["Range", weapon.range],
@@ -1375,12 +1418,12 @@ export function createGame({ ui, levels }) {
         const next = applyTowerUpgrades(effectiveWeaponByKey(tower.weapon.key), { ...tower, upgrades: { ...tower.upgrades, [path.key]: rank + 1 } });
         const preview = branchMaxed || limitReached ? path.detail : upgradePreview(tower.weapon,next,path.key);
         button.querySelector("[data-preview]").textContent = preview;
-        button.querySelector("[data-upgrade-status]").textContent = branchMaxed ? "Fully upgraded" : limitReached ? "Tower limit reached" : state.gold < cost ? `Need ${cost - state.gold}g more` : "Upgrade";
-        button.querySelector("[data-cost]").textContent = branchMaxed ? "3 / 3" : limitReached ? "4 / 4" : `${cost}g`;
-        button.setAttribute("aria-label", `${path.name}, rank ${rank} of 3. ${preview}. ${button.querySelector("[data-upgrade-status]").textContent}${branchMaxed || limitReached ? "" : `, ${cost} gold`}`);
+        button.querySelector("[data-upgrade-status]").textContent = branchMaxed ? "Fully upgraded" : limitReached ? "Tower limit reached" : state.gold < cost ? `Need ${cost - state.gold}cr more` : "Upgrade";
+        button.querySelector("[data-cost]").textContent = branchMaxed ? "3 / 3" : limitReached ? "4 / 4" : `${cost}cr`;
+        button.setAttribute("aria-label", `${path.name}, rank ${rank} of 3. ${preview}. ${button.querySelector("[data-upgrade-status]").textContent}${branchMaxed || limitReached ? "" : `, ${cost} credits`}`);
       });
       ui.towerActions.querySelector("[data-upgrade-limit]").textContent = total >= 4 ? "All 4 upgrades installed on this tower." : "Choose 4 upgrades total · up to 3 in one branch.";
-      ui.towerActions.querySelector("[data-sell-value]").textContent = `+${sellValue(state, tower)}g`;
+      ui.towerActions.querySelector("[data-sell-value]").textContent = `+${sellValue(state, tower)}cr`;
       ui.towerActions.querySelector("[data-sell]").disabled = Boolean(state.result);
       ui.towerActions.querySelector("[data-refund-note]").textContent = state.waveIndex === 0 && state.phase === "prepare" ? "Full refund before the first wave." : "Returns 70% of your total investment.";
       return;
@@ -1388,32 +1431,31 @@ export function createGame({ ui, levels }) {
     const obstacle = state.selectedObstacle;
     if (obstacle) {
       ui.towerSidebarTitle.textContent = obstacle.cost ? "Clear this position" : "Solid rock";
-      setMarkup(ui.towerStatList, `<p class="field-guide">${obstacle.cost ? "Spend gold to remove this obstacle and open a new tower position. It stays cleared for this mission." : "This obstacle cannot be removed. Place towers around it."}</p>`);
-      mountActions(`obstacle:${obstacle.row}:${obstacle.col}`, obstacle.cost ? `<button type="button" class="primary-button" data-clear="true">Clear obstacle · ${obstacle.cost}g</button>` : "");
+      setMarkup(ui.towerStatList, `<p class="field-guide">${obstacle.cost ? "Spend credits to remove this obstacle and open a new tower position. It stays cleared for this mission." : "This obstacle cannot be removed. Place towers around it."}</p>`);
+      mountActions(`obstacle:${obstacle.row}:${obstacle.col}:${obstacleCost(state,obstacle)}`, obstacle.cost ? `<button type="button" class="primary-button" data-clear="true">Clear obstacle · ${obstacleCost(state,obstacle)}cr</button>` : "");
       const clearButton = ui.towerActions.querySelector("[data-clear]");
-      if (clearButton) clearButton.disabled = state.gold < obstacle.cost;
+      if (clearButton) clearButton.disabled = state.gold < obstacleCost(state,obstacle);
       return;
     }
     ui.towerSidebarTitle.textContent = state.phase === "prepare" ? "Plan your defense" : "Hold the line";
     const wave = state.level.waves[state.waveIndex];
     const types = [...new Set(wave?.spawns.map(spawn => spawn.enemy))];
-    const tips = { alien_normal: "Scout · reliable fire wears it down.", alien_fast: "Skitter · fast and fragile. Cover the exit.", alien_tank: "Bulwark · 35% armor. Magnum or Sniper.", alien_shielded: "Shielded · extra shield absorbs hits first.", alien_boss: "Overseer · set heavy towers to Strongest.", alien_saucer: "Mothership · shields, armor, lethal breach.", alien_steadfast: "Juggernaut × · immune to slow. Use raw damage or stun.", alien_rager: "Ravager ! · speeds up after its first hit. Finish it quickly.", alien_broodmother: "Broodmother … · releases hatchlings. Cover its spawn with splash.", alien_hatchling: "Hatchling · fast offspring, no gold or XP bounty." };
+    const tips = { alien_normal: "Scout · reliable fire wears it down.", alien_fast: "Skitter · fast and fragile. Cover the exit.", alien_tank: "Bulwark · 35% armor. Magnum or Sniper.", alien_shielded: "Shielded · extra shield absorbs hits first.", alien_boss: "Overseer · set heavy towers to Strongest.", alien_saucer: "Mothership · shields, armor, lethal breach.", alien_steadfast: "Juggernaut × · immune to slow. Use raw damage or stun.", alien_rager: "Ravager ! · speeds up after its first hit. Finish it quickly.", alien_broodmother: "Broodmother … · releases hatchlings. Cover its spawn with splash.", alien_hatchling: "Hatchling · fast offspring, no gold or XP bounty.", alien_medic: "Mender + · heals nearby wounded aliens. Prioritize it before tanks." };
     setMarkup(ui.towerStatList, `<p class="field-guide">${state.level.description}</p><div class="enemy-intel">${types.map(key => `<div><img src="${assetUrl(enemies[key].asset)}" alt=""><span>${tips[key]}</span></div>`).join("")}</div>`);
-    mountActions(`guide:${state.level.id}:${profile.skillPoints}`, `<div class="map-legend"><span><i class="range-dot"></i> Sensor pad: +18% range</span><span><i class="power-dot"></i> Power pad: +15% damage</span>${state.level.biome === "frost" ? "<span>❄ Frozen route: aliens 25% slower</span>" : ""}<span>▧ Crates: click to clear</span></div><p class="upgrade-limit">${profile.skillPoints >= 5 ? `${profile.skillPoints} SP available. Open the commander badge to upgrade.` : "3 stars = no leaks · 2 stars = 60% lives"}</p>`);
+    mountActions(`guide:${state.level.id}:${profile.skillPoints}`, `<div class="map-legend"><span><i class="range-dot"></i> Sensor pad: +18% range</span><span><i class="power-dot"></i> Power pad: +15% damage</span>${state.level.biome === "frost" ? "<span>❄ Frozen route: aliens 25% slower</span>" : ""}<span>▧ Crates: click to clear</span></div><p class="upgrade-limit">${profile.skillPoints >= 4 ? `${profile.skillPoints} SP available. Open the command graph.` : "3 stars = no leaks · 2 stars = 60% lives"}</p>`);
   }
 
   function renderWeaponBar() {
-    ui.weaponBar.innerHTML = equippedWeapons(weapons,state.arsenalProfile).map((weapon, index) => `
-      <article class="weapon-card" data-weapon-key="${weapon.key}" style="--weapon-accent: ${weapon.accent}">
-        <button class="weapon-select" type="button" aria-label="Build ${weapon.name}, ${weapon.price} gold" aria-pressed="false">
-          <span class="weapon-topline"><kbd>${index + 1}</kbd><span class="weapon-state">READY</span></span>
-          <span class="weapon-art-stage"><img class="weapon-art" src="${assetUrl(weapon.hudAsset)}" alt="" draggable="false"></span>
-          <span class="weapon-caption"><strong class="weapon-nickname">${weapon.nickname}</strong><span class="weapon-price">${weapon.price}<small>g</small></span></span>
-          <span class="weapon-role">${arsenalChoice(state.arsenalProfile,weapon.key).blueprint.key === 'common' ? weapon.role : `${arsenalChoice(state.arsenalProfile,weapon.key).blueprint.name} · ${arsenalChoice(state.arsenalProfile,weapon.key).blueprint.key}`}</span>
-        </button>
-        <button class="weapon-info-button" data-info-weapon-key="${weapon.key}" type="button" aria-label="View ${weapon.name} attributes">i</button>
-      </article>
-    `).join("");
+    ui.weaponBar.innerHTML=equippedWeapons(weapons,state.arsenalProfile).map((weapon,index)=>{
+      const model=applySkillBonuses(weapon,state.arsenalProfile),tier=arsenalChoice(state.arsenalProfile,weapon.key).blueprint;
+      return `<article class="weapon-card" data-weapon-key="${weapon.key}" style="--weapon-accent:${tier.key==='common'?weapon.accent:tier.color}">
+      <button class="weapon-select" type="button" aria-label="Build ${weapon.name}, ${model.blueprint}, ${model.fireMode}, ${weapon.price} credits" aria-pressed="false">
+      <span class="weapon-topline"><kbd>${index+1}</kbd><span class="weapon-state">READY</span><span class="weapon-price">${weapon.price}<small>cr</small></span></span>
+      <span class="weapon-art-stage"><img class="weapon-art" src="${assetUrl(model.hudAsset)}" alt="" draggable="false"></span>
+      <span class="weapon-caption"><span class="weapon-model-title"><small class="weapon-class-label">${weapon.nickname} / ${tier.key}</small><strong class="weapon-nickname">${model.blueprint}</strong></span></span>
+      <span class="weapon-role">${model.fireMode}${model.pelletCount?' · '+model.pelletCount+' pellets':''}${model.slow?' · slow':''}</span></button>
+      <button class="weapon-info-button" data-info-weapon-key="${weapon.key}" type="button" aria-label="Inspect ${model.blueprint}">i</button></article>`;
+    }).join('');
   }
 
   function abilityStatusLabel(ability, status) {
@@ -1426,8 +1468,9 @@ export function createGame({ ui, levels }) {
 
   function renderAbilityBar() {
     const equippedAbility = activeAbilities.find((ability) => ability.key === state.equippedActiveKey);
+    if(!equippedAbility){ui.abilityBar.innerHTML=`<button class="ability-card ability-locked" data-open-doctrine type="button"><span class="ability-topline"><kbd>Q</kbd><span>SUPPORT</span></span><span class="locked-special-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5ZM12 14v3"/></svg></span><strong>${profile.equippedActiveKey?'Equipped next run':'Unlock a special'}</strong><small>Command graph →</small></button>`;return;}
     ui.abilityBar.innerHTML = [equippedAbility].filter(Boolean).map((ability) => {
-      const stats = abilityStats(profile, ability.key);
+      const stats = abilityStats(state.arsenalProfile, ability.key);
       return `
         <button class="ability-card active-${ability.key}" data-active-key="${ability.key}" type="button" title="${ability.name}">
           <span class="ability-topline"><kbd>Q</kbd><span>ACTIVE / ${stats.rank}</span></span>
@@ -1456,16 +1499,17 @@ export function createGame({ ui, levels }) {
       state.wasPausedBeforeWeaponInfo = state.isPaused;
       state.isPaused = true;
     }
-    ui.weaponInfoTitle.textContent = weapon.name;
+    const model=effectiveWeaponByKey(weapon.key);
+    ui.weaponInfoTitle.textContent = `${weapon.name} / ${model.blueprint}`;
     ui.weaponInventoryGrid.innerHTML = Array.from({ length: 1 }, (_, index) => index === 0
       ? `<button class="inventory-slot selected" type="button" aria-label="Selected ${weapon.name}">
-          <img class="inventory-art" src="${assetUrl(weapon.asset)}" alt="" draggable="false">
-          <span>${weapon.nickname}</span>
+          <img class="inventory-art" src="${assetUrl(model.asset)}" alt="" draggable="false">
+          <span>${model.blueprint}</span>
         </button>`
       : `<button class="inventory-slot empty" type="button" aria-label="Empty inventory slot"></button>`).join("");
-    ui.weaponStatList.innerHTML = `<p class="field-guide">${weapon.description}</p>` + weaponStatsMarkup(applySkillBonuses(weapon, profile));
+    ui.weaponStatList.innerHTML = `<p class="field-guide">${model.modelDescription}</p>` + weaponStatsMarkup(model);
     ui.weaponEquipButton.disabled = !state || state.gold < weapon.price;
-    ui.weaponEquipButton.textContent = `Build · ${weapon.price}g`;
+    ui.weaponEquipButton.textContent = `Build · ${weapon.price}cr`;
     ui.weaponEquipButton.dataset.weaponKey = weapon.key;
     ui.weaponDestroyButton.classList.add("hidden");
     ui.weaponInfoModal.classList.remove("hidden");
@@ -1484,7 +1528,7 @@ export function createGame({ ui, levels }) {
   let arsenalClass = 'handgun';
   function syncArsenal() {
     renderArsenal(ui.arsenalContent,profile,weapons,arsenalClass);
-    ui.arsenalGoal.textContent = `COMMANDER LV ${profile.level} / ${nextArsenalUnlock(profile.level)}`;
+    ui.arsenalGoal.textContent = `COMMANDER LV ${profile.level} / ${nextArsenalUnlock(profile)}`;
   }
   function openArsenal() {
     if(state) { state.wasPausedBeforeArsenal=state.isPaused; state.isPaused=true; }
@@ -1503,17 +1547,21 @@ export function createGame({ ui, levels }) {
     const button=event.target.closest('button');if(!button||button.disabled)return;
     if(button.dataset.arsenalClass)arsenalClass=button.dataset.arsenalClass;
     else if(button.dataset.equipHeavy&&classUnlocked(profile,button.dataset.equipHeavy))profile.arsenal.heavy=button.dataset.equipHeavy;
+    else if(button.dataset.buyBlueprint)purchaseBlueprint(profile,arsenalClass,button.dataset.buyBlueprint);
+    else if(button.dataset.buyAttachment){if(purchaseAttachment(profile,button.dataset.buyAttachment))equipAttachment(profile,arsenalClass,button.dataset.buyAttachment);}
     else if(button.dataset.blueprint)equipBlueprint(profile,arsenalClass,button.dataset.blueprint);
     else if(button.dataset.attachment)equipAttachment(profile,arsenalClass,button.dataset.attachment);
     saveProfile(profile);syncArsenal();
   });
+
+  function syncDoctrine(key){ui.allowSkillRefund=!state||Boolean(state.result);renderSkillTree(ui,profile,key);}
 
   function openSkillTree() {
     if (state) {
       state.wasPausedBeforeSkillTree = state.isPaused;
       state.isPaused = true;
     }
-    renderSkillTree(ui, profile);
+    syncDoctrine();
     ui.skillTreeModal.classList.remove("hidden");
     ui.skillTreeCloseButton.focus();
     syncHud();
@@ -1563,7 +1611,7 @@ export function createGame({ ui, levels }) {
   function tryPlaceTower(row, col) {
     if (!state?.selectedWeaponKey) return;
     const tower = placeTower(state, state.selectedWeaponKey, row, col);
-    if (!tower) { notify(state, "Cannot build here. Choose a free tile and check your gold."); return; }
+    if (!tower) {notify(state,state.tileSets.water.has(tileKey(row,col))?skillRank(profile,'pontoons')?'Water deployment adds a 35-credit raft. Check your credits.':'Unlock Pontoon Engineering in the command graph to build on water.':'Cannot build here. Choose a free tile and check your credits.');return;}
     state.selectedTowerId = null;
     state.selectedWeaponKey = null;
     notify(state, `${tower.weapon.name} ready${tower.pad ? " · platform bonus active" : ""}. Click it to upgrade.`);
@@ -1576,7 +1624,7 @@ export function createGame({ ui, levels }) {
     ui.resultTitle.textContent = won ? (state.level.stage === 6 ? "Sector secured" : "Mission complete") : "Regroup. Rebuild. Return.";
     ui.resultStars.textContent = won ? "★".repeat(state.reward.stars) + "☆".repeat(3 - state.reward.stars) : "↻";
     ui.resultCopy.textContent = won ? `${state.level.name} · ${state.lives}/${state.level.lives} lives protected.` : `${state.level.name} · ${state.waveIndex} waves completed. Your earned XP is safe.`;
-    ui.resultRewards.innerHTML = `<strong>+${state.runXp} XP earned</strong><span>Commander Lv ${profile.level} · ${profile.skillPoints} SP available</span>${state.reward?.firstClear ? `<span>First-clear bonus included: +${state.level.firstClearXp} XP</span>` : ""}<p>${won ? "Replay for more stars, or advance to the next mission." : "Try crossfire at bends, upgrade key towers, and spend your skill points."}</p><span>${nextArsenalUnlock(profile.level)}</span>`;
+    ui.resultRewards.innerHTML = `<span>+${state.runSalvage} Salvage · ${profile.salvage} banked</span><strong>+${state.runXp} XP earned</strong><span>Commander Lv ${profile.level} · ${profile.skillPoints} SP available</span>${state.reward?.firstClear ? `<span>First-clear bonus included: +${state.level.firstClearXp} XP</span>` : ""}<p>${won ? "Replay for more stars, or advance to the next mission." : "Try crossfire at bends, upgrade key towers, and spend your skill points."}</p><span>${nextArsenalUnlock(profile)}</span>`;
     ui.resultNextButton.classList.toggle("hidden", !won || levels.indexOf(state.level) === levels.length - 1);
     ui.resultSkillsButton.textContent = `Commander skills · ${profile.skillPoints} SP`;
     ui.resultModal.classList.remove("hidden");
@@ -1609,6 +1657,7 @@ export function createGame({ ui, levels }) {
   });
 
   ui.abilityBar.addEventListener("click", (event) => {
+    if(event.target.closest("[data-open-doctrine]")){openSkillTree();return;}
     const button = event.target.closest("[data-active-key]");
     if (!button || button.disabled || !state) return;
     const ability = activeAbilities.find((item) => item.key === button.dataset.activeKey);
@@ -1635,12 +1684,16 @@ export function createGame({ ui, levels }) {
     if (event.target === ui.skillTreeModal) closeSkillTree();
   });
   ui.skillTreeNodes.addEventListener("click", (event) => {
+    const node=event.target.closest('[data-select-skill]');
+    if(node){syncDoctrine(node.dataset.selectSkill);return;}
+    const branch=event.target.closest('[data-skill-branch]');
+    if(branch){const board=ui.skillTreeNodes.querySelector('.command-board');const x={armament:160,logistics:450,support:730}[branch.dataset.skillBranch];board.scrollTo({left:Math.max(0,x-board.clientWidth/2),top:80,behavior:'smooth'});return;}
     const equippedActiveKey = equipActiveKeyFromEvent(event);
     if (equippedActiveKey) {
-      if (!isActiveAbilityKey(equippedActiveKey)) return;
+      if (!isActiveAbilityKey(equippedActiveKey)||!activeUnlocked(profile,equippedActiveKey)) return;
       profile.equippedActiveKey = equippedActiveKey;
       saveProfile(profile);
-      renderSkillTree(ui, profile);
+      syncDoctrine();
       return;
     }
     const skillKey = skillKeyFromEvent(event);
@@ -1648,7 +1701,7 @@ export function createGame({ ui, levels }) {
     saveProfile(profile);
     refreshTowerSkillBonuses();
     if (state) renderAbilityBar();
-    renderSkillTree(ui, profile);
+    syncDoctrine();
     syncHud();
   });
 
@@ -1760,10 +1813,11 @@ export function createGame({ ui, levels }) {
     if (next) startLevel(next);
   });
   ui.resetSkillsButton.addEventListener("click", () => {
+    if(state&&!state.result)return;
     resetSkills(profile);
     saveProfile(profile);
     refreshTowerSkillBonuses();
-    renderSkillTree(ui, profile);
+    syncDoctrine();
     if (state) { renderAbilityBar(); syncHud(); }
   });
   ui.launchWaveButton.addEventListener("click", () => { launchWave(state); syncHud(); });
@@ -1863,6 +1917,8 @@ export function createGame({ ui, levels }) {
     gold: state?.gold,
     player: { level: profile.level, xp: profile.xp, skillPoints: profile.skillPoints },
     skills: profile.skills,
+    salvage:profile.salvage, caches:profile.caches, loot:state?.loot,
+    fieldMines:state?.mines, drone:state?.drone, cache:state?.cache, water:state?.level.water||[],
     skillTreeOpen: !ui.skillTreeModal.classList.contains("hidden"),
     arsenalOpen: !ui.arsenalModal.classList.contains("hidden"),
     wave: state ? `${Math.min(state.waveIndex + 1, state.level.waves.length)}/${state.level.waves.length}` : null,
@@ -1875,7 +1931,7 @@ export function createGame({ ui, levels }) {
     activeAbilities: state ? Object.fromEntries(activeAbilities.map((ability) => [
       ability.key,
       {
-        rank: abilityStats(profile, ability.key).rank,
+        rank: abilityStats(state.arsenalProfile, ability.key).rank,
         cooldown: Number(state.activeAbilities[ability.key].cooldown.toFixed(2)),
         timer: Number(state.activeAbilities[ability.key].timer.toFixed(2)),
       },
@@ -1890,6 +1946,7 @@ export function createGame({ ui, levels }) {
       atkSpeed: tower.weapon.atkSpeed,
       reloadSpeed: tower.weapon.reloadSpeed,
       ammo: tower.ammo,
+      fireMode:tower.weapon.fireMode, burstCount:tower.weapon.burstCount, burstLeft:tower.burstLeft, platform:tower.platform,
       pelletCount: tower.weapon.pelletCount,
       slowStrength: tower.weapon.slowStrength,
       slowDuration: tower.weapon.slow,
@@ -1920,6 +1977,7 @@ export function createGame({ ui, levels }) {
       stunTimer: enemy.stunTimer,
       raged: enemy.raged,
       brood: enemy.brood,
+      healer:enemy.healer,
       burnTimer: Number(enemy.burnTimer.toFixed(2)),
     })) || [],
     result: state?.result,

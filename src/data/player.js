@@ -5,6 +5,8 @@ export const PLAYER_PROFILE_KEY = "aliens-tower-defense-profile";
 
 export function createDefaultProfile() {
   return {
+    schemaVersion: 4,
+    salvage: 0, caches: {}, lootRolls: 0, lootMisses: 0, legacyActives: [],
     level: 1,
     xp: 0,
     skillPoints: 0,

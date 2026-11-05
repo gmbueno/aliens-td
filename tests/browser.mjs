@@ -13,7 +13,7 @@ const browser=await chromium.launch({headless:true,args:['--mute-audio'],...(pro
 const errors=[], failed=[];
 async function pageFor(profile,viewport={width:1440,height:1000}) {
  const context=await browser.newContext({viewport});
- if(profile)await context.addInitScript(p=>{if(!localStorage.getItem('aliens-tower-defense-profile'))localStorage.setItem('aliens-tower-defense-profile',JSON.stringify(p));},profile);
+ if(profile)await context.addInitScript(p=>{if(!localStorage.getItem('aliens-tower-defense-profile'))localStorage.setItem('aliens-tower-defense-profile',JSON.stringify({...p,schemaVersion:3}));},profile);
  const page=await context.newPage();
  page.on('pageerror',error=>errors.push(error.stack || String(error)));
  page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
@@ -66,11 +66,11 @@ try {
  const skilled=await pageFor({level:6,xp:0,skillPoints:50,settings:{muted:true}});
  await skilled.locator('#menu-skills-button').click();await skilled.locator('[data-skill-key="damage"]').click();
  assert.equal((await read(skilled)).skills.damage,1);assert.equal((await read(skilled)).player.skillPoints,45);
- await skilled.locator('[data-equip-active-key="artillery"]').click();await skilled.locator('#skill-tree-close-button').click();await choose(skilled,levels[0]);
+ await skilled.locator('[data-select-skill="artillery"]').click();await skilled.locator('[data-equip-active-key="artillery"]').click();await skilled.locator('#skill-tree-close-button').click();await choose(skilled,levels[0]);
  await skilled.keyboard.press('1');await tileClick(skilled,3,7);assert.equal((await read(skilled)).towers[0].damage,432);
- await skilled.locator('#player-level-button').click();await skilled.locator('[data-equip-active-key="napalm"]').click();await skilled.locator('#reset-skills-button').click();
+ await skilled.locator('#player-level-button').click();await skilled.locator('[data-select-skill="napalm"]').click();await skilled.locator('[data-equip-active-key="napalm"]').click();assert.ok(await skilled.locator('#reset-skills-button').isDisabled());
  await skilled.screenshot({path:`${out}/skills.png`,fullPage:true});await skilled.locator('#skill-tree-close-button').click();
- assert.equal((await read(skilled)).towers[0].damage,400);assert.equal((await read(skilled)).equippedActive,'artillery');
+ assert.equal((await read(skilled)).towers[0].damage,432);assert.equal((await read(skilled)).equippedActive,'artillery');
  await skilled.locator('#launch-wave-button').click();await advance(skilled,2000);await skilled.keyboard.press('q');
  assert.equal((await read(skilled)).selectedActive,'artillery');await tileClick(skilled,4,1);assert.ok((await read(skilled)).activeAbilities.artillery.cooldown>0);
  await skilled.locator('#gear-button').click();await skilled.locator('#restart-button').click();assert.equal((await read(skilled)).equippedActive,'napalm');
@@ -105,6 +105,7 @@ try {
    if(actual.result)break;
  }
  assert.equal((await read(victory)).result,'victory');
+ assert.equal((await read(victory)).caches.level_1,true);assert.ok((await read(victory)).arsenal.unlocked.includes('handgun:epic'));assert.ok((await read(victory)).salvage>=55);
  assert.ok((await read(victory)).campaign.records.level_1.stars>0);
  await victory.screenshot({path:`${out}/victory.png`,fullPage:true});
  await victory.locator('#result-next-button').click();assert.equal((await read(victory)).level,'level_2');

@@ -1,8 +1,8 @@
-// 3-2 · Ember Passage. Authored route, obstacles, and wave schedule.
+// 3-2 · Ember Passage. Authored route, terrain and waves.
 const level14 = {
   "id": "level_14",
   "name": "Ember Passage",
-  "description": "Tight packs and armored leaders demand a mixed defense.",
+  "description": "Tight packs and armored leaders demand a mixed defense. Water tiles accept weapons after Pontoon Engineering (+35 credits per raft).",
   "sector": 3,
   "stage": 2,
   "biome": "hive",
@@ -361,7 +361,7 @@ const level14 = {
           "at": 1.74
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.41
         },
         {
@@ -437,7 +437,7 @@ const level14 = {
           "at": 1.61
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.21
         },
         {
@@ -521,7 +521,7 @@ const level14 = {
           "at": 1.48
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.02
         },
         {
@@ -613,7 +613,7 @@ const level14 = {
           "at": 1.35
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.82
         },
         {
@@ -713,7 +713,7 @@ const level14 = {
           "at": 1.22
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.63
         },
         {
@@ -821,7 +821,7 @@ const level14 = {
           "at": 1.1
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.45
         },
         {
@@ -921,6 +921,44 @@ const level14 = {
           "at": 9.5
         }
       ]
+    }
+  ],
+  "water": [
+    {
+      "row": 3,
+      "col": 6
+    },
+    {
+      "row": 4,
+      "col": 5
+    },
+    {
+      "row": 4,
+      "col": 6
+    },
+    {
+      "row": 4,
+      "col": 7
+    },
+    {
+      "row": 5,
+      "col": 6
+    },
+    {
+      "row": 5,
+      "col": 7
+    },
+    {
+      "row": 5,
+      "col": 8
+    },
+    {
+      "row": 6,
+      "col": 5
+    },
+    {
+      "row": 6,
+      "col": 6
     }
   ]
 };

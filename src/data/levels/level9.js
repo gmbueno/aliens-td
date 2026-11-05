@@ -1,4 +1,4 @@
-// 2-3 · Whiteout. Authored route, obstacles, and wave schedule.
+// 2-3 · Whiteout. Authored route, terrain and waves.
 const level9 = {
   "id": "level_9",
   "name": "Whiteout",

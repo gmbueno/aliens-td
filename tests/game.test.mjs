@@ -11,7 +11,7 @@ import { simulate } from './balance.mjs';
 
 const saved = new Map();
 globalThis.localStorage = {getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v)};
-const make = (level=levels[0], raw={}) => createInitialState(level,normalizeProfile({settings:{muted:true},...raw}),{width:1280,height:720});
+const make = (level=levels[0], raw={}) => createInitialState(level,normalizeProfile({schemaVersion:3,settings:{muted:true},...raw}),{width:1280,height:720});
 const tick = (state, seconds) => { for(let n=0;n<seconds*60;n++)stepState(state,1/60); };
 const freeTile = state => {
   for(let row=0;row<state.level.rows;row++)for(let col=0;col<state.level.cols;col++) if(!state.tileSets.path.has(`${row}:${col}`)&&!state.tileSets.blockers.has(`${row}:${col}`))return{row,col};
@@ -249,7 +249,7 @@ test('models and attachments have deterministic unlocks, socket caps and persist
  const {equipBlueprint,equipAttachment,normalizeArsenal,equippedWeapons}=await import('../src/data/arsenal.js');
  const fresh=normalizeProfile();assert.equal(equipBlueprint(fresh,'handgun','rare'),false);assert.equal(equipAttachment(fresh,'handgun','incendiary'),false);
  const state=make();state.gold=10000;const tile=freeTile(state);assert.equal(placeTower(state,'rocket_launcher',tile.row,tile.col),null);
- const profile=normalizeProfile({level:10});assert.equal(equipBlueprint(profile,'handgun','legendary'),true);
+ const profile=normalizeProfile({schemaVersion:3,level:10});assert.equal(equipBlueprint(profile,'handgun','legendary'),true);
  assert.equal(equipAttachment(profile,'handgun','incendiary'),true);assert.equal(equipAttachment(profile,'handgun','concussive'),true);assert.equal(equipAttachment(profile,'handgun','cryo'),false);
  assert.equal(equipAttachment(profile,'handgun','incendiary'),true);assert.equal(equipAttachment(profile,'handgun','cryo'),true);
  profile.arsenal.heavy='rocket_launcher';assert.equal(equippedWeapons(weapons,profile).length,6);assert.equal(equippedWeapons(weapons,profile).at(-1).key,'rocket_launcher');

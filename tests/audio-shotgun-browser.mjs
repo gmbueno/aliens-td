@@ -27,7 +27,7 @@ try {
    await page.goto(url);assert.equal((await read(page)).audio.state,'locked');
    await page.click('#menu-play-button');
    await page.waitForFunction(()=>{const s=JSON.parse(window.render_game_to_text());return s.audio.loadedClips===s.audio.totalClips;});
-   assert.equal((await read(page)).audio.totalClips,19);assert.equal((await read(page)).audio.errors,0);
+   assert.equal((await read(page)).audio.totalClips,20);assert.equal((await read(page)).audio.errors,0);
    await page.click(`.weapon-card[data-weapon-key="${key}"] .weapon-select`);
    const s=await read(page),rect=await page.locator('#game-canvas').boundingBox(),pad=s.pads[0];
    await page.mouse.click(rect.x+(s.board.x+(pad.col+.5)*s.board.tile)/1280*rect.width,rect.y+(s.board.y+(pad.row+.5)*s.board.tile)/720*rect.height);
@@ -36,7 +36,7 @@ try {
    for(let n=0;n<5;n++) {
      const previous=(await read(page)).audio.played;
      const current=await tickUntil(page,state=>state.audio.played>previous);
-     assert.equal(current.audio.lastShot.weapon,key);assert.ok(current.audio.activeVoices<=24);
+     assert.equal(current.audio.lastShot.weapon,key);assert.equal(current.audio.lastShot.model,current.towers[0].blueprint);assert.ok(current.audio.activeVoices<=24);
      events.push(current.audio.lastShot);
    }
    assert.ok(new Set(events.map(e=>e.variant)).size>=2,`${key} must vary recorded samples`);
@@ -75,12 +75,12 @@ try {
          rows.push({weapon,duration:buffer.duration,peak,rms:Math.sqrt(energy/data.length)});
        }return rows;
      });
-     assert.equal(audioMetrics.length,19);assert.ok(audioMetrics.every(m=>m.peak>.02&&m.peak<1&&m.rms>.0001&&m.duration<2.5));
+     assert.equal(audioMetrics.length,20);assert.ok(audioMetrics.every(m=>m.peak>.02&&m.peak<1&&m.rms>.0001&&m.duration<2.5));
      await fs.writeFile(`${out}/audio-metrics.json`,JSON.stringify(audioMetrics,null,2));
    }
    await context.close();
  }
  assert.deepEqual(errors,[]);assert.deepEqual(failed,[]);
  await fs.writeFile(`${out}/audio-variation.json`,JSON.stringify(reports,null,2));
- console.log('PASS: 19 recorded clips decode with signal, all 6 weapons play varied samples, no oscillators, pause/mute/menu silence, ballistic shotgun fan visible.');
+ console.log('PASS: 20 recorded clips decode with signal, all 6 weapons play varied samples, no oscillators, pause/mute/menu silence, ballistic shotgun fan visible.');
 } finally {await browser.close();}

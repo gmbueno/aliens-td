@@ -1,4 +1,4 @@
-// 3-4 · Hive Spiral. Authored route, obstacles, and wave schedule.
+// 3-4 · Hive Spiral. Authored route, terrain and waves.
 const level16 = {
   "id": "level_16",
   "name": "Hive Spiral",
@@ -453,7 +453,7 @@ const level16 = {
           "at": 1.74
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.41
         },
         {
@@ -537,7 +537,7 @@ const level16 = {
           "at": 1.61
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.21
         },
         {
@@ -629,7 +629,7 @@ const level16 = {
           "at": 1.48
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.02
         },
         {
@@ -729,7 +729,7 @@ const level16 = {
           "at": 1.35
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.82
         },
         {
@@ -837,7 +837,7 @@ const level16 = {
           "at": 1.22
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.63
         },
         {
@@ -953,7 +953,7 @@ const level16 = {
           "at": 1.1
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.45
         },
         {

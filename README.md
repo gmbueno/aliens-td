@@ -10,12 +10,15 @@ A static HTML/CSS/JavaScript tower-defense game. Play at **https://gmbueno.githu
 - Six deployment slots. Five fixed classes plus a Heavy slot that selects Sniper or RPG (RPG unlocks at commander Lv 4).
 - Two distinct upgrade branches per weapon: Buckshot / Choke & pump, Suppression, Devastator, Long-range optics and more. Four upgrades total per tower, at most three per branch. First/Last/Strongest/Nearest targeting stays freely accessible.
 - Sell towers for a full refund before the first wave, or 70% of the total investment afterward.
+- Commander graph: Armament, Logistics and Support, with visible prerequisites, before/after previews and free node refunds between missions. Research clearance discounts, starting supplies, pontoon construction, automatic exit mines and an automatic patrol UAV.
+- Water appears on five missions. Pontoon Engineering lets a weapon deploy on a raft for 35 extra credits; no extra battle slot.
 - Three active abilities with an equipped loadout: Chrono Break, Artillery Strike (ten impacts across five seconds), Napalm.
-- Models unlock at commander levels 1/3/6/10: Common/Rare/Epic/Legendary, with 0/1/1/2 attachment slots. Free swaps, four deterministic attachments, no loot rolls or extra currency.
-- Ravagers accelerate after a hit, Juggernauts resist slow, and Broodmothers release small aliens over time and on death. Their traits appear in wave intel.
-- Persistent XP, 10 skill points per commander level, free skill refunds, mission records, and first-clear/new-star bonuses. Existing profiles migrate automatically.
+- Four distinct models per class: semi-auto, automatic, burst, pump, double-barrel and heavy variants, with different damage/range/magazines and individual silhouettes. Common models are free; Rare licenses cost 8 SP, Epic plans come from midpoint caches, and Legendary plans come from elite drops or sector caches. Rarity gives 0/1/1/2 attachment slots.
+- Persistent Salvage buys four attachments (40/60/80/100). First midpoint cache per mission gives 30 Salvage and an advanced plan; first clears give 25 Salvage, replays 8. Elite drops: Juggernaut/Broodmother 4%, bosses 18%, guaranteed within 20 eligible kills. Duplicate plans become extra Salvage.
+- Ravagers accelerate after a hit, Juggernauts resist slow, and Broodmothers release small aliens over time and on death. Their traits appear in wave intel. Menders from mission 12 heal nearby allies.
+- Persistent XP, 10 skill points per commander level, free commander-node refunds between missions, mission records, and first-clear/new-star bonuses. Existing profiles migrate automatically.
 
-Mission difficulty is fixed. Investing in permanent skills makes earlier maps easier; later maps add stronger enemies and more demanding wave compositions. All missions are selectable so players can experiment without replay gates. Gold is local to each run; skills and records persist in this browser.
+Mission difficulty is fixed. Investing in permanent skills makes earlier maps easier; later maps add stronger enemies and more demanding wave compositions. All missions are selectable so players can experiment without replay gates. Credits are local to each run; SP, Salvage, plans, attachments and records persist in this browser. New profiles start with locked specials; existing unlocked abilities and models are preserved.
 
 Stars: 3 for no lost lives, 2 for at least 60% remaining, 1 for surviving. First-clear and newly earned star bonuses only pay once; kills, completed waves, and the ordinary clear reward remain repeatable. Defeat keeps earned XP.
 
@@ -36,6 +39,7 @@ GAME_URL=http://localhost:4173 npm run test:browser
 GAME_URL=http://localhost:4173 npm run test:controls
 GAME_URL=http://localhost:4173 npm run test:audio
 GAME_URL=http://localhost:4173 npm run test:arsenal
+GAME_URL=http://localhost:4173 npm run test:progression
 ```
 
 The unit/campaign tests use Node 22 without dependencies. The browser suite uses Playwright and saves screenshots under ignored `output/`. The balance runner uses a repeatable placement policy, reinvests between waves, and deliberately does not use active abilities. It is a regression benchmark, not a promise that every strategy wins.
@@ -48,7 +52,7 @@ The unit/campaign tests use Node 22 without dependencies. The browser suite uses
 - **Escape** cancels selection, closes a popup, or opens the command menu; **F** toggles fullscreen.
 - Auto waves, speed, sound, and the skill tree are available in the interface. Hidden browser tabs pause the mission.
 
-Abilities and cooldowns advance with combat time and game speed, stop while paused, and do not recharge during preparation. Changing models, attachments, the Heavy slot or equipped active applies on the next deployment; permanent tower skills update existing towers immediately.
+Abilities and cooldowns advance with combat time and game speed, stop while paused, and do not recharge during preparation. Changing models, attachments, the Heavy slot, active ranks or automatic support applies on the next deployment. Tower training and clearance/pontoon research affect current purchases immediately. Starting supplies and finite mines cannot be replenished mid-run; commander refunds are available from mission select/results. Rare licenses stay owned and their SP cost is not refunded by the commander-node reset.
 
 ## Structure and deployment
 
@@ -67,10 +71,18 @@ Target and upgrade controls keep their DOM identity while gold/ammo updates. The
 
 ## Recorded sound and shotgun ballistics
 
-Weapon audio uses 14 self-hosted gun recordings from The Free Firearm Sound Library (CC0), plus five launch/power/impact clips. Sources, editing notes, license and output hashes are under `assets/audio/`. Two or three recorded shots per weapon alternate without immediate repeats, with small pitch/gain variation, restrained stereo positioning, a bass body layer, reduced harsh presence, transient-preserving compression and a 24-voice ceiling. Audio unlocks after player interaction, stops on pause/mute/menu, and is never queued to play later. The old oscillator sound generator has been removed.
+Weapon audio uses 14 self-hosted gun recordings from The Free Firearm Sound Library (CC0), plus five launch/power/impact clips. Sources, editing notes, license and output hashes are under `assets/audio/`. Two or three recorded shots per weapon alternate without immediate repeats, with small pitch/gain variation, restrained stereo positioning, a short layer from the approved artillery report, full-band recorded crack, short room reflections, model-specific pitch/gain and transient-preserving compression and a 24-voice ceiling. Audio unlocks after player interaction, stops on pause/mute/menu, and is never queued to play later. The approved power mix is kept on its own audio bus. The drone reuses a quieter firearm sample (20 decoded sources, 19 unique clips). No oscillator sound generator is used.
 
 The shotgun starts with three physical pellets per shell in a fixed cone; Buckshot increases this to four, five and six. It aims before firing, then each pellet travels straight, can hit any live alien crossing its path, and survives the original target's death. Swept collision picks the first physical impact and prevents tunneling at 2x speed. Other weapons retain their guided shots. Close positioning is rewarded because more pellets connect.
 
 `npm run test:audio` runs an isolated, OS-muted headless browser while testing real sample decoding/playback, variation, mute/pause behavior and a visible shotgun volley. It does not play through the user's speakers.
 
 The arsenal browser suite checks unlocks, socket caps, saved loadouts, six-slot Heavy selection, RPG area impacts, all power sounds/visuals, pause behavior and new enemy traits. Its enemy-only scenario explicitly supplies a controlled spawn schedule; the loadout, RPG and ability scenarios exercise the unchanged production campaign. All browser suites use isolated, headless browsers with OS audio muted.
+
+## Command update (0.4.0)
+
+The commander graph is keyboard-accessible, uses selectable nodes and a persistent inspector, and keeps close/refund controls reachable on small screens. Four firing archetypes per weapon are described before purchase; battle cards show class, model, mode, rarity and cost. Bursts consume individual rounds, retarget between rounds, and respect reload/ammo boundaries.
+
+A cache is visible on every map and opens automatically after the midpoint wave. Its contents persist even after defeat. The first cache is one-time per mission; repeat clears still earn Salvage. New weapon licenses and attachment purchases persist across reload and commander respec. Existing 0.3 saves retain their previously available unlocks.
+
+The new browser suite covers graph prerequisites, research, purchases/refunds, locked fresh-profile specials, persistent Rare licenses/attachments, clear model identity, water deployment/raft charges, discounted clearance and automatic mines/UAV. All browser work uses isolated headless contexts and OS-muted audio. The source-based audio preparation recipe is in `scripts/prepare_doctrine_audio.py`; source hashes must match the provenance manifest.

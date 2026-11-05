@@ -1,6 +1,6 @@
 import { normalizeArsenal } from "../data/arsenal.js";
 import { PLAYER_PROFILE_KEY, createDefaultProfile, xpNeeded } from "../data/player.js";
-import { DEFAULT_EQUIPPED_ACTIVE_KEY, SP_PER_LEVEL, createDefaultSkills, isActiveAbilityKey, skillTree, spentSkillPoints } from "../data/skills.js";
+import { DEFAULT_EQUIPPED_ACTIVE_KEY, SP_PER_LEVEL, createDefaultSkills, isActiveAbilityKey, skillTree, spentSkillPoints, activeUnlocked } from "../data/skills.js";
 
 export function normalizeProfile(rawProfile = {}) {
   if (!rawProfile || typeof rawProfile !== "object") rawProfile = {};
@@ -30,9 +30,16 @@ export function normalizeProfile(rawProfile = {}) {
       ? rawProfile.equippedActiveKey
       : DEFAULT_EQUIPPED_ACTIVE_KEY,
   };
+  profile.schemaVersion = rawProfile.schemaVersion ?? (rawProfile.skills && Object.keys(rawProfile.skills).length || rawProfile.equippedActiveKey ? 3 : 4);
+  profile.legacyActives = profile.schemaVersion<4 ? ['chronoBreak','artillery','napalm'] : (Array.isArray(rawProfile.legacyActives)?rawProfile.legacyActives.filter(isActiveAbilityKey):[]);
+  if(profile.schemaVersion<4 && !profile.equippedActiveKey)profile.equippedActiveKey='chronoBreak';
+  profile.salvage=integer(rawProfile.salvage);profile.lootRolls=integer(rawProfile.lootRolls);profile.lootMisses=Math.min(19,integer(rawProfile.lootMisses));
+  profile.caches=Object.fromEntries(Object.entries(rawProfile.caches||{}).filter(([key,value])=>/^level_\d+$/.test(key)&&value).map(([key])=>[key,true]));
   profile.arsenal = normalizeArsenal(rawProfile.arsenal, profile);
+  profile.schemaVersion=4;
+  if(!activeUnlocked(profile,profile.equippedActiveKey))profile.equippedActiveKey=null;
   const earned = Math.max(0, profile.level - 1) * SP_PER_LEVEL;
-  const available = Math.max(Number(rawProfile.skillPoints) || 0, earned - spentSkillPoints(profile));
+  const available = Math.max(integer(rawProfile.skillPoints), earned - spentSkillPoints(profile) - profile.arsenal.spSpent);
   profile.skillPoints = Math.max(0, available);
   return profile;
 }
@@ -65,13 +72,15 @@ export function recordVictory(profile, level, lives) {
   const newStars = Math.max(0, stars - previous.stars);
   const xp = level.clearXp + (firstClear ? level.firstClearXp : 0) + newStars * 15;
   profile.missions[level.id] = { stars: Math.max(previous.stars, stars), clears: previous.clears + 1, bestLives: Math.max(previous.bestLives, lives) };
+  const salvage=firstClear?25:8;profile.salvage+=salvage;
   addXp(profile, xp);
-  return { stars, firstClear, newStars, xp };
+  return { stars, firstClear, newStars, xp, salvage };
 }
 
 export function resetSkills(profile) {
   profile.skillPoints += spentSkillPoints(profile);
   profile.skills = createDefaultSkills();
+  if(!activeUnlocked(profile,profile.equippedActiveKey))profile.equippedActiveKey=null;
 }
 
 export function addXp(profile, amount) {

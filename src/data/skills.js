@@ -1,5 +1,5 @@
 export const SP_PER_LEVEL = 10;
-export const DEFAULT_EQUIPPED_ACTIVE_KEY = "chronoBreak";
+export const DEFAULT_EQUIPPED_ACTIVE_KEY = null;
 
 const ACTIVE_MAX_RANK = 10;
 const PASSIVE_MAX_RANK = 5;
@@ -73,7 +73,30 @@ export const passiveSkillTree = [
   },
 ];
 
-export const skillTree = [...activeSkillTree, ...passiveSkillTree];
+export const utilitySkillTree = [
+  {key:'salvage',type:'utility',name:'Clearance Crew',description:'Clearing obstacles costs 15% less per rank (up to 45%).',maxRank:3,cost:4},
+  {key:'supplies',type:'utility',name:'Supply Lines',description:'Start every deployment with 25 extra credits per rank.',maxRank:3,cost:5},
+  {key:'pontoons',type:'utility',name:'Pontoon Engineering',description:'Build any weapon on water. A raft costs 35 extra credits.',maxRank:1,cost:6},
+  {key:'mines',type:'utility',name:'Last Line',description:'Automatically deploy 5 / 10 mines near the exit. Each deals 1,100 area damage. One stock per mission.',maxRank:2,cost:6},
+  {key:'drone',type:'utility',name:'Patrol Drone',description:'An automatic UAV patrols the route. Ranks improve its damage and coverage. No extra controls.',maxRank:3,cost:8},
+];
+const layout = {
+ damage:['armament',190,105,null],reload:['armament',65,105,null],
+ fireRate:['armament',250,215,'damage'],range:['armament',65,215,'reload'],
+ chronoBreak:['armament',65,325,'range'],artillery:['armament',250,325,'fireRate'],
+ salvage:['logistics',450,105,null],supplies:['logistics',450,215,'salvage'],pontoons:['logistics',450,325,'supplies'],
+ mines:['support',730,105,null],drone:['support',640,215,'mines'],napalm:['support',820,215,'mines'],
+};
+export const skillTree = [...activeSkillTree, ...passiveSkillTree, ...utilitySkillTree].map(skill=>{
+ const [branch,x,y,parent]=layout[skill.key];
+ return {...skill,branch,x,y,requires:parent?{key:parent,rank:1}:null};
+});
+export function prerequisiteMet(profile,skill) {
+ return !skill.requires || skillRank(profile,skill.requires.key)>=skill.requires.rank;
+}
+export function activeUnlocked(profile,key) {
+ return Boolean(key && (skillRank(profile,key)>0 || profile.legacyActives?.includes(key)));
+}
 
 export const activeAbilities = [
   {
@@ -125,7 +148,7 @@ export function spentSkillPoints(profile) {
 }
 
 export function canBuySkill(profile, skill) {
-  return skillRank(profile, skill.key) < skill.maxRank && profile.skillPoints >= skill.cost;
+  return skillRank(profile, skill.key) < skill.maxRank && profile.skillPoints >= skill.cost && (skillRank(profile,skill.key)>0 || prerequisiteMet(profile,skill));
 }
 
 export function buySkill(profile, skillKey) {
@@ -133,6 +156,7 @@ export function buySkill(profile, skillKey) {
   if (!skill || !canBuySkill(profile, skill)) return false;
   profile.skills[skill.key] = skillRank(profile, skill.key) + 1;
   profile.skillPoints -= skill.cost;
+  if(skill.active && !profile.equippedActiveKey)profile.equippedActiveKey=skill.active;
   return true;
 }
 

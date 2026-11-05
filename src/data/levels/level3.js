@@ -1,4 +1,4 @@
-// 1-3 · Switchback. Authored route, obstacles, and wave schedule.
+// 1-3 · Switchback. Authored route, terrain and waves.
 const level3 = {
   "id": "level_3",
   "name": "Switchback",

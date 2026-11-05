@@ -1,4 +1,4 @@
-// 1-5 · Dust Run. Authored route, obstacles, and wave schedule.
+// 1-5 · Dust Run. Authored route, terrain and waves.
 const level5 = {
   "id": "level_5",
   "name": "Dust Run",

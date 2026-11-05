@@ -1,4 +1,4 @@
-// 1-1 · Landing Zone. Authored route, obstacles, and wave schedule.
+// 1-1 · Landing Zone. Authored route, terrain and waves.
 const level1 = {
   "id": "level_1",
   "name": "Landing Zone",

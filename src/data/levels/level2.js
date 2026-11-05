@@ -1,4 +1,4 @@
-// 1-2 · Cargo Crossing. Authored route, obstacles, and wave schedule.
+// 1-2 · Cargo Crossing. Authored route, terrain and waves.
 const level2 = {
   "id": "level_2",
   "name": "Cargo Crossing",

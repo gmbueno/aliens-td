@@ -10,10 +10,10 @@ const read=p=>p.evaluate(()=>JSON.parse(window.render_game_to_text()));
 const advance=(p,ms)=>p.evaluate(ms=>window.advanceTime(ms),ms);
 async function pageFor(profile,viewport={width:1440,height:1000},fixture=false){
  const context=await browser.newContext({viewport});
- await context.addInitScript(p=>{if(!localStorage.getItem('aliens-tower-defense-profile'))localStorage.setItem('aliens-tower-defense-profile',JSON.stringify(p));},profile);
+ await context.addInitScript(p=>{if(!localStorage.getItem('aliens-tower-defense-profile'))localStorage.setItem('aliens-tower-defense-profile',JSON.stringify({...p,schemaVersion:3}));},profile);
  // Only this explicit trait scenario replaces the spawn schedule, using real enemy definitions.
  // All armory, power, unlock and RPG scenarios below use the production campaign unchanged.
- if(fixture)await context.route('**/src/data/levels/index.js',route=>route.fulfill({contentType:'application/javascript',body:`import level from './level1.js'; export const levels=[{...level, startGold:1000, waves:[{name:'Trait encounter',healthScale:1,reward:0,spawns:[{enemy:'alien_steadfast',at:0},{enemy:'alien_rager',at:1},{enemy:'alien_broodmother',at:2},{enemy:'alien_normal',at:100}]}]}];`}));
+ if(fixture)await context.route('**/src/data/levels/index.js',route=>route.fulfill({contentType:'application/javascript',body:`import level from './level1.js'; export const levels=[{...level, startGold:1000, waves:[{name:'Trait encounter',healthScale:1,reward:0,spawns:[{enemy:'alien_steadfast',at:0},{enemy:'alien_rager',at:1},{enemy:'alien_broodmother',at:2},{enemy:'alien_medic',at:2.5},{enemy:'alien_normal',at:100}]}]}];`}));
  const page=await context.newPage();page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('response',r=>{if(r.status()>=400&&r.url().startsWith(url))failed.push(`${r.status()} ${r.url()}`);});
  await page.goto(url);await page.waitForFunction(()=>window.render_game_to_text);return page;
 }
@@ -23,7 +23,7 @@ try{
  for(const width of [320,390,844,1280]){
   const p=await pageFor({level:1,settings:{muted:true}},{width,height:width===844?390:width===1280?720:844});
   const loadout=await p.locator('.menu-loadout').boundingBox(),customize=await p.locator('#menu-arsenal-button').boundingBox();assert.ok(customize.x+customize.width<=loadout.x+loadout.width,'customize button stays inside its panel');
-  await p.click('#menu-arsenal-button');assert.ok(await p.locator('[data-blueprint="rare"]').isDisabled());
+  await p.click('#menu-arsenal-button');assert.ok(await p.locator('[data-buy-blueprint="rare"]').isDisabled());
   await p.click('[data-arsenal-class="rocket_launcher"]');assert.ok(await p.locator('[data-equip-heavy]').isDisabled());
   assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
   assert.equal(await p.locator('.arsenal-card').evaluate(e=>e.scrollWidth>e.clientWidth+1),false);
@@ -61,7 +61,7 @@ try{
  assert.ok(fired,'RPG fires its launch sound');assert.ok(exploded,'RPG explodes visually');await p.context().close();
  for(const key of ['artillery','napalm','chronoBreak']){
   const power=await pageFor({level:6,skills:{artillery:2},equippedActiveKey:key,settings:{muted:false}});
-  await power.click('#menu-play-button');await power.waitForFunction(()=>JSON.parse(window.render_game_to_text()).audio.loadedClips===19);
+  await power.click('#menu-play-button');await power.waitForFunction(()=>JSON.parse(window.render_game_to_text()).audio.loadedClips===20);
   await power.click('#launch-wave-button');await advance(power,2000);
   await power.keyboard.press('q');if(key==='artillery')await tile(power,4,2);
   const activated=await read(power);assert.ok(activated.activeAbilities[key].timer>0);
@@ -76,7 +76,7 @@ try{
  // Verify all three enemy traits are drawn, and the brood actually releases hatchlings.
  const traits=await pageFor({level:10,settings:{muted:true}},undefined,true);
  await traits.click('#menu-play-button');await traits.click('[data-weapon-key="machine_pistol"] .weapon-select');await tile(traits,3,1);await tile(traits,3,1);await traits.click('[data-target="last"]');await traits.click('#launch-wave-button');await advance(traits,3100);
- let ts=await read(traits);assert.ok(ts.enemies.some(e=>e.immuneSlow));assert.ok(ts.enemies.some(e=>e.raged));assert.ok(ts.enemies.some(e=>e.brood));
+ let ts=await read(traits);assert.ok(ts.enemies.some(e=>e.immuneSlow));assert.ok(ts.enemies.some(e=>e.raged));assert.ok(ts.enemies.some(e=>e.brood));assert.ok(ts.enemies.some(e=>e.healer));await advance(traits,1500);
  await freezeShot(traits,'enemy-traits');await traits.click('#play-pause-button');await advance(traits,8200);ts=await read(traits);assert.ok(ts.enemies.some(e=>e.key==='alien_hatchling'));await freezeShot(traits,'hatchlings');await traits.context().close();
  assert.deepEqual(errors,[]);assert.deepEqual(failed,[]);
  console.log('PASS: responsive arsenal, unlocks, models, attachment caps, persistence, Heavy slot, RPG audio/impact, all three power sounds/visuals, pause, enemy traits and hatchlings.');

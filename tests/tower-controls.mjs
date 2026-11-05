@@ -72,7 +72,7 @@ try {
  await page.screenshot({path:`${out}/live-combat.png`,fullPage:true});
  await page.click('#gear-button');await page.click('#restart-button');await place(page,'sniper');
  assert.equal((await state(page)).gold,25);assert.equal(await page.locator('[data-upgrade="power"]').isDisabled(),true);
- assert.match(await page.locator('[data-upgrade="power"] [data-upgrade-status]').textContent(),/Need \d+g more/);
+ assert.match(await page.locator('[data-upgrade="power"] [data-upgrade-status]').textContent(),/Need \d+cr more/);
  await page.screenshot({path:`${out}/insufficient-funds.png`,fullPage:true});
  await page.click('[data-sell]');const select=page.locator('[data-weapon-key="handgun"] .weapon-select');await select.focus();await page.keyboard.press('Space');
  assert.equal((await state(page)).selectedWeapon,'handgun');assert.equal((await state(page)).phase,'prepare');

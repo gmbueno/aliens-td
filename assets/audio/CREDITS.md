@@ -19,12 +19,16 @@ Sources used from `Prepared SFX/`:
 
 These recordings represent the game's fictional towers; model names do not imply endorsement or exact weapon simulation. No audio was extracted from Call of Duty or another commercial game.
 
-Edits for this game: individual shots isolated with 12ms onset padding, 45Hz high-pass, gain trim, peak limiting, short natural tails, 100ms fade-out, mono 44.1kHz / 128kbps MP3 encoding. Each weapon has two or three separately recorded shots. Exact source offsets, durations and output hashes are listed in recordings.json. Playback adds subtle pitch/gain variation and modest left/right positioning; the recorded transient remains intact.
+## Current firearm mix (Command update)
 
-## Arsenal update (November 2026)
+Each gun report layers the original full-band firearm recording with a short, caliber-scaled portion of the approved `effects/artillery.mp3` report. The recording keeps its crack; the artillery layer supplies low/mid-frequency body. Edits include 60–65Hz cleanup, a low-pass on the body layer, short 43/79ms reflections, gentle compression, peak limiting and MP3 encoding. Two or three original takes alternate with small pitch/gain variation. Models add a modest caliber-based pitch/gain adjustment. The runtime power bus retains the approved artillery processing separately from the new firearm bus.
 
-Gunshot edits now include 45Hz high-pass cleanup, a parallel low-pitched recorded body layer, a +6dB shelf at 160Hz, a −4dB cut at 3.3kHz, a 9.5kHz low-pass, transient-preserving compression and longer fades/tails. This keeps the original recordings' attack while reducing harshness. Runtime adds a mild low shelf, presence cut, bounded voice mixing and slower compressor attack.
+Exact original offsets, source/output hashes, artillery-body source hash and editing notes are in `recordings.json`. The repeatable preparation recipe is `scripts/prepare_doctrine_audio.py`, using ffmpeg and the six source WAVs listed above. No audio was extracted from Call of Duty or League of Legends.
 
-`effects/impact.mp3`, `effects/rocket-launch.mp3` and `effects/artillery.mp3` derive from **Explosions** by **EZduzziteh**, CC0: https://opengameart.org/content/explosions-4 — source `explosion1_0.ogg`. Edits: trim, pitch variation, bass shelf, low-pass, limiter, fade and MP3 encoding. The launch sound is a stylized adaptation of the explosion, rather than a recording of a specific launcher.
+## Power reports and original effects
 
-`effects/napalm.mp3` and `effects/chrono.mp3` are original project-designed rendered effects (noise/fire whoosh and a layered stasis chime). They use no commercial-game audio. All effect source/output hashes are recorded in effects.json. These original effects are also dedicated to CC0.
+`effects/impact.mp3`, `effects/rocket-launch.mp3` and `effects/artillery.mp3` derive from **Explosions** by **EZduzziteh**, CC0: https://opengameart.org/content/explosions-4 — source `explosion1_0.ogg`. Edits: trim, pitch variation, bass shelf, low-pass, limiter, fade and MP3 encoding. The launch sound is a stylized adaptation, not a recording of a specific launcher. These five power/effect files are unchanged from the approved 0.3 release.
+
+`effects/napalm.mp3` and `effects/chrono.mp3` are original project-designed rendered effects (fire whoosh and layered stasis chime), also dedicated to CC0. Effect source/output hashes are in `effects.json`.
+
+There are 14 firearm takes and 5 power/effect files. The UAV reuses the first Machine Pistol take at low gain; the runtime decodes 20 sources from these 19 unique files.

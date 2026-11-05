@@ -1,0 +1,57 @@
+import { skillRank } from '../data/skills.js';
+export const PONTOON_COST=35;
+const key=(r,c)=>`${r}:${c}`;
+export function reservedTile(state,preferEnd=false){
+ const rows=Array.from({length:state.level.rows},(_,i)=>preferEnd?state.level.rows-1-i:i);
+ const cols=Array.from({length:state.level.cols},(_,i)=>preferEnd?state.level.cols-1-i:i);
+ for(const row of rows)for(const col of cols){
+  const k=key(row,col);
+  if(state.tileSets.path.has(k)||state.tileSets.blockers.has(k)||state.tileSets.water.has(k)||state.level.pads.some(t=>t.row===row&&t.col===col))continue;
+  return {row,col,x:state.board.x+(col+.5)*state.board.tile,y:state.board.y+(row+.5)*state.board.tile};
+ }
+ return null;
+}
+export function initializeSupport(state){
+ const count=skillRank(state.profile,'mines')*5;
+ state.mines=Array.from({length:count},(_,i)=>{
+  const t=Math.max(0,state.path.length-4)+(i+.5)/count*2.5;
+  const j=Math.min(state.path.length-2,Math.floor(t)),f=t-j,a=state.path[j],b=state.path[j+1];
+  return {x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f,spent:false};
+ });
+ const rank=skillRank(state.profile,'drone'),base=rank?reservedTile(state):null;
+ state.drone=base?{rank,base,x:base.x,y:base.y,time:0,cooldown:0,flash:0,lastTarget:null}:null;
+ state.cache={...reservedTile(state,true),opened:Boolean(state.profile.caches[state.level.id]),claimed:Boolean(state.profile.caches[state.level.id]),wave:Math.ceil(state.level.waves.length/2)};
+}
+export function updateDrone(state,dt,damageEnemy){
+ const drone=state.drone;if(!drone)return;
+ drone.time+=dt;drone.flash=Math.max(0,drone.flash-dt);drone.cooldown=Math.max(0,drone.cooldown-dt);
+ const span=state.path.length-1,phase=(drone.time*.9)%(span*2),t=phase<=span?phase:span*2-phase;
+ const j=Math.min(state.path.length-2,Math.floor(t)),f=t-j,a=state.path[j],b=state.path[j+1];
+ drone.x=a.x+(b.x-a.x)*f+Math.cos(drone.time*2)*28;drone.y=a.y+(b.y-a.y)*f-35;
+ const target=state.enemies.filter(e=>e.life>0&&Math.hypot(e.x-drone.x,e.y-drone.y)<130+drone.rank*20).sort((a,b)=>(b.segment*1000+b.progress)-(a.segment*1000+a.progress))[0];
+ if(target&&drone.cooldown<=0){damageEnemy(target,140+drone.rank*60,.15);drone.cooldown=.5;drone.lastTarget={x:target.x,y:target.y};drone.flash=.09;state.audio?.play('drone',drone.x);}
+}
+export function triggerMines(state,enemy,damageEnemy,addEffect){
+ for(const mine of state.mines){
+  if(mine.spent||enemy.life<=0||Math.hypot(enemy.x-mine.x,enemy.y-mine.y)>24)continue;
+  mine.spent=true;
+  for(const target of state.enemies)if(target.life>0&&Math.hypot(target.x-mine.x,target.y-mine.y)<=48)damageEnemy(target,1100,.6);
+  addEffect(state,'explosion',mine.x,mine.y,48,.6);state.audio?.play('impact',mine.x);
+ }
+}
+export function drawSupport(ctx,state){
+ for(const mine of state.mines){if(mine.spent)continue;ctx.save();ctx.translate(mine.x,mine.y);ctx.fillStyle='#596852';ctx.strokeStyle='#d8c38a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,6,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#ecbc63';ctx.fillRect(-2,-2,4,4);ctx.restore();}
+ const cache=state.cache;
+ if(cache&&Number.isFinite(cache.x)){
+  ctx.save();ctx.translate(cache.x,cache.y);ctx.fillStyle=cache.opened?'#45504b':'#765b34';ctx.strokeStyle=cache.opened?'#839a89':'#e5c383';ctx.lineWidth=2;
+  ctx.fillRect(-19,-10,38,27);ctx.strokeRect(-19,-10,38,27);ctx.fillRect(-21,cache.opened?-22:-17,42,10);ctx.strokeRect(-21,cache.opened?-22:-17,42,10);
+  ctx.fillStyle='#dfc17f';ctx.fillRect(-3,-8,6,9);ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.fillStyle=cache.opened?'#9cae9d':'#f3d899';ctx.fillText(cache.opened?'CLAIMED':`CACHE / W${cache.wave}`,0,31);ctx.restore();
+ }
+ const drone=state.drone;if(!drone)return;
+ ctx.save();ctx.translate(drone.base.x,drone.base.y);ctx.fillStyle='#203c46';ctx.strokeStyle='#76b9cc';ctx.lineWidth=2;ctx.fillRect(-23,-23,46,46);ctx.strokeRect(-23,-23,46,46);ctx.beginPath();ctx.arc(0,0,17,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#b6d7d9';ctx.font='bold 15px monospace';ctx.textAlign='center';ctx.fillText('UAV',0,5);ctx.restore();
+ if(drone.flash&&drone.lastTarget){ctx.strokeStyle='#9ae7f5aa';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(drone.x,drone.y);ctx.lineTo(drone.lastTarget.x,drone.lastTarget.y);ctx.stroke();}
+ ctx.save();ctx.translate(drone.x,drone.y);ctx.fillStyle='#0005';ctx.beginPath();ctx.ellipse(7,35,20,8,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#a8cbd1';ctx.lineWidth=4;
+ ctx.beginPath();ctx.moveTo(-15,-11);ctx.lineTo(15,11);ctx.moveTo(15,-11);ctx.lineTo(-15,11);ctx.stroke();ctx.fillStyle='#365966';ctx.strokeStyle='#b8d9dc';ctx.lineWidth=1;
+ for(const x of [-15,15])for(const y of [-11,11]){ctx.beginPath();ctx.ellipse(x,y,12,4,drone.time*28,0,Math.PI*2);ctx.stroke();}
+ ctx.fillRect(-7,-10,14,20);ctx.strokeRect(-7,-10,14,20);ctx.fillStyle='#9ce2ef';ctx.fillRect(-3,6,6,3);ctx.restore();
+}

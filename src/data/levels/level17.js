@@ -1,8 +1,8 @@
-// 3-5 · Last Stand. Authored route, obstacles, and wave schedule.
+// 3-5 · Last Stand. Authored route, terrain and waves.
 const level17 = {
   "id": "level_17",
   "name": "Last Stand",
-  "description": "A short approach and relentless shield units test your whole arsenal.",
+  "description": "A short approach and relentless shield units test your whole arsenal. Water tiles accept weapons after Pontoon Engineering (+35 credits per raft).",
   "sector": 3,
   "stage": 5,
   "biome": "hive",
@@ -361,7 +361,7 @@ const level17 = {
           "at": 1.74
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.41
         },
         {
@@ -449,7 +449,7 @@ const level17 = {
           "at": 1.61
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.21
         },
         {
@@ -545,7 +545,7 @@ const level17 = {
           "at": 1.48
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.02
         },
         {
@@ -649,7 +649,7 @@ const level17 = {
           "at": 1.35
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.82
         },
         {
@@ -761,7 +761,7 @@ const level17 = {
           "at": 1.22
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.63
         },
         {
@@ -881,7 +881,7 @@ const level17 = {
           "at": 1.1
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.45
         },
         {
@@ -1009,7 +1009,7 @@ const level17 = {
           "at": 1.1
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.45
         },
         {
@@ -1129,6 +1129,40 @@ const level17 = {
           "at": 11.25
         }
       ]
+    }
+  ],
+  "water": [
+    {
+      "row": 2,
+      "col": 9
+    },
+    {
+      "row": 3,
+      "col": 8
+    },
+    {
+      "row": 3,
+      "col": 9
+    },
+    {
+      "row": 4,
+      "col": 7
+    },
+    {
+      "row": 4,
+      "col": 8
+    },
+    {
+      "row": 4,
+      "col": 9
+    },
+    {
+      "row": 4,
+      "col": 11
+    },
+    {
+      "row": 5,
+      "col": 8
     }
   ]
 };

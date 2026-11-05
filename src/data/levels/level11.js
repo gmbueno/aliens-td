@@ -1,8 +1,8 @@
-// 2-5 · Thin Ice. Authored route, obstacles, and wave schedule.
+// 2-5 · Thin Ice. Authored route, terrain and waves.
 const level11 = {
   "id": "level_11",
   "name": "Thin Ice",
-  "description": "Fast enemies slip through short lanes. Use Chrono to buy time.",
+  "description": "Fast enemies slip through short lanes. Use Chrono to buy time. Water tiles accept weapons after Pontoon Engineering (+35 credits per raft).",
   "sector": 2,
   "stage": 5,
   "biome": "frost",
@@ -834,6 +834,32 @@ const level11 = {
           "at": 11.9
         }
       ]
+    }
+  ],
+  "water": [
+    {
+      "row": 4,
+      "col": 6
+    },
+    {
+      "row": 5,
+      "col": 5
+    },
+    {
+      "row": 5,
+      "col": 6
+    },
+    {
+      "row": 5,
+      "col": 7
+    },
+    {
+      "row": 6,
+      "col": 6
+    },
+    {
+      "row": 7,
+      "col": 5
     }
   ]
 };

@@ -82,6 +82,7 @@ export const enemies = {
     asset: assets.aliens.saucer,
     visualSize: 80,
   },
+  alien_medic: { key:'alien_medic',label:'Mender',life:10000,speed:52,damage:2,gold:19,xp:4,healer:true,shape:'circle',color:'#81e6ab',asset:assets.aliens.shielded,visualSize:62 },
   alien_steadfast: { key: 'alien_steadfast', label: 'Juggernaut', life: 16000, speed: 48, damage: 2, gold: 23, xp: 4, armor: .15, immuneSlow: true, shape: 'square', color: '#93e6d9', asset: assets.aliens.tank, visualSize: 72 },
   alien_rager: { key: 'alien_rager', label: 'Ravager', life: 6500, speed: 65, damage: 1, gold: 14, xp: 3, rageMultiplier: 1.7, shape: 'triangle', color: '#ff8667', asset: assets.aliens.fast, visualSize: 64 },
   alien_broodmother: { key: 'alien_broodmother', label: 'Broodmother', life: 21000, speed: 34, damage: 4, gold: 35, xp: 7, brood: true, shape: 'pentagon', color: '#bfa3ee', asset: assets.aliens.boss, visualSize: 82 },

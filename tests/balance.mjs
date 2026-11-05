@@ -26,7 +26,7 @@ export function invest(state) {
       const effective = applySkillBonuses(weapon, state.profile);
       for(let row=0;row<state.level.rows;row++) for(let col=0;col<state.level.cols;col++) {
         const key=`${row}:${col}`;
-        if(state.tileSets.path.has(key)||state.tileSets.blockers.has(key)||state.towers.some(t=>t.row===row&&t.col===col))continue;
+        if(state.tileSets.path.has(key)||state.tileSets.blockers.has(key)||state.towers.some(t=>t.row===row&&t.col===col)||state.tileSets.water.has(key)||(!state.cache.opened&&state.cache.row===row&&state.cache.col===col)||(state.drone?.base.row===row&&state.drone.base.col===col))continue;
         const point={x:state.board.x+(col+.5)*state.board.tile,y:state.board.y+(row+.5)*state.board.tile};
         const pad=state.level.pads.find(p=>p.row===row&&p.col===col);
         const range=effective.range*(pad?.type==='range'?1.18:1);

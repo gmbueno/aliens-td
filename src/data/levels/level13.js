@@ -1,4 +1,4 @@
-// 3-1 · Spore Fields. Authored route, obstacles, and wave schedule.
+// 3-1 · Spore Fields. Authored route, terrain and waves.
 const level13 = {
   "id": "level_13",
   "name": "Spore Fields",
@@ -369,7 +369,7 @@ const level13 = {
           "at": 1.74
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.41
         },
         {
@@ -441,7 +441,7 @@ const level13 = {
           "at": 1.61
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.21
         },
         {
@@ -521,7 +521,7 @@ const level13 = {
           "at": 1.48
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 2.02
         },
         {
@@ -609,7 +609,7 @@ const level13 = {
           "at": 1.35
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.82
         },
         {
@@ -705,7 +705,7 @@ const level13 = {
           "at": 1.22
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.63
         },
         {
@@ -809,7 +809,7 @@ const level13 = {
           "at": 1.1
         },
         {
-          "enemy": "alien_shielded",
+          "enemy": "alien_medic",
           "at": 1.45
         },
         {

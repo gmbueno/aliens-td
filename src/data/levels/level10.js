@@ -1,4 +1,4 @@
-// 2-4 · Frozen Coil. Authored route, obstacles, and wave schedule.
+// 2-4 · Frozen Coil. Authored route, terrain and waves.
 const level10 = {
   "id": "level_10",
   "name": "Frozen Coil",

@@ -1,4 +1,4 @@
-// 2-2 · Glacier Gate. Authored route, obstacles, and wave schedule.
+// 2-2 · Glacier Gate. Authored route, terrain and waves.
 const level8 = {
   "id": "level_8",
   "name": "Glacier Gate",

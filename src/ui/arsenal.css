@@ -70,3 +70,15 @@
 .menu-loadout>div{min-width:0}
 .arsenal-title button{width:auto;flex-shrink:0}
 @media(max-width:700px){.menu-loadout{flex-direction:column;align-items:stretch}.menu-loadout button{width:100%;min-width:0}}
+.arsenal-wallet{display:flex;align-items:center;gap:24px;padding:0 0 18px;color:#c2d1c3;font:10px monospace}.arsenal-wallet b{font-size:24px;color:#ecc17d;margin-right:6px}.arsenal-wallet small{display:block;margin-top:5px;color:#a3b9b0;font:11px 'Trebuchet MS',sans-serif}.arsenal-wallet p{margin:0 0 0 auto;line-height:1.8;color:#a2b7af;font-size:10px}.blueprint>img{display:block;width:100%;height:105px;object-fit:contain;margin:0 auto 8px}.blueprint>strong{font-size:9px;line-height:1.6}.blueprint p{min-height:60px}.blueprint:disabled{opacity:.6}.weapon-class-label{display:block;color:#91b0ae;font:8px monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}.weapon-model-title{min-width:0;display:block}.weapon-model-title .weapon-nickname{font-size:12px;line-height:1.1}.weapon-caption{align-items:center}.weapon-role{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.locked-special-icon{font-size:38px;color:#d0b680;line-height:1.1}.ability-locked{cursor:pointer!important}.ability-locked:hover{border-color:#e5c38a!important}
+@media(max-width:700px){.arsenal-wallet{flex-wrap:wrap;gap:14px}.arsenal-wallet p{width:100%;margin:0}.blueprint>img{height:85px}.weapon-model-title .weapon-nickname{font-size:11px}}
+/* Model identity is the primary label; older generic small/price rules must not style it. */
+.weapon-bar .weapon-select{grid-template-rows:16px minmax(0,1fr) 30px 12px}
+.weapon-bar .weapon-card .weapon-class-label{display:block;position:static;order:0;min-width:0;min-height:0;padding:0;margin:0 0 3px;border:0;border-radius:0;background:none;transform:none;text-shadow:none;align-self:auto;place-items:normal;color:#9eb9b9;font:8px/1 monospace;text-align:left;letter-spacing:.5px;white-space:nowrap}
+.weapon-bar .weapon-card .weapon-model-title{display:block;width:100%;min-width:0}
+.weapon-bar .weapon-card .weapon-nickname{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.weapon-bar .weapon-card .weapon-price{font-size:13px;white-space:nowrap;flex-shrink:0}
+.weapon-topline{gap:5px}.weapon-topline .weapon-state{margin-right:auto}
+@media(max-width:700px){.weapon-bar .weapon-select{grid-template-rows:15px minmax(0,1fr) 28px 12px}.weapon-bar .weapon-state{display:none}.weapon-bar .weapon-price{margin-left:auto}.weapon-bar .weapon-card .weapon-nickname{font-size:11px}.weapon-bar .weapon-card .weapon-class-label{font-size:7px;letter-spacing:.2px}}
+@media(max-height:500px) and (min-width:600px){.weapon-bar .weapon-select{grid-template-rows:12px minmax(0,1fr) 14px}.weapon-bar .weapon-card .weapon-class-label,.weapon-bar .weapon-role,.weapon-bar .weapon-state{display:none}.weapon-bar .weapon-card .weapon-nickname{font-size:9px}.weapon-bar .weapon-card .weapon-price{font-size:10px;margin-left:auto}}
+.ability-bar .ability-locked .locked-special-icon{display:grid;place-items:center;min-height:0;text-transform:none}.locked-special-icon svg{max-height:100%}
