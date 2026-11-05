@@ -1,10 +1,11 @@
 {
   "name": "alienstowerdefense",
   "private": true,
-  "version": "0.4.1",
+  "version": "0.5.0",
   "type": "module",
   "scripts": {
     "serve": "python3 -m http.server 4173",
+    "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:browser": "node tests/browser.mjs",
     "test:balance": "node tests/balance.mjs",
@@ -12,7 +13,9 @@
     "test:progression": "node tests/progression-browser.mjs",
     "test:arsenal": "node tests/arsenal-browser.mjs",
     "test:audio": "node tests/audio-shotgun-browser.mjs",
-    "test:hud": "node tests/hud-browser.mjs"
+    "test:hud": "node tests/hud-browser.mjs",
+    "test:frontier": "node tests/frontier-browser.mjs",
+    "test:build": "node tests/build-smoke.mjs"
   },
   "devDependencies": {
     "playwright": "1.58.2"

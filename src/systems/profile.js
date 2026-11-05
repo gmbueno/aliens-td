@@ -1,4 +1,4 @@
-import { normalizeArsenal } from "../data/arsenal.js";
+import { normalizeArsenal, classMilestones, classUnlocked } from "../data/arsenal.js";
 import { PLAYER_PROFILE_KEY, createDefaultProfile, xpNeeded } from "../data/player.js";
 import { DEFAULT_EQUIPPED_ACTIVE_KEY, SP_PER_LEVEL, createDefaultSkills, isActiveAbilityKey, skillTree, spentSkillPoints, activeUnlocked } from "../data/skills.js";
 
@@ -66,6 +66,7 @@ export function missionStars(lives, maxLives) {
 }
 
 export function recordVictory(profile, level, lives) {
+  const known = new Set(Object.keys(classMilestones).filter(key=>classUnlocked(profile,key)));
   const previous = profile.missions[level.id] || { stars: 0, clears: 0, bestLives: 0 };
   const stars = missionStars(lives, level.lives);
   const firstClear = previous.clears === 0;
@@ -74,7 +75,8 @@ export function recordVictory(profile, level, lives) {
   profile.missions[level.id] = { stars: Math.max(previous.stars, stars), clears: previous.clears + 1, bestLives: Math.max(previous.bestLives, lives) };
   const salvage=firstClear?25:8;profile.salvage+=salvage;
   addXp(profile, xp);
-  return { stars, firstClear, newStars, xp, salvage };
+  const unlockedClasses=Object.keys(classMilestones).filter(key=>!known.has(key)&&classUnlocked(profile,key));
+  return { stars, firstClear, newStars, xp, salvage, unlockedClasses };
 }
 
 export function resetSkills(profile) {

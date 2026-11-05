@@ -1,7 +1,7 @@
 import { pathToFileURL } from 'node:url';
 import { createInitialState, stepState, placeTower, launchWave, upgradeTower } from '../src/game.js';
 import { levels } from '../src/data/levels/index.js';
-import { equippedWeapons } from '../src/data/arsenal.js';
+import { equippedWeapons, classUnlocked } from '../src/data/arsenal.js';
 import { weapons } from '../src/data/weapons.js';
 import { normalizeProfile } from '../src/systems/profile.js';
 import { applySkillBonuses, towerUpgradeCost } from '../src/systems/weaponStats.js';
@@ -22,7 +22,7 @@ export function invest(state) {
     const coverage = point => state.towers.reduce((sum, t) => sum + (Math.hypot(t.x-point.x,t.y-point.y) <= t.range ? t.weapon.directDamage * t.weapon.atkSpeed * (t.weapon.pelletCount || 1) / (1+t.weapon.atkSpeed*t.weapon.reloadSpeed/t.weapon.capacity) : 0), 0);
     const importance = path.map(point => 1 / (1 + coverage(point) / 1600));
     for (const weapon of equippedWeapons(weapons,state.arsenalProfile)) {
-      if (weapon.price > state.gold) continue;
+      if (!classUnlocked(state.arsenalProfile,weapon.key) || weapon.price > state.gold) continue;
       const effective = applySkillBonuses(weapon, state.profile);
       for(let row=0;row<state.level.rows;row++) for(let col=0;col<state.level.cols;col++) {
         const key=`${row}:${col}`;
@@ -52,7 +52,9 @@ export function invest(state) {
 }
 
 export function simulate(level, ranks, investDuringCombat = false) {
-  const state=createInitialState(level,makeProfile(ranks),{width:1280,height:720});
+  const profile=makeProfile(ranks);
+  profile.missions=Object.fromEntries(levels.slice(0,levels.indexOf(level)).map(l=>[l.id,{clears:1,stars:3,bestLives:l.lives}]));
+  const state=createInitialState(level,profile,{width:1280,height:720});
   let frames=0;
   while(!state.result && frames<60*1200) {
     if(state.phase==='prepare') {

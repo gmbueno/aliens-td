@@ -1,9 +1,11 @@
 import { models } from './models.js';
+import { assets } from './assets.js';
+const originalArt={handgun:assets.slots.weapons.handgun,assault_rifle:assets.slots.weapons.assaultRifle,machine_pistol:assets.slots.weapons.machinePistol,magnum:assets.slots.weapons.magnum,shotgun:assets.slots.weapons.shotgun,sniper:assets.slots.weapons.sniper};
 export const loadoutSlots = ['handgun', 'assault_rifle', 'machine_pistol', 'magnum', 'shotgun', 'heavy'];
 export const rarityTiers = [
-  { key: 'common', name: 'Common', level: 1, sockets: 0, color: '#a9bac1' },
+  { key: 'common', name: 'Common', level: 1, sockets: 1, color: '#a9bac1' },
   { key: 'rare', name: 'Rare', level: 3, sockets: 1, color: '#7dbef5' },
-  { key: 'epic', name: 'Epic', level: 6, sockets: 1, color: '#c49bff' },
+  { key: 'epic', name: 'Epic', level: 6, sockets: 2, color: '#c49bff' },
   { key: 'legendary', name: 'Legendary', level: 10, sockets: 2, color: '#f0c16c' },
 ];
 const names = {
@@ -21,16 +23,21 @@ export const attachments = [
   { cost:80, key: 'concussive', name: 'Concussive', level: 6, icon: '✦', description: 'Every 5th shot stuns its target for 0.35s. Bosses resist most of the stun.' },
   { cost:100, key: 'blast', name: 'Blast rounds', level: 8, icon: '◉', description: 'Hits deal 20% damage to nearby aliens in a small area. RPG: +12 blast radius instead.' },
 ];
-export function classUnlocked(profile, key) { return key !== 'rocket_launcher' || profile.level >= 4; }
+export const classMilestones = {handgun:0,assault_rifle:0,machine_pistol:1,shotgun:2,magnum:3,sniper:4,rocket_launcher:6,flamethrower:8,laser:10};
+export const campaignClears = profile => Object.values(profile.missions || {}).filter(m => m.clears > 0).length;
+export function classUnlocked(profile,key) { return key in classMilestones && campaignClears(profile) >= classMilestones[key]; }
+export function classRequirement(key) { const n=classMilestones[key];return n===1?'Complete your first mission':n?`Complete ${n} different missions`:'Starter weapon'; }
+export function nextClassUnlock(profile) { const cleared=campaignClears(profile);return Object.entries(classMilestones).filter(([,n])=>n>cleared).sort((a,b)=>a[1]-b[1])[0] || null; }
 export function blueprintsFor(key) {
-  return rarityTiers.map((tier, i) => ({ ...tier, ...models[key]?.[i], art: `assets/models/${key}-${tier.key}.svg` }));
+  return rarityTiers.map((tier, i) => ({ ...tier, ...models[key]?.[i], art: i===0 && originalArt[key] ? originalArt[key] : `assets/frontier/weapons/${key}-${tier.key}.png` }));
 }
 export function defaultArsenal() {
-  return { heavy: 'sniper', blueprints: {}, attachments: {}, unlocked: [], unlockedAttachments: [], spSpent: 0 };
+  return { heavy: 'sniper', support: 'machine_pistol', blueprints: {}, attachments: {}, unlocked: [], unlockedAttachments: [], spSpent: 0 };
 }
 export function normalizeArsenal(raw = {}, profile) {
   const result = defaultArsenal();
-  result.heavy = raw?.heavy === 'rocket_launcher' && classUnlocked(profile, 'rocket_launcher') ? 'rocket_launcher' : 'sniper';
+  result.heavy = ['rocket_launcher','laser'].includes(raw?.heavy) && classUnlocked(profile, raw.heavy) ? raw.heavy : 'sniper';
+  result.support=raw?.support==='flamethrower'&&classUnlocked(profile,'flamethrower')?'flamethrower':'machine_pistol';
   const legacy=profile.schemaVersion<4;
   const valid=new Set(Object.keys(models).flatMap(key=>rarityTiers.map(t=>`${key}:${t.key}`)));
   result.unlocked=[...new Set((Array.isArray(raw?.unlocked)?raw.unlocked:[]).filter(k=>valid.has(k)))];
@@ -40,7 +47,7 @@ export function normalizeArsenal(raw = {}, profile) {
    result.unlocked=[...new Set([...result.unlocked,...Object.keys(models).flatMap(key=>rarityTiers.filter(t=>profile.level>=t.level).map(t=>`${key}:${t.key}`))])];
    result.unlockedAttachments=attachments.filter(a=>profile.level>=a.level).map(a=>a.key);
   }
-  for (const key of Object.keys(names)) {
+  for (const key of Object.keys(models)) {
     const tier = rarityTiers.find(t => t.key === raw?.blueprints?.[key] && (t.key==='common' || result.unlocked.includes(`${key}:${t.key}`))) || rarityTiers[0];
     result.blueprints[key] = tier.key;
     result.attachments[key] = [...new Set(Array.isArray(raw?.attachments?.[key]) ? raw.attachments[key] : [])]
@@ -72,7 +79,7 @@ export function equipAttachment(profile, key, attachmentKey) {
 export function applyArsenal(weapon, profile) {
   const { blueprint, attachments: mods } = arsenalChoice(profile, weapon.key);
   const next = { ...weapon, ...blueprint.stats, blueprint: blueprint.name, rarity: blueprint.key, attachments: mods,
-    fireMode: blueprint.mode, modelDescription: blueprint.description, modelArt: true,
+    critChance:.05,critDamage:1.6,fireMode: blueprint.mode, modelDescription: blueprint.description, modelArt: true,
     asset: blueprint.art, placedAsset: blueprint.art, hudAsset: blueprint.art };
   next.soundPitch=Math.max(.85,Math.min(1.12,Math.pow(weapon.directDamage/next.directDamage,.12)));
   next.soundGain=Math.max(.8,Math.min(1.1,Math.pow(next.directDamage/weapon.directDamage,.1)));
@@ -81,7 +88,7 @@ export function applyArsenal(weapon, profile) {
   return next;
 }
 export function equippedWeapons(weapons, profile) {
-  return loadoutSlots.map(slot => weapons.find(w => w.key === (slot === 'heavy' ? profile.arsenal?.heavy || 'sniper' : slot))).filter(Boolean);
+  return loadoutSlots.map(slot => weapons.find(w => w.key === (slot === 'heavy' ? profile.arsenal?.heavy || 'sniper' : slot === 'machine_pistol' ? profile.arsenal?.support || 'machine_pistol' : slot))).filter(Boolean);
 }
 
 export function blueprintOwned(profile,key,tier) {
@@ -104,7 +111,9 @@ export function purchaseAttachment(profile,key) {
 export function cacheReward(profile,level) {
  if(profile.caches[level.id])return null;
  profile.caches[level.id]=true;profile.salvage+=30;
- const keys=Object.keys(models),index=(Number(level.id.split('_')[1])-1)%keys.length;
+ const attachment=attachments.find(a=>!profile.arsenal.unlockedAttachments.includes(a.key));
+ if(attachment){profile.arsenal.unlockedAttachments.push(attachment.key);return {name:attachment.name,attachment:attachment.key,salvage:30};}
+ const keys=Object.keys(models).filter(key=>classUnlocked(profile,key)),index=(Number(level.id.split('_')[1])-1)%keys.length;
  const tier=level.stage===6?'legendary':'epic';
  const candidates=[keys[index],...keys.filter(k=>k!==keys[index])];
  const key=candidates.find(k=>!blueprintOwned(profile,k,tier));
@@ -118,7 +127,7 @@ export function eliteDrop(profile,enemy,randomValue) {
  const roll=randomValue ?? Math.random();
  if(roll>=(enemy.key==='alien_boss'||enemy.key==='alien_saucer'?.18:.04) && profile.lootMisses<20)return null;
  profile.lootMisses=0;profile.salvage+=8;
- const remaining=Object.keys(models).filter(k=>!blueprintOwned(profile,k,'legendary'));
+ const remaining=Object.keys(models).filter(k=>classUnlocked(profile,k)&&!blueprintOwned(profile,k,'legendary'));
  if(!remaining.length)return {name:'8 Salvage',salvage:8};
  const key=remaining[profile.lootRolls%remaining.length];unlockBlueprint(profile,key,'legendary');
  return {name:blueprintsFor(key)[3].name,weapon:key,tier:'legendary',salvage:8};

@@ -9,7 +9,7 @@ const errors=[];
 const state=p=>p.evaluate(()=>JSON.parse(window.render_game_to_text()));
 async function create(viewport={width:1440,height:1000},touch=false) {
  const context=await browser.newContext({viewport,hasTouch:touch});
- await context.addInitScript(()=>localStorage.setItem('aliens-tower-defense-profile',JSON.stringify({level:1,settings:{muted:true}})));
+ await context.addInitScript(()=>localStorage.setItem('aliens-tower-defense-profile',JSON.stringify({level:1,missions:Object.fromEntries(Array.from({length:6},(_,i)=>[`level_${i+2}`,{clears:1,stars:3,bestLives:18}])),settings:{muted:true}})));
  const page=await context.newPage();page.on('pageerror',e=>errors.push(String(e)));
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.goto(url);return page;
@@ -72,7 +72,7 @@ try {
  await page.screenshot({path:`${out}/live-combat.png`,fullPage:true});
  await page.click('#gear-button');await page.click('#restart-button');await place(page,'sniper');
  assert.equal((await state(page)).gold,25);assert.equal(await page.locator('[data-upgrade="power"]').isDisabled(),true);
- assert.match(await page.locator('[data-upgrade="power"] [data-upgrade-status]').textContent(),/Need \d+cr more/);
+ assert.match(await page.locator('[data-upgrade="power"] [data-upgrade-status]').textContent(),/Need \$\d+ more/);
  await page.screenshot({path:`${out}/insufficient-funds.png`,fullPage:true});
  await page.click('[data-sell]');const select=page.locator('[data-weapon-key="handgun"] .weapon-select');await select.focus();await page.keyboard.press('Space');
  assert.equal((await state(page)).selectedWeapon,'handgun');assert.equal((await state(page)).phase,'prepare');

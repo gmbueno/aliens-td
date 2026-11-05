@@ -17,7 +17,7 @@ try {
  for(const key of ['handgun','assault_rifle','machine_pistol','magnum','shotgun','sniper']) {
    const context=await browser.newContext({viewport:{width:1440,height:1000}});
    await context.addInitScript(()=>{
-     localStorage.setItem('aliens-tower-defense-profile',JSON.stringify({level:1,settings:{muted:false}}));
+     localStorage.setItem('aliens-tower-defense-profile',JSON.stringify({level:1,missions:Object.fromEntries(Array.from({length:6},(_,i)=>[`level_${i+2}`,{clears:1,stars:3,bestLives:18}])),settings:{muted:false}}));
      const native=window.AudioContext||window.webkitAudioContext;
      if(native)native.prototype.createOscillator=()=>{throw new Error('Synthetic oscillator used instead of a recorded sample');};
    });
@@ -68,7 +68,7 @@ try {
      await page.click('#gear-button');await page.click('#change-level-button');assert.equal((await read(page)).audio.paused,true);
      // Verify real decoded waveforms, including fast attack and a non-silent tail.
      const audioMetrics=await page.evaluate(async()=>{
-       const {weaponAudio}=await import('./src/data/audio.js');const decoder=new OfflineAudioContext(1,44100,44100);const rows=[];
+       const {weaponAudio}=await import(new URL('./src/data/audio.js',document.baseURI).href);const decoder=new OfflineAudioContext(1,44100,44100);const rows=[];
        for(const [weapon,config] of Object.entries(weaponAudio))for(const file of config.files){
          const buffer=await decoder.decodeAudioData(await (await fetch(file)).arrayBuffer());const data=buffer.getChannelData(0);
          let peak=0,energy=0;for(const v of data){peak=Math.max(peak,Math.abs(v));energy+=v*v;}

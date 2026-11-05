@@ -1,6 +1,18 @@
 // Fictional models inspired by distinct firing archetypes, not copied COD weapons.
 const model = (name, mode, stats, description) => ({ name, mode, stats, description });
 export const models = {
+ laser: [
+ model('Helios Beam','Continuous beam',{},'A sustained anti-shield beam. Overheats after five seconds; cools before firing again.'),
+ model('Prism Lance','Continuous beam',{directDamage:440,range:290,capacity:32,reloadSpeed:2.5},'Longer reach with a shorter heat window.'),
+ model('Ion Core','Continuous beam',{directDamage:580,range:220,capacity:48,reloadSpeed:3.4},'A heavy emitter: more damage and heat capacity.'),
+ model('Aurora Array','Continuous beam',{directDamage:520,range:275,capacity:48,reloadSpeed:2.7},'An efficient long-range beam array.'),
+ ],
+ flamethrower: [
+ model('Ember Jet','Flame cone',{},'Short range, wide flame cone and lingering burns. The fuel tank needs refilling.'),
+ model('Cinder Sprayer','Flame cone',{range:145,directDamage:115,cone:.65,burnDamage:380},'Wider coverage and lighter direct damage.'),
+ model('Inferno Torch','Flame cone',{range:115,directDamage:190,burnDamage:580,capacity:24,reloadSpeed:2.5},'A short, concentrated jet for heavy burns.'),
+ model('Phoenix Rig','Flame cone',{range:145,directDamage:160,burnDamage:490,capacity:40,reloadSpeed:2.6},'Longer fuel capacity and controlled flames.'),
+ ],
  handgun: [
   model('Service 9','Semi-auto',{},'Balanced service pistol. Fast, inexpensive coverage.'),
   model('Lynx Auto','Full-auto',{atkSpeed:10,directDamage:140,capacity:30,range:140,reloadSpeed:1.3},'A compact machine pistol: many light rounds at close range.'),

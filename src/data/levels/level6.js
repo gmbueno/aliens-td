@@ -2,7 +2,7 @@
 const level6 = {
   "id": "level_6",
   "name": "Outpost Siege",
-  "description": "The Overseer leads the assault. Set heavy weapons to Strongest.",
+  "description": "The Overseer leads the assault. Set heavy weapons to Strongest. Amber overdrive tiles make aliens 35% faster. Cover their exits.",
   "sector": 1,
   "stage": 6,
   "biome": "outpost",
@@ -44,7 +44,7 @@ const level6 = {
     {
       "row": 6,
       "col": 2,
-      "kind": "cargo",
+      "kind": "barrels",
       "cost": 50
     },
     {
@@ -733,6 +733,24 @@ const level6 = {
           "at": 13.05
         }
       ]
+    }
+  ],
+  "speedTiles": [
+    {
+      "row": 3,
+      "col": 3
+    },
+    {
+      "row": 2,
+      "col": 3
+    },
+    {
+      "row": 6,
+      "col": 9
+    },
+    {
+      "row": 6,
+      "col": 10
     }
   ]
 };

@@ -37,7 +37,7 @@ try{
  await select(p,'napalm');await p.screenshot({path:`${out}/graph-trained.png`,fullPage:true});await p.click('#skill-tree-close-button');
  assert.equal((await read(p)).equippedActive,null,'new equipment waits until deployment');assert.equal((await read(p)).fieldMines.length,0);
  await p.click('#gear-button');await p.click('#change-level-button');await p.click('#menu-arsenal-button');
- await p.click('[data-buy-blueprint="rare"]');assert.equal((await read(p)).player.skillPoints,28);assert.equal((await read(p)).arsenal.blueprints.handgun,'rare');
+ await p.click('.model-options > summary');await p.click('[data-buy-blueprint="rare"]');assert.equal((await read(p)).player.skillPoints,28);assert.equal((await read(p)).arsenal.blueprints.handgun,'rare');
  await p.click('[data-buy-attachment="incendiary"]');assert.equal((await read(p)).salvage,80);assert.deepEqual((await read(p)).arsenal.attachments.handgun,['incendiary']);
  assert.match(await p.locator('.arsenal-statline').innerText(),/Lynx Auto/);assert.match(await p.locator('.arsenal-statline').innerText(),/Full-auto/);
  await p.screenshot({path:`${out}/arsenal-acquisitions.png`,fullPage:true});await p.click('#arsenal-close-button');await p.reload();

@@ -7,6 +7,7 @@ export function createWeaponAudio() {
   let muted = false, paused = true, decoding = null;
   let played = 0, suppressed = 0, errors = 0, lastShot = null;
   const voices = new Set();
+  const energyVoices = new Map();
   const buffers = new Map();
   const previousVariant = new Map();
   const lastFired = new Map();
@@ -19,6 +20,8 @@ export function createWeaponAudio() {
 
   function silence() {
     if (!context) return;
+    for(const voice of energyVoices.values()) {voice.gain.gain.setTargetAtTime(0,context.currentTime,.01);voice.source.stop(context.currentTime+.05);}
+    energyVoices.clear();
     for (const voice of voices) {
       voice.gain.gain.cancelScheduledValues(context.currentTime);
       voice.gain.gain.setTargetAtTime(0, context.currentTime, 0.004);
@@ -105,14 +108,30 @@ export function createWeaponAudio() {
     return true;
   }
 
+  function energy(key,x,active){
+    if(!context||context.state!=='running'||muted||paused)return;
+    const current=energyVoices.get(key);
+    if(!active){if(current){current.gain.gain.setTargetAtTime(0,context.currentTime,.02);current.source.stop(context.currentTime+.1);energyVoices.delete(key);}return;}
+    if(current){current.panner.pan.setTargetAtTime(Math.max(-.6,Math.min(.6,(x/1280-.5)*1.2)),context.currentTime,.1);return;}
+    const source=key==='laser'?context.createOscillator():context.createBufferSource();
+    if(key==='laser'){source.type='sawtooth';source.frequency.value=95;}
+    else{const buffer=context.createBuffer(1,context.sampleRate,context.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;source.buffer=buffer;source.loop=true;}
+    const filter=context.createBiquadFilter();filter.type='lowpass';filter.frequency.value=key==='laser'?600:850;
+    const gain=context.createGain();gain.gain.value=0;gain.gain.setTargetAtTime(key==='laser'?.065:.16,context.currentTime,.05);
+    const panner=context.createStereoPanner();panner.pan.value=(x/1280-.5)*.8;
+    source.connect(filter);filter.connect(gain);gain.connect(panner);panner.connect(body);
+    source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();panner.disconnect();};source.start();
+    energyVoices.set(key,{source,gain,panner});
+  }
   return {
     unlock,
     play,
+    energy,
     sync: (nextMuted, nextPaused) => setEnabledState(Boolean(nextMuted), Boolean(nextPaused)),
     diagnostics: () => ({
       mode: 'recorded', state: context?.state || 'locked', muted, paused,
       loadedClips: [...buffers.values()].reduce((total, clips) => total + clips.filter(Boolean).length, 0),
-      totalClips: downloads.length, activeVoices: voices.size, played, suppressed, errors, lastShot,
+      totalClips: downloads.length, activeVoices: voices.size, activeEnergyVoices:energyVoices.size, played, suppressed, errors, lastShot,
     }),
   };
 }

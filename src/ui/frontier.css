@@ -1,0 +1,93 @@
+/* The original illustrated card rack, with clear deployment and discovery states. */
+.hud-top .hud-chip { cursor: default; }
+.hud-top .hud-chip.player-chip { cursor: pointer; }
+.hud-top .gold-chip strong::before { content: "$"; font-size: .65em; margin-right: 3px; color: #d9bd81; }
+.weapon-bar .weapon-card {
+  background: linear-gradient(180deg,#07101508,#08131c55),var(--weapon-card-art) center/100% 100% no-repeat;
+  border: 0; border-radius: 3px; box-shadow: 0 5px 10px #0005;
+}
+.weapon-bar .weapon-card::after { width: 2px; inset: 8px auto 8px 4px; opacity: .65; }
+.weapon-bar .weapon-card:hover { background-color: transparent; box-shadow: inset 0 0 0 1px #a1bdc6,0 5px 12px #0008; }
+.weapon-bar .weapon-card.selected { background: linear-gradient(#a8e0b518,#45714640),var(--weapon-card-art) center/100% 100%; box-shadow: inset 0 0 0 2px #c4e2a5,0 0 18px #a5d08020; }
+.weapon-bar .weapon-select { padding: 9px 12px 10px; }
+.weapon-bar .weapon-art { height: 80px; max-height: 100%; width: auto; max-width: 100%; object-fit: contain; filter: drop-shadow(0 5px 4px #000a); }
+.weapon-bar .weapon-art-stage::before { opacity: .35; }
+.weapon-bar .weapon-card .weapon-price { color: #ffe09b; font-weight: bold; }
+.weapon-bar .weapon-card.class-locked .weapon-art { filter: grayscale(1) brightness(.55); opacity: .5; }
+.weapon-bar .weapon-card.class-locked .weapon-select { cursor: not-allowed; }
+.weapon-bar .weapon-card.class-locked .weapon-state { color: #c7b9a0; }
+.weapon-bar .weapon-card.class-locked .weapon-price { visibility: hidden; }
+.weapon-bar .weapon-card.class-locked .weapon-role { display: block; color: #d5bd8e; font-size: 9px; }
+.weapon-bar .weapon-card.class-locked::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(135deg,transparent 0 14px,#0001 14px 15px); }
+.armory-heading { gap: 8px; }
+.armory-heading button { margin-left: auto; flex-shrink: 0; min-height: 24px; border: 1px solid #647263; border-radius: 3px; background: #24332c; color: #dce9c7; font: 9px "Trebuchet MS",sans-serif; cursor: pointer; padding: 3px 8px; }
+.armory-heading button:hover { background: #3e5040; border-color: #bfce9b; }
+.ability-bar .ability-card.ability-illustrated { display: block; position: relative; padding: 0; height: 150px; border: 0; background: none; box-shadow: none; overflow: visible; }
+.ability-bar .ability-illustrated .ability-full-art { display: block; height: 100%; width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 3px 5px #0007); }
+.ability-bar .ability-illustrated .ability-topline { position: absolute; top: 8px; left: 9px; right: 9px; z-index: 1; }
+.ability-bar .ability-illustrated .ability-topline > span { display: none; }
+.ability-bar .ability-illustrated .ability-caption { display: none; }
+.ability-bar .ability-illustrated > small { position: absolute; z-index: 1; left: 50%; transform: translateX(-50%); bottom: 7px; min-width: 65px; padding: 4px 8px; background: #07111be6; border: 1px solid #d1ad6977; border-radius: 3px; color: #ffe0a0; text-align: center; font: bold 10px monospace; }
+.ability-bar .ability-illustrated:disabled { opacity: 1; filter: none; }
+.ability-bar .ability-illustrated.selected .ability-full-art { filter: drop-shadow(0 0 8px #ffc86f); }
+.loadout-hero { display: grid; grid-template-columns: 160px minmax(0,1fr); gap: 24px; align-items: center; margin-bottom: 20px; padding: 20px; border: 1px solid #596059; background: radial-gradient(ellipse at 0 0,#d0ae6322,transparent 75%),#162229; }
+.loadout-hero > img { height: 180px; width: 100%; object-fit: contain; filter: drop-shadow(0 8px 10px #0008); }
+.loadout-hero h3 { font: bold 32px "Trebuchet MS",sans-serif; margin: 5px 0 12px; color: #f0ead5; }
+.loadout-hero p { color: #c5d0c9; font-size: 13px; line-height: 1.65; }
+.loadout-hero span { color: #e7c58b; font: 11px monospace; }
+.arsenal-classes button { min-width: 95px; }
+.arsenal-classes button img { height: 55px; object-fit: contain; }
+.arsenal-classes button small { display: block; color: #b2c197; font: 8px/1.3 monospace; margin-top: 5px; white-space: normal; }
+.arsenal-classes button.undiscovered img { filter: grayscale(1); opacity: .4; }
+.arsenal-title h3 { font-size: 21px; }
+.arsenal-title { padding-bottom: 12px; }
+.model-options { border: 1px solid #485b60; border-radius: 5px; background: #15242a; margin: 16px 0; }
+.model-options > summary { cursor: pointer; padding: 15px 18px; color: #e7d7b4; font-weight: bold; font-size: 14px; }
+.model-options > summary span { color: #a5b8bd; font-size: 11px; font-weight: normal; margin-left: 12px; }
+.model-options .blueprint-grid { padding: 0 12px 12px; }
+.model-options .blueprint > img { height: 130px; }
+.arsenal-restart-panel { position: sticky; bottom: -26px; z-index: 3; display: flex; align-items: center; gap: 20px; padding: 16px 0; background: #142329f5; border-top: 1px solid #aa9865; margin-top: 20px; }
+.arsenal-restart-panel p { flex: 1; min-width:0; color: #d4c8ab; font-size: 11px; line-height: 1.6; }
+.arsenal-restart-panel button { flex:0 0 auto; width:auto; max-width:50%; }
+.enemy-roster { display: flex; flex-wrap: wrap; gap: 5px; margin: 12px 0; }
+.enemy-roster span { display: flex; align-items: center; gap: 4px; border: 1px solid #3e5155; background: #102028; padding: 4px 7px 4px 3px; color: #cbd7ce; font-size: 10px; }
+.enemy-roster img { width: 30px; height: 30px; object-fit: contain; }
+.next-discovery { border-left: 3px solid #e2b66b; background: #ca9e4c12; padding: 10px 12px; color: #e7d7af; font-size: 12px; line-height: 1.6; }
+@media (max-width:820px) and (min-height:581px) {
+  .hud-bottom { grid-template-rows: 14px 112px auto; }
+  .ability-bar .ability-card.ability-illustrated { height: 112px; display: flex; align-items: center; justify-content: center; gap: 20px; padding: 0; }
+  .ability-bar .ability-illustrated .ability-full-art { width: 64px; height: 112px; }
+  .ability-bar .ability-illustrated .ability-caption { display: block; font: bold 14px "Trebuchet MS",sans-serif; }
+  .ability-bar .ability-illustrated > small { position: static; transform: none; width: auto; }
+  .ability-bar .ability-illustrated .ability-topline { left: 6px; top: 6px; right: auto; }
+}
+@media (max-width:700px) {
+  .loadout-hero { grid-template-columns: 85px minmax(0,1fr); gap: 15px; padding: 14px; }
+  .loadout-hero > img { height: 155px; }
+  .loadout-hero h3 { font-size: 24px; }
+  .loadout-hero p { font-size: 11px; }
+  .model-options > summary span { display: block; margin: 6px 0 0 15px; }
+  .arsenal-restart-panel { flex-direction: column; align-items: stretch; gap: 8px; bottom: -18px; padding: 10px 0; }
+  .arsenal-restart-panel p { margin: 0; }
+  .arsenal-restart-panel button { width:100%;max-width:none; }
+  .weapon-bar .weapon-select { padding: 8px 9px; }
+}
+@media (min-width:821px) and (max-width:1100px) and (min-height:581px) {
+  .weapon-bar .weapon-select { grid-template-rows: 12px minmax(0,1fr) 26px; padding: 5px 8px; }
+  .weapon-bar .weapon-art { height: 38px; }
+  .weapon-bar .weapon-card.class-locked .weapon-role { display: none; }
+  .hud-bottom { grid-template-columns: 100px minmax(0,1fr); grid-template-rows:14px minmax(0,1fr); }
+  .ability-bar { grid-column:1;grid-row:2; }
+  .weapon-bar { grid-column:2;grid-row:2; }
+  .ability-bar .ability-card.ability-illustrated { height:208px;display:block; }
+  .ability-bar .ability-illustrated .ability-full-art { width:100%;height:100%; }
+  .ability-bar .ability-illustrated .ability-caption { display:none; }
+  .ability-bar .ability-illustrated .ability-topline { top:14px;left:8px;right:auto; }
+}
+@media (max-height:580px) and (min-width:721px) {
+  .ability-bar .ability-card.ability-illustrated { height: 90px; }
+  .weapon-bar .weapon-select { padding: 5px 7px; }
+  .weapon-bar .weapon-art { height: 35px; }
+  .weapon-bar .weapon-card.class-locked .weapon-role { display: none; }
+  .armory-heading button { display: none; }
+}

@@ -2,7 +2,7 @@
 const level15 = {
   "id": "level_15",
   "name": "The Gauntlet",
-  "description": "Every corner matters. Clear growth only when the new position pays off.",
+  "description": "Every corner matters. Clear growth only when the new position pays off. Amber overdrive tiles make aliens 35% faster. Cover their exits.",
   "sector": 3,
   "stage": 3,
   "biome": "hive",
@@ -949,6 +949,24 @@ const level15 = {
           "at": 9.85
         }
       ]
+    }
+  ],
+  "speedTiles": [
+    {
+      "row": 5,
+      "col": 3
+    },
+    {
+      "row": 6,
+      "col": 3
+    },
+    {
+      "row": 2,
+      "col": 9
+    },
+    {
+      "row": 2,
+      "col": 10
     }
   ]
 };

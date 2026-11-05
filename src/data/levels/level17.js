@@ -2,7 +2,7 @@
 const level17 = {
   "id": "level_17",
   "name": "Last Stand",
-  "description": "A short approach and relentless shield units test your whole arsenal. Water tiles accept weapons after Pontoon Engineering (+35 credits per raft).",
+  "description": "A short approach and relentless shield units test your whole arsenal. Water tiles accept weapons after Pontoon Engineering (+$35 per raft).",
   "sector": 3,
   "stage": 5,
   "biome": "hive",

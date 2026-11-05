@@ -75,17 +75,17 @@ export const passiveSkillTree = [
 
 export const utilitySkillTree = [
   {key:'salvage',type:'utility',name:'Clearance Crew',description:'Clearing obstacles costs 15% less per rank (up to 45%).',maxRank:3,cost:4},
-  {key:'supplies',type:'utility',name:'Supply Lines',description:'Start every deployment with 25 extra credits per rank.',maxRank:3,cost:5},
-  {key:'pontoons',type:'utility',name:'Pontoon Engineering',description:'Build any weapon on water. A raft costs 35 extra credits.',maxRank:1,cost:6},
+  {key:'supplies',type:'utility',name:'Supply Lines',description:'Start every deployment with $25 extra per rank.',maxRank:3,cost:5},
+  {key:'pontoons',type:'utility',name:'Pontoon Engineering',description:'Build any weapon on water. A raft costs $35 extra.',maxRank:1,cost:6},
   {key:'mines',type:'utility',name:'Last Line',description:'Automatically deploy 5 / 10 mines near the exit. Each deals 1,100 area damage. One stock per mission.',maxRank:2,cost:6},
   {key:'drone',type:'utility',name:'Patrol Drone',description:'An automatic UAV patrols the route. Ranks improve its damage and coverage. No extra controls.',maxRank:3,cost:8},
 ];
 const layout = {
- damage:['armament',190,105,null],reload:['armament',65,105,null],
- fireRate:['armament',250,215,'damage'],range:['armament',65,215,'reload'],
- chronoBreak:['armament',65,325,'range'],artillery:['armament',250,325,'fireRate'],
- salvage:['logistics',450,105,null],supplies:['logistics',450,215,'salvage'],pontoons:['logistics',450,325,'supplies'],
- mines:['support',730,105,null],drone:['support',640,215,'mines'],napalm:['support',820,215,'mines'],
+ damage:['armament',85,145,null],reload:['armament',240,145,null],
+ fireRate:['armament',85,285,'damage'],range:['armament',240,285,'reload'],
+ chronoBreak:['armament',240,425,'range'],artillery:['armament',85,425,'fireRate'],
+ salvage:['logistics',450,145,null],supplies:['logistics',450,285,'salvage'],pontoons:['logistics',450,425,'supplies'],
+ mines:['support',730,145,null],drone:['support',650,285,'mines'],napalm:['support',810,285,'mines'],
 };
 export const skillTree = [...activeSkillTree, ...passiveSkillTree, ...utilitySkillTree].map(skill=>{
  const [branch,x,y,parent]=layout[skill.key];

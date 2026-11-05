@@ -7,14 +7,14 @@ A static HTML/CSS/JavaScript tower-defense game. Play at **https://gmbueno.githu
 - 18 individually authored missions across the Outpost, Frozen Frontier, and Hive.
 - Five to nine waves per mission, visible incoming enemy compositions, and manual preparation or optional auto waves.
 - Clearable cargo/ice/growth obstacles, permanent rocks, sensor pads (+18% range), power pads (+15% damage), and frost tiles (25% enemy slowdown).
-- Six deployment slots. Five fixed classes plus a Heavy slot that selects Sniper or RPG (RPG unlocks at commander Lv 4).
+- Six deployment slots and nine discoverable types. Handgun/AR are the starters; distinct mission clears unlock the rest. MP/Flamethrower share slot 3; Sniper/RPG/Laser share slot 6.
 - Two distinct upgrade branches per weapon: Buckshot / Choke & pump, Suppression, Devastator, Long-range optics and more. Four upgrades total per tower, at most three per branch. First/Last/Strongest/Nearest targeting stays freely accessible.
 - Sell towers for a full refund before the first wave, or 70% of the total investment afterward.
 - Commander graph: Armament, Logistics and Support, with visible prerequisites, before/after previews and free node refunds between missions. Research clearance discounts, starting supplies, pontoon construction, automatic exit mines and an automatic patrol UAV.
 - Water appears on five missions. Pontoon Engineering lets a weapon deploy on a raft for 35 extra credits; no extra battle slot.
 - Three active abilities with an equipped loadout: Chrono Break, Artillery Strike (ten impacts across five seconds), Napalm.
-- Four distinct models per class: semi-auto, automatic, burst, pump, double-barrel and heavy variants, with different damage/range/magazines and individual silhouettes. Common models are free; Rare licenses cost 8 SP, Epic plans come from midpoint caches, and Legendary plans come from elite drops or sector caches. Rarity gives 0/1/1/2 attachment slots.
-- Persistent Salvage buys four attachments (40/60/80/100). First midpoint cache per mission gives 30 Salvage and an advanced plan; first clears give 25 Salvage, replays 8. Elite drops: Juggernaut/Broodmother 4%, bosses 18%, guaranteed within 20 eligible kills. Duplicate plans become extra Salvage.
+- Four distinct models per class: semi-auto, automatic, burst, pump, double-barrel and heavy variants, with different damage/range/magazines and individual silhouettes. Common models are free; Rare licenses cost 8 SP, Epic plans come from midpoint caches, and Legendary plans come from elite drops or sector caches. Models give 1/1/2/2 attachment slots. Model choices are optional.
+- Persistent Salvage buys four attachments (40/60/80/100). First midpoint cache per mission gives 30 Salvage and discovers an attachment, then optional advanced plans once all attachments are known; first clears give 25 Salvage, replays 8. Elite drops: Juggernaut/Broodmother 4%, bosses 18%, guaranteed within 20 eligible kills. Duplicate plans become extra Salvage.
 - Ravagers accelerate after a hit, Juggernauts resist slow, and Broodmothers release small aliens over time and on death. Their traits appear in wave intel. Menders from mission 12 heal nearby allies.
 - Persistent XP, 10 skill points per commander level, free commander-node refunds between missions, mission records, and first-clear/new-star bonuses. Existing profiles migrate automatically.
 
@@ -41,6 +41,7 @@ GAME_URL=http://localhost:4173 npm run test:audio
 GAME_URL=http://localhost:4173 npm run test:arsenal
 GAME_URL=http://localhost:4173 npm run test:progression
 GAME_URL=http://localhost:4173 npm run test:hud
+GAME_URL=http://localhost:4173 npm run test:frontier
 ```
 
 The unit/campaign tests use Node 22 without dependencies. The browser suite uses Playwright and saves screenshots under ignored `output/`. The balance runner uses a repeatable placement policy, reinvests between waves, and deliberately does not use active abilities. It is a regression benchmark, not a promise that every strategy wins.
@@ -64,7 +65,7 @@ Abilities and cooldowns advance with combat time and game speed, stop while paus
 - `src/data/assets.js`: centralized art paths.
 - `docs/design-notes.md`: research rationale and balance methodology.
 
-Pushing `main` runs `.github/workflows/deploy-pages.yml`: campaign tests must pass, then only runtime files are packaged and deployed to GitHub Pages. Tests, documentation, and development dependencies are excluded from the public bundle.
+Pushing `main` runs `.github/workflows/deploy-pages.yml`: campaign and browser gates must pass, then `npm run build` packages runtime files into a content-versioned release. A browser smoke test checks that package before deployment to GitHub Pages. The entry page keeps the same origin and saved profile, while its versioned base prevents mixing cached modules or art from different releases. Tests, documentation, and development dependencies are excluded from the public bundle.
 
 ## Interaction update (November 2026)
 
@@ -101,3 +102,41 @@ during updates. The notebook armory also keeps the special above the weapons.
 labels, held clicks, game controls, combat rewards, wave progress and low lives.
 It is required by the deployment workflow. Sprite prompts, provenance and the
 reported US$0.0394 generation cost are in `assets/hud/icons/`.
+
+## Frontier update (0.5.0)
+
+New players can deploy **Handgun and Assault Rifle**. Clear different missions
+to discover MP (1), Shotgun (2), Magnum (3), Sniper (4), RPG (6), Flamethrower
+(8) and Laser Array (10). Replaying one map does not advance this count, and
+commander level alone does not unlock types. Existing XP, research, owned plans,
+attachments and mission records are preserved. Mission completion announces
+new discoveries; the menu and locked cards show the next requirement.
+
+The six-slot rack stays compact: Flamethrower replaces MP in slot 3; Sniper,
+RPG and Laser share slot 6. Alternate models are behind **Change model** in
+the arsenal. All starter models support one attachment; midpoint caches
+discover attachments before awarding optional advanced plans. Open the arsenal
+from a battle card or **Change loadout** during a mission. Purchases and swaps
+are saved; **Apply loadout & restart mission** explicitly replaces the active
+deployment, while closing the arsenal leaves that run unchanged.
+
+Laser Array uses a continuous beam and a five-second heat window followed by
+cooling. Flamethrower burns every alien in a short cone, leaves lingering fire,
+and refills its fuel tank. Weapon upgrades improve cooling, fuel, burn damage,
+critical chance or critical damage according to weapon role. Firearm samples
+are unchanged; energy weapons use bounded procedural hum/hiss voices that stop
+on pause/mute. Critical rolls are deterministic for repeatable simulation.
+
+The original detailed starter-weapon PNGs and illustrated card backgrounds are
+restored. Whole special cards use contained artwork. PixelForge supplies new
+model/energy weapon sprites, dedicated trait-alien sprites, obstacles, cache
+states and a connected water texture. Mission previews show the actual alien
+roster. Six maps add amber arrows that accelerate aliens by 35%, separate from
+blue ice. The research graph uses labeled trained/ready/unfunded/locked states,
+clear branch colors and readable prerequisite connections. Run money uses `$`.
+
+`test:frontier` validates the entire unlock/swap/restart flow, energy damage,
+heat, fuel, pause/audio, card art, map previews and responsive research states.
+Core tests also cover the two-type opening, milestone progression, flame cone,
+critical upgrades and overdrive terrain. PixelForge provenance and its reported
+US$0.0604 cost are documented in `assets/frontier/`.

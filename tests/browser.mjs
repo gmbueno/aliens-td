@@ -105,7 +105,7 @@ try {
    if(actual.result)break;
  }
  assert.equal((await read(victory)).result,'victory');
- assert.equal((await read(victory)).caches.level_1,true);assert.ok((await read(victory)).arsenal.unlocked.includes('handgun:epic'));assert.ok((await read(victory)).salvage>=55);
+ assert.equal((await read(victory)).caches.level_1,true);assert.ok((await read(victory)).arsenal.unlockedAttachments.includes('incendiary'));assert.ok((await read(victory)).classUnlocks.includes('machine_pistol'));assert.ok((await read(victory)).salvage>=55);
  assert.ok((await read(victory)).campaign.records.level_1.stars>0);
  await victory.screenshot({path:`${out}/victory.png`,fullPage:true});
  await victory.locator('#result-next-button').click();assert.equal((await read(victory)).level,'level_2');

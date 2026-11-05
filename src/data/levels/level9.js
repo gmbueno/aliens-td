@@ -2,7 +2,7 @@
 const level9 = {
   "id": "level_9",
   "name": "Whiteout",
-  "description": "Shielded aliens absorb damage first. Mix sustained fire with heavy rounds.",
+  "description": "Shielded aliens absorb damage first. Mix sustained fire with heavy rounds. Amber overdrive tiles make aliens 35% faster. Cover their exits.",
   "sector": 2,
   "stage": 3,
   "biome": "frost",
@@ -802,6 +802,16 @@ const level9 = {
           "at": 10.98
         }
       ]
+    }
+  ],
+  "speedTiles": [
+    {
+      "row": 6,
+      "col": 3
+    },
+    {
+      "row": 7,
+      "col": 3
     }
   ]
 };

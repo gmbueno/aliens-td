@@ -2,7 +2,7 @@
 const level11 = {
   "id": "level_11",
   "name": "Thin Ice",
-  "description": "Fast enemies slip through short lanes. Use Chrono to buy time. Water tiles accept weapons after Pontoon Engineering (+35 credits per raft).",
+  "description": "Fast enemies slip through short lanes. Use Chrono to buy time. Water tiles accept weapons after Pontoon Engineering (+$35 per raft).",
   "sector": 2,
   "stage": 5,
   "biome": "frost",

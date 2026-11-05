@@ -1,3 +1,4 @@
+import {missionRecords} from './fixtures.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {levels} from '../src/data/levels/index.js';
@@ -30,7 +31,7 @@ try{
   await p.click('[data-arsenal-class="handgun"]');await p.screenshot({path:`${out}/arsenal-fresh-${width}.png`,fullPage:true});
   await p.keyboard.press('Escape');assert.equal((await read(p)).arsenalOpen,false);await p.context().close();
  }
- const p=await pageFor({level:10,settings:{muted:false}});await p.click('#menu-arsenal-button');
+ const p=await pageFor({level:10,missions:missionRecords(),settings:{muted:false}});await p.click('#menu-arsenal-button');await p.click('.model-options > summary');
  await p.click('[data-blueprint="legendary"]');await p.click('[data-attachment="incendiary"]');await p.click('[data-attachment="concussive"]');
  assert.ok(await p.locator('[data-attachment="cryo"]').isDisabled());
  await p.click('[data-attachment="concussive"]');await p.click('[data-attachment="cryo"]');
@@ -74,7 +75,7 @@ try{
   await power.context().close();
  }
  // Verify all three enemy traits are drawn, and the brood actually releases hatchlings.
- const traits=await pageFor({level:10,settings:{muted:true}},undefined,true);
+ const traits=await pageFor({level:10,missions:missionRecords(),settings:{muted:true}},undefined,true);
  await traits.click('#menu-play-button');await traits.click('[data-weapon-key="machine_pistol"] .weapon-select');await tile(traits,3,1);await tile(traits,3,1);await traits.click('[data-target="last"]');await traits.click('#launch-wave-button');await advance(traits,3100);
  let ts=await read(traits);assert.ok(ts.enemies.some(e=>e.immuneSlow));assert.ok(ts.enemies.some(e=>e.raged));assert.ok(ts.enemies.some(e=>e.brood));assert.ok(ts.enemies.some(e=>e.healer));await advance(traits,1500);
  await freezeShot(traits,'enemy-traits');await traits.click('#play-pause-button');await advance(traits,8200);ts=await read(traits);assert.ok(ts.enemies.some(e=>e.key==='alien_hatchling'));await freezeShot(traits,'hatchlings');await traits.context().close();

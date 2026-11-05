@@ -39,13 +39,15 @@ export function triggerMines(state,enemy,damageEnemy,addEffect){
   addEffect(state,'explosion',mine.x,mine.y,48,.6);state.audio?.play('impact',mine.x);
  }
 }
-export function drawSupport(ctx,state){
+export function drawSupport(ctx,state,world={}){
  for(const mine of state.mines){if(mine.spent)continue;ctx.save();ctx.translate(mine.x,mine.y);ctx.fillStyle='#596852';ctx.strokeStyle='#d8c38a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,6,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#ecbc63';ctx.fillRect(-2,-2,4,4);ctx.restore();}
  const cache=state.cache;
  if(cache&&Number.isFinite(cache.x)){
-  ctx.save();ctx.translate(cache.x,cache.y);ctx.fillStyle=cache.opened?'#45504b':'#765b34';ctx.strokeStyle=cache.opened?'#839a89':'#e5c383';ctx.lineWidth=2;
+  const image=world[cache.opened?'chest-open':'chest-closed'];
+  if(image){ctx.save();ctx.translate(cache.x,cache.y);ctx.shadowColor='#0008';ctx.shadowBlur=8;ctx.shadowOffsetY=5;ctx.drawImage(image,-30,-30,60,60);ctx.shadowColor='transparent';ctx.fillStyle=cache.opened?'#acd7b7':'#f7db97';ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.fillText(cache.opened?'✓ CLAIMED':`CACHE / W${cache.wave}`,0,34);ctx.restore();}
+  else {ctx.save();ctx.translate(cache.x,cache.y);ctx.fillStyle=cache.opened?'#45504b':'#765b34';ctx.strokeStyle=cache.opened?'#839a89':'#e5c383';ctx.lineWidth=2;
   ctx.fillRect(-19,-10,38,27);ctx.strokeRect(-19,-10,38,27);ctx.fillRect(-21,cache.opened?-22:-17,42,10);ctx.strokeRect(-21,cache.opened?-22:-17,42,10);
-  ctx.fillStyle='#dfc17f';ctx.fillRect(-3,-8,6,9);ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.fillStyle=cache.opened?'#9cae9d':'#f3d899';ctx.fillText(cache.opened?'CLAIMED':`CACHE / W${cache.wave}`,0,31);ctx.restore();
+  ctx.fillStyle='#dfc17f';ctx.fillRect(-3,-8,6,9);ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.fillStyle=cache.opened?'#9cae9d':'#f3d899';ctx.fillText(cache.opened?'CLAIMED':`CACHE / W${cache.wave}`,0,31);ctx.restore();}
  }
  const drone=state.drone;if(!drone)return;
  ctx.save();ctx.translate(drone.base.x,drone.base.y);ctx.fillStyle='#203c46';ctx.strokeStyle='#76b9cc';ctx.lineWidth=2;ctx.fillRect(-23,-23,46,46);ctx.strokeRect(-23,-23,46,46);ctx.beginPath();ctx.arc(0,0,17,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#b6d7d9';ctx.font='bold 15px monospace';ctx.textAlign='center';ctx.fillText('UAV',0,5);ctx.restore();

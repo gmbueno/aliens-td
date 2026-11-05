@@ -2,7 +2,7 @@
 const level3 = {
   "id": "level_3",
   "name": "Switchback",
-  "description": "Fast skitters arrive in packs. Shotguns punish clusters.",
+  "description": "Fast skitters arrive in packs. Shotguns punish clusters. Amber overdrive tiles make aliens 35% faster. Cover their exits.",
   "sector": 1,
   "stage": 3,
   "biome": "outpost",
@@ -561,6 +561,24 @@ const level3 = {
           "at": 11.28
         }
       ]
+    }
+  ],
+  "speedTiles": [
+    {
+      "row": 3,
+      "col": 3
+    },
+    {
+      "row": 2,
+      "col": 3
+    },
+    {
+      "row": 6,
+      "col": 10
+    },
+    {
+      "row": 6,
+      "col": 11
     }
   ]
 };

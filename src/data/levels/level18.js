@@ -2,7 +2,7 @@
 const level18 = {
   "id": "level_18",
   "name": "Mothership",
-  "description": "Destroy the Mothership and its escort. Save your active ability for the finale.",
+  "description": "Destroy the Mothership and its escort. Save your active ability for the finale. Amber overdrive tiles make aliens 35% faster. Cover their exits.",
   "sector": 3,
   "stage": 6,
   "biome": "hive",
@@ -1177,6 +1177,24 @@ const level18 = {
           "at": 11.6
         }
       ]
+    }
+  ],
+  "speedTiles": [
+    {
+      "row": 3,
+      "col": 3
+    },
+    {
+      "row": 2,
+      "col": 3
+    },
+    {
+      "row": 6,
+      "col": 11
+    },
+    {
+      "row": 5,
+      "col": 11
     }
   ]
 };

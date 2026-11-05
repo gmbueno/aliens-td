@@ -1,7 +1,8 @@
+import {criticalShot,energyHit,drawEnergy} from './systems/energyWeapons.js';
 import { PONTOON_COST, initializeSupport, updateDrone, triggerMines, drawSupport } from './systems/fieldSupport.js';
 import { createWeaponAudio } from "./systems/weaponAudio.js";
 import { enemies, getEnemy } from "./data/enemies.js";
-import { equippedWeapons, classUnlocked, equipBlueprint, equipAttachment, arsenalChoice, blueprintsFor, purchaseBlueprint, purchaseAttachment, cacheReward, eliteDrop } from "./data/arsenal.js";
+import { equippedWeapons, classUnlocked, classRequirement, nextClassUnlock, campaignClears, equipBlueprint, equipAttachment, arsenalChoice, blueprintsFor, purchaseBlueprint, purchaseAttachment, cacheReward, eliteDrop } from "./data/arsenal.js";
 import { renderArsenal, nextArsenalUnlock } from "./ui/arsenalView.js";
 import { weapons } from "./data/weapons.js";
 import { xpNeeded } from "./data/player.js";
@@ -15,7 +16,7 @@ const TWO_PI = Math.PI * 2;
 const BOARD_PAD = 12;
 const NEXT_WAVE_DELAY = 8;
 
-const ASSET_CACHE_BUSTER = "tactical-hud-20261105";
+const ASSET_CACHE_BUSTER = "frontier-20261105";
 
 function assetUrl(src) {
   return `${src}?v=${ASSET_CACHE_BUSTER}`;
@@ -38,9 +39,11 @@ function createAssetStore() {
     placedWeapons: {},
     enemies: {},
     towers: {},
+    world: {},
     loaded: false,
   };
   Promise.all([
+    ...['rock','ice','growth','cargo','barrels','chest-closed','chest-open','water'].map(key=>loadImage(`assets/frontier/world/${key}.png`).then(image=>store.world[key]=image)),
     loadImage(assetPaths.board.tile).then((image) => {
       store.tile = image;
     }),
@@ -361,7 +364,8 @@ function createProjectile(state, tower, target, angleOffset = 0, aimAngle = null
     y: tower.y + Math.sin(baseAngle) * muzzle,
     vx: Math.cos(angle) * tower.weapon.projectileSpeed,
     vy: Math.sin(angle) * tower.weapon.projectileSpeed,
-    damage: tower.weapon.directDamage,
+    damage: tower.weapon.directDamage * (tower.lastCritical ? tower.weapon.critDamage : 1),
+    critical: tower.lastCritical,
     armorPierce: tower.weapon.armorPierce || 0,
     slow: tower.weapon.slow || 0,
     speed: tower.weapon.projectileSpeed,
@@ -380,11 +384,19 @@ function createProjectile(state, tower, target, angleOffset = 0, aimAngle = null
 
 export function fireTower(state, tower, target, continuing=false) {
   tower.shotsFired = (tower.shotsFired || 0) + 1;
+  tower.lastCritical=criticalShot(tower);
+  if(tower.weapon.continuous){
+    energyHit(state,tower,target,projectileHit);
+    tower.cooldown+=1/tower.weapon.atkSpeed;tower.ammo--;
+    return;
+  }
   const pelletCount = tower.weapon.pelletCount || 1;
   if (tower.weapon.ballistic) {
     // Lead the target at firing time; pellets never steer after leaving the muzzle.
     const flight = distance(tower, target) / tower.weapon.projectileSpeed;
-    const movement = activeStatus(state, "chronoBreak").timer > 0 ? 0 : target.speed * (target.stunTimer>0?0:1) * (target.raged?target.rageMultiplier:1) * (target.slowTimer>0&&!target.immuneSlow?1-(target.slowStrength||.25):1);
+    const terrainTile=state.level.track[target.segment];
+    const terrain=(state.level.speedTiles?.some(t=>t.row===terrainTile?.row&&t.col===terrainTile?.col)?1.35:1)*(state.level.slowTiles?.some(t=>t.row===terrainTile?.row&&t.col===terrainTile?.col) && !target.immuneSlow ? .75 : 1);
+    const movement = activeStatus(state, "chronoBreak").timer > 0 ? 0 : target.speed * terrain * (target.stunTimer>0?0:1) * (target.raged?target.rageMultiplier:1) * (target.slowTimer>0&&!target.immuneSlow?1-(target.slowStrength||.25):1);
     const aimX = target.x + Math.cos(target.angle || 0) * movement * flight;
     const aimY = target.y + Math.sin(target.angle || 0) * movement * flight;
     const angle = Math.atan2(aimY - tower.y, aimX - tower.x);
@@ -405,23 +417,33 @@ export function fireTower(state, tower, target, continuing=false) {
 
 function updateTowers(state, dt) {
   for (const tower of state.towers) {
+    tower.beamEnd=null;
     tower.muzzleFlash = Math.max(0, (tower.muzzleFlash || 0) - dt);
     if (tower.reloadTimer > 0) {
       tower.reloadTimer -= dt;
       if (tower.reloadTimer <= 0) tower.ammo = tower.weapon.capacity;
       continue;
     }
-    tower.cooldown = Math.max(0, tower.cooldown - dt);
+    tower.cooldown = tower.weapon.continuous ? tower.cooldown-dt : Math.max(0, tower.cooldown - dt);
     if (tower.ammo <= 0) {
       tower.burstLeft=0;
       tower.reloadTimer = tower.weapon.reloadSpeed;
       continue;
     }
     const target = targetForTower(tower, state.enemies);
+    if(tower.weapon.continuous){
+      if(!target)tower.cooldown=Math.max(0,tower.cooldown);
+      if(target){tower.angle=Math.atan2(target.y-tower.y,target.x-tower.x);tower.beamEnd={x:target.x,y:target.y};if(tower.cooldown<=0)fireTower(state,tower,target);}
+      continue;
+    }
     if(tower.burstLeft>0){
       tower.burstTimer-=dt;
       if(tower.burstTimer<=0&&target){tower.burstLeft--;fireTower(state,tower,target,true);}
     }else if (target && tower.cooldown <= 0) fireTower(state, tower, target);
+  }
+  for(const key of ['laser','flamethrower']){
+    const active=state.towers.find(t=>t.weapon.key===key&&t.beamEnd);
+    state.audio?.energy?.(key,active?.x||640,Boolean(active));
   }
 }
 
@@ -432,9 +454,12 @@ function updateEnemies(state, dt) {
     if(enemy.life<=0)continue;
     const tile = state.level.track[enemy.segment];
     const onIce = state.level.slowTiles?.some((item) => item.row === tile.row && item.col === tile.col);
+    const onHaste=state.level.speedTiles?.some(item=>item.row===tile.row&&item.col===tile.col);
+    enemy.onHaste=Boolean(onHaste);
     const frozen = enemy.stunTimer > 0;
-    let remaining = enemy.speed * movementDt * (frozen ? 0 : 1) * (onIce && !enemy.immuneSlow ? .75 : 1) * (enemy.raged ? enemy.rageMultiplier : 1) * (enemy.slowTimer > 0 && !enemy.immuneSlow ? 1-(enemy.slowStrength || .25) : 1);
+    let remaining = enemy.speed * movementDt * (onHaste ? 1.35 : 1) * (frozen ? 0 : 1) * (onIce && !enemy.immuneSlow ? .75 : 1) * (enemy.raged ? enemy.rageMultiplier : 1) * (enemy.slowTimer > 0 && !enemy.immuneSlow ? 1-(enemy.slowStrength || .25) : 1);
     enemy.stunTimer = Math.max(0,(enemy.stunTimer || 0)-dt);
+    enemy.criticalFlash=Math.max(0,(enemy.criticalFlash||0)-dt);
     enemy.healFlash=Math.max(0,(enemy.healFlash||0)-dt);
     if(enemy.healer&&movementDt>0&&!frozen){
       enemy.healTimer-=dt;
@@ -499,6 +524,7 @@ function collectKilledEnemies(state) {
 }
 export function projectileHit(state,projectile,enemy) {
   damageEnemy(enemy,projectile.damage,projectile.armorPierce);
+  if(projectile.critical)enemy.criticalFlash=.16;
   if(!enemy.immuneSlow && (projectile.slow || projectile.cryo)) {
     enemy.slowStrength=Math.max(enemy.slowTimer>0?enemy.slowStrength||0:0,projectile.slow?projectile.slowStrength||.25:.16);
     enemy.slowTimer=Math.max(enemy.slowTimer||0,projectile.slow||1);
@@ -585,7 +611,7 @@ export function launchWave(state) {
   state.phase = "combat";
   state.waveDelay = 0;
   state.waveLeaks = 0;
-  notify(state, `Wave ${state.waveIndex + 1} · ${state.level.waves[state.waveIndex].name}${bonus ? ` · +${bonus}cr early launch` : ""}`);
+  notify(state, `Wave ${state.waveIndex + 1} · ${state.level.waves[state.waveIndex].name}${bonus ? ` · +$${bonus} early launch` : ""}`);
   return true;
 }
 
@@ -609,11 +635,11 @@ function updateWaves(state, dt) {
     state.gold += wave.reward + cleanBonus;
     awardRunXp(state, 8 + state.level.sector * 2);
     saveProfile(state.profile);
-    notify(state, `Wave cleared · +${wave.reward}cr supplies${cleanBonus ? " · +15cr flawless defense" : ""}`);
+    notify(state, `Wave cleared · +$${wave.reward} supplies${cleanBonus ? " · +$15 flawless defense" : ""}`);
     state.waveIndex += 1;
     if(!state.cache.opened && state.waveIndex>=state.cache.wave){
       state.cache.opened=true;const reward=cacheReward(state.profile,state.level);
-      if(reward){state.runSalvage+=reward.salvage;state.loot.push(reward);notify(state,reward.tier?`CACHE OPENED · ${reward.name} / ${reward.weapon.replaceAll("_"," ")} blueprint · +${reward.salvage} Salvage`:`CACHE OPENED · +${reward.salvage} Salvage banked`);saveProfile(state.profile);}
+      if(reward){state.runSalvage+=reward.salvage;state.loot.push(reward);notify(state,reward.attachment?`CACHE OPENED · ${reward.name} attachment unlocked · +${reward.salvage} Salvage`:reward.tier?`CACHE OPENED · ${reward.name} / ${reward.weapon.replaceAll("_"," ")} blueprint · +${reward.salvage} Salvage`:`CACHE OPENED · +${reward.salvage} Salvage banked`);saveProfile(state.profile);}
     }
     state.waveTime = 0;
     state.spawnedInWave = new Set();
@@ -720,6 +746,9 @@ export function stepState(state, dt) {
     updateProjectiles(state, scaledDt);
     updateBurningEnemies(state, scaledDt);
     updateEnemies(state, scaledDt);
+  }else{
+    for(const tower of state.towers)tower.beamEnd=null;
+    state.audio?.energy?.('laser',640,false);state.audio?.energy?.('flamethrower',640,false);
   }
   updateResult(state);
 }
@@ -783,6 +812,7 @@ function drawAlien(ctx, enemy, assets) {
   ctx.drawImage(image, -w / 2, -h / 2, w, h);
   ctx.restore();
   ctx.shadowColor = "transparent";
+  if(enemy.criticalFlash>0){ctx.fillStyle='#ffdc80';ctx.font='bold 12px monospace';ctx.textAlign='center';ctx.fillText('CRIT',0,-h/2-13);}
   const hpW = Math.max(28, size * 0.82);
   const hpY = -h / 2 - 8;
   ctx.fillStyle = "rgba(7,12,16,0.72)";
@@ -915,11 +945,12 @@ function drawPlacementIndicator(ctx, board, row, col, isValid = true) {
   ctx.restore();
 }
 
-function drawObstacle(ctx, x, y, size, obstacle, selected, cost=obstacle.cost) {
+function drawObstacle(ctx, x, y, size, obstacle, selected, cost=obstacle.cost, image=null) {
   ctx.save();
   ctx.translate(x + size / 2, y + size / 2);
   ctx.shadowColor = "#0009"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 6;
-  if (obstacle.kind === "cargo") {
+  if(image){ctx.drawImage(image,-size*.43,-size*.43,size*.86,size*.86);}
+  else if (obstacle.kind === "cargo") {
     ctx.fillStyle = "#655137"; ctx.strokeStyle = "#dcb271"; ctx.lineWidth = 2;
     drawRoundedRect(ctx, -size * .31, -size * .3, size * .62, size * .6, 4);
     ctx.fillStyle = "#282c2c";
@@ -944,7 +975,7 @@ function drawObstacle(ctx, x, y, size, obstacle, selected, cost=obstacle.cost) {
   ctx.shadowColor = "transparent";
   if (obstacle.cost) {
     ctx.fillStyle = "#141c24"; ctx.fillRect(-18, size*.22, 36, 17);
-    ctx.fillStyle = "#efd6a3"; ctx.font = "bold 12px monospace"; ctx.textAlign = "center"; ctx.fillText(`${cost}cr`, 0, size*.22 + 13);
+    ctx.fillStyle = "#efd6a3"; ctx.font = "bold 12px monospace"; ctx.textAlign = "center"; ctx.fillText(`$${cost}`, 0, size*.22 + 13);
   }
   if (selected) { ctx.strokeStyle = "#ffdd88"; ctx.lineWidth = 3; ctx.strokeRect(-size*.4,-size*.4,size*.8,size*.8); }
   ctx.restore();
@@ -1023,13 +1054,20 @@ function drawGame(ctx, state, assets) {
         ctx.fillRect(x + 2, y + 2, board.tile - 4, board.tile - 4);
       }
       if(water){
-        ctx.fillStyle='#184b61';ctx.fillRect(x+1,y+1,board.tile-2,board.tile-2);ctx.strokeStyle='#6ab3c166';ctx.lineWidth=2;
-        for(let n=0;n<3;n++){const wy=y+18+n*18;ctx.beginPath();for(let k=0;k<=board.tile;k+=6){const yy=wy+Math.sin(k*.12+state.visualTime*1.5+n)*3;if(k===0)ctx.moveTo(x+k,yy);else ctx.lineTo(x+k,yy);}ctx.stroke();}
+        const texture=assets.world.water;
+        if(texture){assets.waterPattern ||=ctx.createPattern(texture,'repeat');ctx.fillStyle=assets.waterPattern;ctx.fillRect(x,y,board.tile,board.tile);}
+        else{ctx.fillStyle='#1c5667';ctx.fillRect(x,y,board.tile,board.tile);}
+        ctx.strokeStyle='#9be0da30';ctx.lineWidth=1;
+        ctx.beginPath();ctx.ellipse(x+board.tile*.5,y+board.tile*.5+Math.sin(state.visualTime+row)*3,board.tile*.28,3,0,0,Math.PI);ctx.stroke();
+        ctx.strokeStyle='#a8bcb288';ctx.lineWidth=3;
+        for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]])if(!tileSets.water.has(tileKey(row+dr,col+dc))){
+          ctx.beginPath();if(dr){const sy=y+(dr>0?board.tile:0);ctx.moveTo(x,sy);ctx.lineTo(x+board.tile,sy);}else{const sx=x+(dc>0?board.tile:0);ctx.moveTo(sx,y);ctx.lineTo(sx,y+board.tile);}ctx.stroke();
+        }
       }
       ctx.strokeStyle = isPath ? "rgba(247, 163, 69, 0.38)" : "rgba(90, 205, 255, 0.18)";
       ctx.lineWidth = 1;
-      ctx.strokeRect(x + 2.5, y + 2.5, board.tile - 5, board.tile - 5);
-      if (level.biome !== "outpost") {
+      if(!water)ctx.strokeRect(x + 2.5, y + 2.5, board.tile - 5, board.tile - 5);
+      if (!water && level.biome !== "outpost") {
         ctx.fillStyle = level.biome === "frost" ? (isPath ? "#61c7e04a" : "#367c9c30") : (isPath ? "#a8ba3433" : "#73844325");
         ctx.fillRect(x + 1, y + 1, board.tile - 2, board.tile - 2);
       }
@@ -1037,6 +1075,13 @@ function drawGame(ctx, state, assets) {
       if (slowTile) {
         ctx.fillStyle = "#8deeff4a"; ctx.fillRect(x+3, y+3, board.tile-6, board.tile-6);
         ctx.fillStyle = "#d6ffff"; ctx.font = "22px sans-serif"; ctx.textAlign = "center"; ctx.fillText("❄", x+board.tile/2, y+board.tile/2+8);
+      }
+      if(level.speedTiles?.some(tile=>tile.row===row&&tile.col===col)){
+        ctx.fillStyle='#e99c2540';ctx.fillRect(x+3,y+3,board.tile-6,board.tile-6);
+        const index=level.track.findIndex(t=>t.row===row&&t.col===col),to=level.track[Math.min(index+1,level.track.length-1)];
+        ctx.save();ctx.translate(x+board.tile/2,y+board.tile/2);ctx.rotate(Math.atan2(to.row-row,to.col-col));
+        ctx.strokeStyle='#ffe39a';ctx.lineWidth=3;ctx.lineCap='round';
+        for(const cx of [-10,4]){ctx.beginPath();ctx.moveTo(cx-4,-9);ctx.lineTo(cx+5,0);ctx.lineTo(cx-4,9);ctx.stroke();}ctx.restore();
       }
       const pad = level.pads?.find(tile => tile.row === row && tile.col === col);
       if (pad) {
@@ -1047,7 +1092,7 @@ function drawGame(ctx, state, assets) {
       }
       if (isBlocked) {
         const obstacle = level.blockers.find(tile => tile.row === row && tile.col === col);
-        drawObstacle(ctx, x, y, board.tile, obstacle, state.selectedObstacle === obstacle,obstacleCost(state,obstacle));
+        drawObstacle(ctx, x, y, board.tile, obstacle, state.selectedObstacle === obstacle,obstacleCost(state,obstacle),assets.world[obstacle.kind]);
       }
     }
   }
@@ -1075,7 +1120,7 @@ function drawGame(ctx, state, assets) {
   }
   ctx.restore();
 
-  drawSupport(ctx,state);
+  drawSupport(ctx,state,assets.world);
 
   const selected = findEffectiveWeaponByKey(weapons, state.selectedWeaponKey, { ...state.profile, arsenal: state.arsenalProfile.arsenal });
   if (selected) {
@@ -1095,6 +1140,13 @@ function drawGame(ctx, state, assets) {
       const canPlace = state.gold >= selected.price+(tileSets.water.has(key)?PONTOON_COST:0) && (!tileSets.water.has(key)||skillRank(state.profile,'pontoons')) && !tileSets.path.has(key) && !tileSets.blockers.has(key) && !occupied;
       const x = board.x + state.hoverTile.col * board.tile + board.tile / 2;
       const y = board.y + state.hoverTile.row * board.tile + board.tile / 2;
+      if(level.speedTiles?.some(tile=>tile.row===row&&tile.col===col)){
+        ctx.fillStyle='#e99c2540';ctx.fillRect(x+3,y+3,board.tile-6,board.tile-6);
+        const index=level.track.findIndex(t=>t.row===row&&t.col===col),to=level.track[Math.min(index+1,level.track.length-1)];
+        ctx.save();ctx.translate(x+board.tile/2,y+board.tile/2);ctx.rotate(Math.atan2(to.row-row,to.col-col));
+        ctx.strokeStyle='#ffe39a';ctx.lineWidth=3;ctx.lineCap='round';
+        for(const cx of [-10,4]){ctx.beginPath();ctx.moveTo(cx-4,-9);ctx.lineTo(cx+5,0);ctx.lineTo(cx-4,9);ctx.stroke();}ctx.restore();
+      }
       const pad = level.pads?.find(tile => tile.row === state.hoverTile.row && tile.col === state.hoverTile.col);
       drawRangeCircle(ctx, x, y, selected.range * (pad?.type === "range" ? 1.18 : 1), canPlace ? "rgba(116, 224, 108, 0.88)" : "rgba(255, 103, 125, 0.82)");
       drawPlacementIndicator(ctx, board, state.hoverTile.row, state.hoverTile.col, canPlace);
@@ -1111,6 +1163,7 @@ function drawGame(ctx, state, assets) {
     if (target && !(tower.muzzleFlash > 0)) tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
     if(tower.platform){ctx.save();ctx.translate(tower.x,tower.y);ctx.fillStyle='#b4955b';ctx.strokeStyle='#edcf8c';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(-32,-29,64,58,10);ctx.fill();ctx.stroke();ctx.fillStyle='#536b62';ctx.fillRect(-34,-23,8,46);ctx.fillRect(26,-23,8,46);ctx.restore();}
     drawTower(ctx, tower, assets);
+    drawEnergy(ctx,tower,state.visualTime);
     if (tower.muzzleFlash > 0) {
       ctx.save(); ctx.translate(tower.x, tower.y); ctx.rotate(tower.angle);
       ctx.fillStyle = "#fff3b5"; ctx.shadowColor = "#ffbb48"; ctx.shadowBlur = 12;
@@ -1120,6 +1173,10 @@ function drawGame(ctx, state, assets) {
     for (let i = 0; i < ranks; i++) {
       ctx.fillStyle = i < tower.upgrades.power ? "#ffc24c" : "#7ce1f7";
       ctx.fillRect(tower.x - ranks * 5 + i * 10, tower.y + 28, 7, 5);
+    }
+    if(tower.weapon.continuous&&tower.reloadTimer<=0){
+      ctx.fillStyle='#101922';ctx.fillRect(tower.x-23,tower.y+38,46,4);
+      ctx.fillStyle=tower.weapon.continuous==='laser'?'#f3a75c':'#e7b867';ctx.fillRect(tower.x-23,tower.y+38,46*(tower.weapon.continuous==='laser'?1-tower.ammo/tower.weapon.capacity:tower.ammo/tower.weapon.capacity),4);
     }
     if (tower.reloadTimer > 0) {
       ctx.fillStyle = "#101922"; ctx.fillRect(tower.x-23,tower.y+38,46,4);
@@ -1260,12 +1317,18 @@ export function createGame({ ui, levels }) {
       ${(level.water||[]).map(tile=>`<rect x="${tile.col*10+1}" y="${tile.row*10+1}" width="8" height="8" fill="#4eabc2" opacity=".6"/>`).join("")}
       ${level.blockers.map(tile => `<rect x="${tile.col * 10 + 2}" y="${tile.row * 10 + 2}" width="6" height="6" rx="1" fill="${color}" opacity=".25"/>`).join("")}
       <polyline points="${level.track.map(tile => `${tile.col * 10 + 5},${tile.row * 10 + 5}`).join(" ")}" fill="none" stroke="${color}" stroke-width="5" stroke-linejoin="round" opacity=".85"/>
+      ${(level.speedTiles||[]).map(tile=>`<rect x="${tile.col*10+1}" y="${tile.row*10+1}" width="8" height="8" fill="#ffc14f"/><path d="m${tile.col*10+3},${tile.row*10+3} 3,2 -3,2" fill="none" stroke="#3f321c" stroke-width="1.2"/>`).join('')}
       ${level.pads.map(tile => `<circle cx="${tile.col * 10 + 5}" cy="${tile.row * 10 + 5}" r="2.8" fill="${tile.type === "power" ? "#ffc24c" : "#78e9ff"}"/>`).join("")}
       <circle cx="${level.track[0].col * 10 + 5}" cy="${level.track[0].row * 10 + 5}" r="4" fill="#ff806f"/>
       <circle cx="${level.track.at(-1).col * 10 + 5}" cy="${level.track.at(-1).row * 10 + 5}" r="4" fill="#d0f7b0"/>
     </svg>`;
   }
 
+  function enemyRoster(level,limit=20){
+    const keys=[...new Set(level.waves.flatMap(w=>w.spawns.map(s=>s.enemy)))];
+    keys.sort((a,b)=>Number(['alien_medic','alien_steadfast','alien_rager','alien_broodmother'].includes(b))-Number(['alien_medic','alien_steadfast','alien_rager','alien_broodmother'].includes(a)));
+    return `<div class="enemy-roster">${keys.slice(0,limit).map(key=>`<span title="${enemies[key].label}"><img src="${enemies[key].asset}" alt="">${limit>4?enemies[key].label:''}</span>`).join('')}</div>`;
+  }
   function syncMenu() {
     ui.arsenalNextUnlock.textContent = nextArsenalUnlock(profile);
     ui.menuSkillsButton.innerHTML = `<span>COMMANDER / LV ${profile.level}</span><strong>${profile.skillPoints} SP available ↗</strong><i style="--xp:${Math.round(profile.xp / xpNeeded(profile.level) * 100)}%"></i>`;
@@ -1276,14 +1339,16 @@ export function createGame({ ui, levels }) {
       const stars = profile.missions[level.id]?.stars || 0;
       return `<button class="level-tile biome-${level.biome} ${selectedLevel?.id === level.id ? "selected" : ""}" data-level-id="${level.id}" type="button" aria-pressed="${selectedLevel?.id === level.id}" aria-label="${missionLabel(level)} ${level.name}, ${stars} of 3 stars">
         <span class="mission-number">${missionLabel(level)} <span class="mission-stars">${"★".repeat(stars)}${"☆".repeat(3 - stars)}</span></span>
-        ${mapPreview(level)}<strong>${level.name}</strong><span>${level.rule} · ${level.waves.length} waves</span>
+        ${mapPreview(level)}${enemyRoster(level,4)}<strong>${level.name}</strong><span>${level.rule} · ${level.waves.length} waves</span>
       </button>`;
     }).join("");
     const level = selectedLevel;
     const cleared = profile.missions[level.id]?.clears;
     ui.missionBriefing.innerHTML = `<p class="eyebrow">MISSION ${missionLabel(level)} / BRIEFING</p><h2>${level.name}</h2><p>${level.description}</p>
-      <div class="brief-stats"><div><span>Starting funds</span><strong>${level.startGold+skillRank(profile,'supplies')*25}cr</strong></div><div><span>Base integrity</span><strong>${level.lives} lives</strong></div><div><span>Recommended</span><strong>Lv ${level.recommendedLevel}+</strong></div><div><span>${cleared ? "Clear reward" : "First clear"}</span><strong>+${level.clearXp + (cleared ? 0 : level.firstClearXp)} XP</strong></div></div>
+      <p class="eyebrow">ALIEN INTEL / THIS MISSION</p>${enemyRoster(level)}<div class="brief-stats"><div><span>Starting funds</span><strong>$${level.startGold+skillRank(profile,'supplies')*25}</strong></div><div><span>Base integrity</span><strong>${level.lives} lives</strong></div><div><span>Recommended</span><strong>Lv ${level.recommendedLevel}+</strong></div><div><span>${cleared ? "Clear reward" : "First clear"}</span><strong>+${level.clearXp + (cleared ? 0 : level.firstClearXp)} XP</strong></div></div>
       <div class="brief-tip">${cleared ? "Improve your record: 3 stars for no leaks, 2 for 60%+ lives, 1 for surviving." : "Kills and completed waves earn permanent XP, even if you lose. Each level grants 10 skill points."}</div>`;
+    const next=nextClassUnlock(profile),nextWeapon=weapons.find(w=>w.key===next?.[0]);
+    if(nextWeapon)ui.missionBriefing.insertAdjacentHTML('beforeend',`<div class="next-discovery">NEXT WEAPON / <strong>${nextWeapon.name}</strong><br>${campaignClears(profile)} / ${next[1]} different missions cleared.</div>`);
     ui.menuPlayButton.disabled = false;
     ui.menuPlayButton.textContent = `Deploy to ${missionLabel(level)} →`;
   }
@@ -1336,10 +1401,10 @@ export function createGame({ ui, levels }) {
     ui.battleTitle.textContent = `${missionLabel(state.level)} / ${state.level.name}`;
     ui.wavePreview.textContent = `${state.cache.opened?"CACHE CLAIMED":"CACHE / W"+state.cache.wave}${state.mines.length?" · MINES "+state.mines.filter(m=>!m.spent).length+"/"+state.mines.length:""}${state.drone?" · UAV":""} · ${state.phase === "prepare" ? "UP NEXT" : "INCOMING"} · ${wavePreview()}`;
     ui.launchWaveButton.disabled = state.phase !== "prepare" || state.isPaused || Boolean(state.result);
-    const bonus = state.waveIndex > 0 && state.waveDelay > 0 ? ` (+${Math.ceil(state.waveDelay) * 2}cr)` : "";
+    const bonus = state.waveIndex > 0 && state.waveDelay > 0 ? ` (+$${Math.ceil(state.waveDelay) * 2})` : "";
     ui.launchWaveButton.textContent = state.phase === "combat" ? "Wave in progress" : `Launch wave ${state.waveIndex + 1}${bonus}`;
     ui.autoWaveToggle.checked = profile.settings.autoWave;
-    ui.battleMessage.textContent = state.selectedWeaponKey ? `${effectiveWeaponByKey(state.selectedWeaponKey).blueprint} / ${effectiveWeaponByKey(state.selectedWeaponKey).fireMode} · choose a free tile. Water adds a 35-credit raft.` : state.messageTimer > 0 ? state.message : state.selectedActiveKey ? "Mark an area for a 5-second artillery barrage. Escape to cancel." : state.selectedWeaponKey ? "Choose a free tile. Blue pads extend range; amber pads boost damage." : state.phase === "prepare" ? "Prepare your defense. Click a tower to upgrade it or a crate to clear space." : "Click a tower to upgrade, change target, or sell.";
+    ui.battleMessage.textContent = state.selectedWeaponKey ? `${effectiveWeaponByKey(state.selectedWeaponKey).blueprint} / ${effectiveWeaponByKey(state.selectedWeaponKey).fireMode} · choose a free tile. Water adds a $35 raft.` : state.messageTimer > 0 ? state.message : state.selectedActiveKey ? "Mark an area for a 5-second artillery barrage. Escape to cancel." : state.selectedWeaponKey ? "Choose a free tile. Blue pads extend range; amber pads boost damage." : state.phase === "prepare" ? "Prepare your defense. Click a tower to upgrade it or a crate to clear space." : "Click a tower to upgrade, change target, or sell.";
     ui.playerLevelButton.title = `Commander Lv ${profile.level} · ${profile.xp}/${xpNeeded(profile.level)} XP · ${profile.skillPoints} SP available`;
     ui.playerLevelButton.setAttribute("aria-label", `Open skill tree. Commander level ${profile.level}, ${profile.skillPoints} skill points available`);
     ui.playerLevelButton.classList.toggle("has-points", profile.skillPoints >= 4);
@@ -1348,15 +1413,17 @@ export function createGame({ ui, levels }) {
     ui.weaponBar.querySelectorAll(".weapon-card").forEach((card) => {
       const weapon = weapons.find((item) => item.key === card.dataset.weaponKey);
       const selected = state.selectedWeaponKey === weapon.key;
+      const locked=!classUnlocked(state.arsenalProfile,weapon.key);
       const missing = Math.max(0, weapon.price - state.gold);
       card.classList.toggle("selected", selected);
       card.classList.toggle("unaffordable", missing > 0);
-      card.setAttribute("aria-disabled", String(missing > 0));
+      card.removeAttribute("aria-disabled");
       const select = card.querySelector(".weapon-select");
+      select.disabled=locked;
       select.setAttribute("aria-pressed", String(selected));
-      select.setAttribute("aria-disabled", String(missing > 0));
+      select.setAttribute("aria-disabled", String(locked || missing > 0));
       // Keep the info action usable even when the weapon is unaffordable.
-      card.querySelector(".weapon-state").textContent = selected ? "SELECTED" : missing > 0 ? `NEED ${missing}cr` : "READY";
+      card.querySelector(".weapon-state").textContent = locked ? "LOCKED" : selected ? "SELECTED" : missing > 0 ? `NEED $${missing}` : "READY";
     });
     syncTowerSidebar();
   }
@@ -1366,8 +1433,10 @@ export function createGame({ ui, levels }) {
       ["Damage", weapon.directDamage],
       ["Fire mode", weapon.fireMode || "Single shot"],
       ["Fire rate", `${weapon.atkSpeed}/s${weapon.burstCount?` × ${weapon.burstCount}`:""}`],
-      ["Capacity", weapon.capacity],
-      ["Reload Time", `${weapon.reloadSpeed}s`],
+      [weapon.continuous==='laser'?"Heat window":weapon.continuous==='flame'?"Fuel window":"Capacity",weapon.continuous?`${(weapon.capacity/weapon.atkSpeed).toFixed(1)}s`:weapon.capacity],
+      [weapon.continuous==='laser'?"Cooling":"Reload", `${weapon.reloadSpeed}s`],
+      ["Critical chance", `${Math.round((weapon.critChance||0)*100)}%`],
+      ["Critical damage", `×${(weapon.critDamage||1.6).toFixed(2)}`],
       ["Range", weapon.range],
     ];
     return stats.map(([label, value]) => `
@@ -1398,7 +1467,7 @@ export function createGame({ ui, levels }) {
         ["Damage", tower.weapon.directDamage.toLocaleString("en-US")],
         ["Fire rate", `${tower.weapon.atkSpeed}/s`],
         ["Range", tower.range],
-        [tower.reloadTimer > 0 ? "Reloading" : "Ammo", tower.reloadTimer > 0 ? `${tower.reloadTimer.toFixed(1)}s` : `${tower.ammo} / ${tower.weapon.capacity}`],
+        [tower.weapon.continuous==='laser' ? tower.reloadTimer>0?"Cooling":"Heat reserve" : tower.reloadTimer>0?"Reloading":"Ammo", tower.reloadTimer > 0 ? `${tower.reloadTimer.toFixed(1)}s` : `${tower.ammo} / ${tower.weapon.capacity}`],
       ];
       setMarkup(ui.towerStatList, `<p class="tower-role">${tower.weapon.role}${tower.pad ? ` · ${tower.pad === "range" ? "+18% range pad" : "+15% damage pad"}` : ""}</p>${overview.map(([label, value]) => `<div class="weapon-stat-row"><span>${label}</span><strong>${value}</strong></div>`).join("")}`);
       // Keep controls mounted for the selected tower, including when gold/ammo changes
@@ -1440,12 +1509,12 @@ export function createGame({ ui, levels }) {
         const next = applyTowerUpgrades(effectiveWeaponByKey(tower.weapon.key), { ...tower, upgrades: { ...tower.upgrades, [path.key]: rank + 1 } });
         const preview = branchMaxed || limitReached ? path.detail : upgradePreview(tower.weapon,next,path.key);
         button.querySelector("[data-preview]").textContent = preview;
-        button.querySelector("[data-upgrade-status]").textContent = branchMaxed ? "Fully upgraded" : limitReached ? "Tower limit reached" : state.gold < cost ? `Need ${cost - state.gold}cr more` : "Upgrade";
-        button.querySelector("[data-cost]").textContent = branchMaxed ? "3 / 3" : limitReached ? "4 / 4" : `${cost}cr`;
+        button.querySelector("[data-upgrade-status]").textContent = branchMaxed ? "Fully upgraded" : limitReached ? "Tower limit reached" : state.gold < cost ? `Need $${cost - state.gold} more` : "Upgrade";
+        button.querySelector("[data-cost]").textContent = branchMaxed ? "3 / 3" : limitReached ? "4 / 4" : `$${cost}`;
         button.setAttribute("aria-label", `${path.name}, rank ${rank} of 3. ${preview}. ${button.querySelector("[data-upgrade-status]").textContent}${branchMaxed || limitReached ? "" : `, ${cost} credits`}`);
       });
       ui.towerActions.querySelector("[data-upgrade-limit]").textContent = total >= 4 ? "All 4 upgrades installed on this tower." : "Choose 4 upgrades total · up to 3 in one branch.";
-      ui.towerActions.querySelector("[data-sell-value]").textContent = `+${sellValue(state, tower)}cr`;
+      ui.towerActions.querySelector("[data-sell-value]").textContent = `+$${sellValue(state, tower)}`;
       ui.towerActions.querySelector("[data-sell]").disabled = Boolean(state.result);
       ui.towerActions.querySelector("[data-refund-note]").textContent = state.waveIndex === 0 && state.phase === "prepare" ? "Full refund before the first wave." : "Returns 70% of your total investment.";
       return;
@@ -1454,7 +1523,7 @@ export function createGame({ ui, levels }) {
     if (obstacle) {
       ui.towerSidebarTitle.textContent = obstacle.cost ? "Clear this position" : "Solid rock";
       setMarkup(ui.towerStatList, `<p class="field-guide">${obstacle.cost ? "Spend credits to remove this obstacle and open a new tower position. It stays cleared for this mission." : "This obstacle cannot be removed. Place towers around it."}</p>`);
-      mountActions(`obstacle:${obstacle.row}:${obstacle.col}:${obstacleCost(state,obstacle)}`, obstacle.cost ? `<button type="button" class="primary-button" data-clear="true">Clear obstacle · ${obstacleCost(state,obstacle)}cr</button>` : "");
+      mountActions(`obstacle:${obstacle.row}:${obstacle.col}:${obstacleCost(state,obstacle)}`, obstacle.cost ? `<button type="button" class="primary-button" data-clear="true">Clear obstacle · $${obstacleCost(state,obstacle)}</button>` : "");
       const clearButton = ui.towerActions.querySelector("[data-clear]");
       if (clearButton) clearButton.disabled = state.gold < obstacleCost(state,obstacle);
       return;
@@ -1464,18 +1533,19 @@ export function createGame({ ui, levels }) {
     const types = [...new Set(wave?.spawns.map(spawn => spawn.enemy))];
     const tips = { alien_normal: "Scout · reliable fire wears it down.", alien_fast: "Skitter · fast and fragile. Cover the exit.", alien_tank: "Bulwark · 35% armor. Magnum or Sniper.", alien_shielded: "Shielded · extra shield absorbs hits first.", alien_boss: "Overseer · set heavy towers to Strongest.", alien_saucer: "Mothership · shields, armor, lethal breach.", alien_steadfast: "Juggernaut × · immune to slow. Use raw damage or stun.", alien_rager: "Ravager ! · speeds up after its first hit. Finish it quickly.", alien_broodmother: "Broodmother … · releases hatchlings. Cover its spawn with splash.", alien_hatchling: "Hatchling · fast offspring, no gold or XP bounty.", alien_medic: "Mender + · heals nearby wounded aliens. Prioritize it before tanks." };
     setMarkup(ui.towerStatList, `<p class="field-guide">${state.level.description}</p><div class="enemy-intel">${types.map(key => `<div><img src="${assetUrl(enemies[key].asset)}" alt=""><span>${tips[key]}</span></div>`).join("")}</div>`);
-    mountActions(`guide:${state.level.id}:${profile.skillPoints}`, `<div class="map-legend"><span><i class="range-dot"></i> Sensor pad: +18% range</span><span><i class="power-dot"></i> Power pad: +15% damage</span>${state.level.biome === "frost" ? "<span>❄ Frozen route: aliens 25% slower</span>" : ""}<span>▧ Crates: click to clear</span></div><p class="upgrade-limit">${profile.skillPoints >= 4 ? `${profile.skillPoints} SP available. Open the command graph.` : "3 stars = no leaks · 2 stars = 60% lives"}</p>`);
+    mountActions(`guide:${state.level.id}:${profile.skillPoints}`, `<div class="map-legend">${state.level.speedTiles?.length?'<span class="haste-legend">» Amber overdrive: aliens +35% speed</span>':''}<span><i class="range-dot"></i> Sensor pad: +18% range</span><span><i class="power-dot"></i> Power pad: +15% damage</span>${state.level.biome === "frost" ? "<span>❄ Frozen route: aliens 25% slower</span>" : ""}<span>▧ Crates: click to clear</span></div><p class="upgrade-limit">${profile.skillPoints >= 4 ? `${profile.skillPoints} SP available. Open the command graph.` : "3 stars = no leaks · 2 stars = 60% lives"}</p>`);
   }
 
   function renderWeaponBar() {
     ui.weaponBar.innerHTML=equippedWeapons(weapons,state.arsenalProfile).map((weapon,index)=>{
+      const locked=!classUnlocked(state.arsenalProfile,weapon.key);
       const model=applySkillBonuses(weapon,state.arsenalProfile),tier=arsenalChoice(state.arsenalProfile,weapon.key).blueprint;
-      return `<article class="weapon-card" data-weapon-key="${weapon.key}" style="--weapon-accent:${tier.key==='common'?weapon.accent:tier.color}">
-      <button class="weapon-select" type="button" aria-label="Build ${weapon.name}, ${model.blueprint}, ${model.fireMode}, ${weapon.price} credits" aria-pressed="false">
-      <span class="weapon-topline"><kbd>${index+1}</kbd><span class="weapon-state">READY</span><span class="weapon-price">${weapon.price}<small>cr</small></span></span>
+      return `<article class="weapon-card ${locked?'class-locked':''}" data-weapon-key="${weapon.key}" style="--weapon-card-art:url('${new URL(assetUrl(weapon.slotCardAsset),document.baseURI).href}');--weapon-accent:${tier.key==='common'?weapon.accent:tier.color}">
+      <button class="weapon-select" type="button" ${locked?'disabled':''} aria-label="Build ${weapon.name}, ${model.blueprint}, ${model.fireMode}, ${weapon.price} credits" aria-pressed="false">
+      <span class="weapon-topline"><kbd>${index+1}</kbd><span class="weapon-state">READY</span><span class="weapon-price">$${weapon.price}</span></span>
       <span class="weapon-art-stage"><img class="weapon-art" src="${assetUrl(model.hudAsset)}" alt="" draggable="false"></span>
-      <span class="weapon-caption"><span class="weapon-model-title"><small class="weapon-class-label">${weapon.nickname} / ${tier.key}</small><strong class="weapon-nickname">${model.blueprint}</strong></span></span>
-      <span class="weapon-role">${model.fireMode}${model.pelletCount?' · '+model.pelletCount+' pellets':''}${model.slow?' · slow':''}</span></button>
+      <span class="weapon-caption"><span class="weapon-model-title"><small class="weapon-class-label">${weapon.nickname} / ${tier.key}</small><strong class="weapon-nickname">${locked?weapon.name:model.blueprint}</strong></span></span>
+      <span class="weapon-role">${locked?classRequirement(weapon.key):model.fireMode}${!locked&&model.pelletCount?' · '+model.pelletCount+' pellets':''}${model.slow?' · slow':''}</span></button>
       <button class="weapon-info-button" data-info-weapon-key="${weapon.key}" type="button" aria-label="Inspect ${model.blueprint}">i</button></article>`;
     }).join('');
   }
@@ -1494,10 +1564,10 @@ export function createGame({ ui, levels }) {
     ui.abilityBar.innerHTML = [equippedAbility].filter(Boolean).map((ability) => {
       const stats = abilityStats(state.arsenalProfile, ability.key);
       return `
-        <button class="ability-card active-${ability.key}" data-active-key="${ability.key}" type="button" title="${ability.name}">
+        <button class="ability-card ability-illustrated active-${ability.key}" data-active-key="${ability.key}" type="button" title="${ability.name}">
           <span class="ability-topline"><kbd>Q</kbd><span>ACTIVE / ${stats.rank}</span></span>
-          <span class="ability-art-stage"><img src="${assetUrl(assetPaths.slots.activeCards[ability.key])}" alt="" draggable="false"></span>
-          <strong>${ability.name}</strong>
+          <img class="ability-full-art" src="${assetUrl(assetPaths.slots.activeCards[ability.key])}" alt="${ability.name}" draggable="false">
+          <strong class="ability-caption">${ability.name}</strong>
           <small>Ready</small>
         </button>
       `;
@@ -1522,6 +1592,7 @@ export function createGame({ ui, levels }) {
       state.isPaused = true;
     }
     const model=effectiveWeaponByKey(weapon.key);
+    document.getElementById("weapon-customize-button").dataset.customizeWeapon=weapon.key;
     ui.weaponInfoTitle.textContent = `${weapon.name} / ${model.blueprint}`;
     ui.weaponInventoryGrid.innerHTML = Array.from({ length: 1 }, (_, index) => index === 0
       ? `<button class="inventory-slot selected" type="button" aria-label="Selected ${weapon.name}">
@@ -1529,9 +1600,9 @@ export function createGame({ ui, levels }) {
           <span>${model.blueprint}</span>
         </button>`
       : `<button class="inventory-slot empty" type="button" aria-label="Empty inventory slot"></button>`).join("");
-    ui.weaponStatList.innerHTML = `<p class="field-guide">${model.modelDescription}</p>` + weaponStatsMarkup(model);
-    ui.weaponEquipButton.disabled = !state || state.gold < weapon.price;
-    ui.weaponEquipButton.textContent = `Build · ${weapon.price}cr`;
+    ui.weaponStatList.innerHTML = `${classUnlocked(state.arsenalProfile,weapon.key)?'':`<p class="next-discovery">WEAPON TYPE LOCKED<br>${classRequirement(weapon.key)}</p>`}<p class="field-guide">${model.modelDescription}</p>` + weaponStatsMarkup(model);
+    ui.weaponEquipButton.disabled = !state || !classUnlocked(state.arsenalProfile,weapon.key) || state.gold < weapon.price;
+    ui.weaponEquipButton.textContent = `Build · $${weapon.price}`;
     ui.weaponEquipButton.dataset.weaponKey = weapon.key;
     ui.weaponDestroyButton.classList.add("hidden");
     ui.weaponInfoModal.classList.remove("hidden");
@@ -1550,6 +1621,8 @@ export function createGame({ ui, levels }) {
   let arsenalClass = 'handgun';
   function syncArsenal() {
     renderArsenal(ui.arsenalContent,profile,weapons,arsenalClass);
+    document.getElementById('arsenal-restart-panel').classList.toggle('hidden',!state||Boolean(state.result));
+    document.getElementById('arsenal-restart-button').disabled=Boolean(state&&JSON.stringify(state.arsenalProfile.arsenal)===JSON.stringify(profile.arsenal));
     ui.arsenalGoal.textContent = `COMMANDER LV ${profile.level} / ${nextArsenalUnlock(profile)}`;
   }
   function openArsenal() {
@@ -1559,8 +1632,11 @@ export function createGame({ ui, levels }) {
   function closeArsenal() {
     ui.arsenalModal.classList.add('hidden');
     if(state) {state.isPaused=state.wasPausedBeforeArsenal; syncHud();} else syncMenu();
-    (state?ui.resultArsenalButton:ui.menuArsenalButton).focus();
+    (state?(state.result?ui.resultArsenalButton:document.getElementById("field-loadout-button")):ui.menuArsenalButton).focus();
   }
+  document.getElementById('field-loadout-button').addEventListener('click',openArsenal);
+  document.getElementById('weapon-customize-button').addEventListener('click',event=>{arsenalClass=event.currentTarget.dataset.customizeWeapon;closeWeaponInfo();openArsenal();});
+  document.getElementById('arsenal-restart-button').addEventListener('click',()=>{if(state&&!state.result)startLevel(state.level);});
   ui.menuArsenalButton.addEventListener('click',openArsenal);
   ui.resultArsenalButton.addEventListener('click',openArsenal);
   ui.arsenalCloseButton.addEventListener('click',closeArsenal);
@@ -1569,6 +1645,7 @@ export function createGame({ ui, levels }) {
     const button=event.target.closest('button');if(!button||button.disabled)return;
     if(button.dataset.arsenalClass)arsenalClass=button.dataset.arsenalClass;
     else if(button.dataset.equipHeavy&&classUnlocked(profile,button.dataset.equipHeavy))profile.arsenal.heavy=button.dataset.equipHeavy;
+    else if(button.dataset.equipSupport&&classUnlocked(profile,button.dataset.equipSupport))profile.arsenal.support=button.dataset.equipSupport;
     else if(button.dataset.buyBlueprint)purchaseBlueprint(profile,arsenalClass,button.dataset.buyBlueprint);
     else if(button.dataset.buyAttachment){if(purchaseAttachment(profile,button.dataset.buyAttachment))equipAttachment(profile,arsenalClass,button.dataset.buyAttachment);}
     else if(button.dataset.blueprint)equipBlueprint(profile,arsenalClass,button.dataset.blueprint);
@@ -1633,7 +1710,7 @@ export function createGame({ ui, levels }) {
   function tryPlaceTower(row, col) {
     if (!state?.selectedWeaponKey) return;
     const tower = placeTower(state, state.selectedWeaponKey, row, col);
-    if (!tower) {notify(state,state.tileSets.water.has(tileKey(row,col))?skillRank(profile,'pontoons')?'Water deployment adds a 35-credit raft. Check your credits.':'Unlock Pontoon Engineering in the command graph to build on water.':'Cannot build here. Choose a free tile and check your credits.');return;}
+    if (!tower) {notify(state,state.tileSets.water.has(tileKey(row,col))?skillRank(profile,'pontoons')?'Water deployment adds a  $35 raft. Check your credits.':'Unlock Pontoon Engineering in the command graph to build on water.':'Cannot build here. Choose a free tile and check your credits.');return;}
     state.selectedTowerId = null;
     state.selectedWeaponKey = null;
     notify(state, `${tower.weapon.name} ready${tower.pad ? " · platform bonus active" : ""}. Click it to upgrade.`);
@@ -1646,7 +1723,7 @@ export function createGame({ ui, levels }) {
     ui.resultTitle.textContent = won ? (state.level.stage === 6 ? "Sector secured" : "Mission complete") : "Regroup. Rebuild. Return.";
     ui.resultStars.textContent = won ? "★".repeat(state.reward.stars) + "☆".repeat(3 - state.reward.stars) : "↻";
     ui.resultCopy.textContent = won ? `${state.level.name} · ${state.lives}/${state.level.lives} lives protected.` : `${state.level.name} · ${state.waveIndex} waves completed. Your earned XP is safe.`;
-    ui.resultRewards.innerHTML = `<span>+${state.runSalvage} Salvage · ${profile.salvage} banked</span><strong>+${state.runXp} XP earned</strong><span>Commander Lv ${profile.level} · ${profile.skillPoints} SP available</span>${state.reward?.firstClear ? `<span>First-clear bonus included: +${state.level.firstClearXp} XP</span>` : ""}<p>${won ? "Replay for more stars, or advance to the next mission." : "Try crossfire at bends, upgrade key towers, and spend your skill points."}</p><span>${nextArsenalUnlock(profile)}</span>`;
+    ui.resultRewards.innerHTML = `${state.reward?.unlockedClasses?.map(key=>`<div class="next-discovery">NEW WEAPON TYPE / <strong>${weapons.find(w=>w.key===key).name}</strong><br>Ready for your next deployment.</div>`).join('')||''}<span>+${state.runSalvage} Salvage · ${profile.salvage} banked</span><strong>+${state.runXp} XP earned</strong><span>Commander Lv ${profile.level} · ${profile.skillPoints} SP available</span>${state.reward?.firstClear ? `<span>First-clear bonus included: +${state.level.firstClearXp} XP</span>` : ""}<p>${won ? "Replay for more stars, or advance to the next mission." : "Try crossfire at bends, upgrade key towers, and spend your skill points."}</p><span>${nextArsenalUnlock(profile)}</span>`;
     ui.resultNextButton.classList.toggle("hidden", !won || levels.indexOf(state.level) === levels.length - 1);
     ui.resultSkillsButton.textContent = `Commander skills · ${profile.skillPoints} SP`;
     ui.resultModal.classList.remove("hidden");
@@ -1670,7 +1747,9 @@ export function createGame({ ui, levels }) {
       return;
     }
     const card = event.target.closest("[data-weapon-key]");
-    if (!card || card.getAttribute("aria-disabled") === "true") return;
+    if (!card) return;
+    const weapon=weapons.find(w=>w.key===card.dataset.weaponKey);
+    if(!weapon||!classUnlocked(state.arsenalProfile,weapon.key)||state.gold<weapon.price)return;
     state.selectedWeaponKey = state.selectedWeaponKey === card.dataset.weaponKey ? null : card.dataset.weaponKey;
     state.selectedObstacle = null;
     state.selectedTowerId = null;
@@ -1709,7 +1788,7 @@ export function createGame({ ui, levels }) {
     const node=event.target.closest('[data-select-skill]');
     if(node){syncDoctrine(node.dataset.selectSkill);return;}
     const branch=event.target.closest('[data-skill-branch]');
-    if(branch){const board=ui.skillTreeNodes.querySelector('.command-board');const x={armament:160,logistics:450,support:730}[branch.dataset.skillBranch];board.scrollTo({left:Math.max(0,x-board.clientWidth/2),top:80,behavior:'smooth'});return;}
+    if(branch){const board=ui.skillTreeNodes.querySelector('.command-board'),rect=board.getBoundingClientRect(),nodes=skillTree.filter(s=>s.branch===branch.dataset.skillBranch).map(s=>ui.skillTreeNodes.querySelector(`[data-select-skill="${s.key}"]`).getBoundingClientRect()),center=(Math.min(...nodes.map(r=>r.left))+Math.max(...nodes.map(r=>r.right)))/2;board.scrollTo({left:Math.max(0,board.scrollLeft+center-rect.left-board.clientWidth/2),top:50,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});return;}
     const equippedActiveKey = equipActiveKeyFromEvent(event);
     if (equippedActiveKey) {
       if (!isActiveAbilityKey(equippedActiveKey)||!activeUnlocked(profile,equippedActiveKey)) return;
@@ -1875,7 +1954,7 @@ export function createGame({ ui, levels }) {
     const modal = [...document.querySelectorAll(".modal-backdrop:not(.hidden)")].at(-1);
     if (modal) {
       if (event.key === "Tab") {
-        const focusable = [...modal.querySelectorAll("button:not(:disabled), input")].filter(el => el.getClientRects().length);
+        const focusable = [...modal.querySelectorAll("button:not(:disabled), input, summary")].filter(el => el.getClientRects().length);
         const first = focusable[0], last = focusable.at(-1);
         if (!modal.contains(document.activeElement) || (event.shiftKey && document.activeElement === first)) { event.preventDefault(); (event.shiftKey ? last : first)?.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
@@ -1940,6 +2019,7 @@ export function createGame({ ui, levels }) {
     player: { level: profile.level, xp: profile.xp, skillPoints: profile.skillPoints },
     skills: profile.skills,
     salvage:profile.salvage, caches:profile.caches, loot:state?.loot,
+    classUnlocks:weapons.filter(w=>classUnlocked(profile,w.key)).map(w=>w.key),speedTiles:state?.level.speedTiles||[],loadout:state?equippedWeapons(weapons,state.arsenalProfile).map(w=>w.key):[],
     fieldMines:state?.mines, drone:state?.drone, cache:state?.cache, water:state?.level.water||[],
     skillTreeOpen: !ui.skillTreeModal.classList.contains("hidden"),
     arsenalOpen: !ui.arsenalModal.classList.contains("hidden"),
@@ -1967,7 +2047,7 @@ export function createGame({ ui, levels }) {
       damage: tower.weapon.directDamage,
       atkSpeed: tower.weapon.atkSpeed,
       reloadSpeed: tower.weapon.reloadSpeed,
-      ammo: tower.ammo,
+      ammo: tower.ammo,heat:tower.weapon.continuous ? Number((1-tower.ammo/tower.weapon.capacity).toFixed(2)):null,cooling:tower.reloadTimer>0&&tower.weapon.continuous==='laser',beam:tower.beamEnd||null,critChance:tower.weapon.critChance,critDamage:tower.weapon.critDamage,
       fireMode:tower.weapon.fireMode, burstCount:tower.weapon.burstCount, burstLeft:tower.burstLeft, platform:tower.platform,
       pelletCount: tower.weapon.pelletCount,
       slowStrength: tower.weapon.slowStrength,
@@ -1993,6 +2073,7 @@ export function createGame({ ui, levels }) {
       y: Math.round(enemy.y),
       life: Math.round(enemy.life),
       shield: Math.round(enemy.shield),
+      onHaste:enemy.onHaste,
       slowTimer: enemy.slowTimer,
       slowStrength: enemy.slowStrength,
       immuneSlow: enemy.immuneSlow,

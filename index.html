@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="./src/ui/battle.css" />
     <link rel="stylesheet" href="./src/ui/arsenal.css" />
     <link rel="stylesheet" href="./src/ui/skillTree.css" />
-    <link rel="stylesheet" href="./src/ui/hud.css" />
+    <link rel="stylesheet" href="./src/ui/hud.css" /><link rel="stylesheet" href="./src/ui/frontier.css" />
   </head>
   <body>
     <main class="app-shell">
@@ -18,14 +18,14 @@
             <div><p class="eyebrow">ALIENS / FRONTIER COMMAND</p><h1>HOLD THE LINE<span>.</span></h1><p class="menu-subtitle">Build. Adapt. Push back the invasion.</p></div>
             <button class="commander-button" id="menu-skills-button" type="button"></button>
           </div>
-          <div class="menu-loadout"><div><strong>YOUR ARSENAL / 6 DEPLOYMENT SLOTS</strong><p id="arsenal-next-unlock"></p></div><button class="secondary-button" id="menu-arsenal-button" type="button">Customize weapons →</button></div>
+          <div class="menu-loadout"><div><strong>YOUR ARSENAL / UNLOCK AS YOU PLAY</strong><p id="arsenal-next-unlock"></p></div><button class="secondary-button" id="menu-arsenal-button" type="button">Customize weapons →</button></div>
           <div class="campaign-topline"><span id="campaign-progress"></span><span>18 missions · 3 sectors</span></div>
           <nav class="sector-tabs" id="sector-tabs" aria-label="Campaign sector"></nav>
           <div class="campaign-body">
             <div class="level-grid" id="level-grid"></div>
             <aside class="mission-briefing"><div id="mission-briefing"></div><button class="primary-button" id="menu-play-button" type="button">Deploy squad →</button></aside>
           </div>
-          <div class="menu-foot"><span>Permanent skills. New tactics. One more try.</span><a class="jam-link" href="https://vibejam.com/" target="_blank" rel="noopener noreferrer">Vibe Jam 2026 ↗</a><span>ARSENAL UPDATE / 03</span></div>
+          <div class="menu-foot"><span>Permanent skills. New tactics. One more try.</span><a class="jam-link" href="https://vibejam.com/" target="_blank" rel="noopener noreferrer">Vibe Jam 2026 ↗</a><span>FRONTIER UPDATE / 05</span></div>
         </div>
       </section>
 
@@ -90,7 +90,7 @@
 
         <div class="battle-status"><span id="battle-message" role="status"></span><span class="keyboard-hint">1–6 build · Space wave/pause · Q ability · Esc cancel · F fullscreen</span></div>
         <footer class="hud hud-bottom">
-          <div class="armory-heading"><span>FIELD ARMORY <i>/ SELECT & DEPLOY</i></span><span>1–6 WEAPONS <i>·</i> Q ACTIVE</span></div>
+          <div class="armory-heading"><span>FIELD ARMORY <i>/ SELECT & DEPLOY</i></span><button id="field-loadout-button" type="button">Change loadout ↗</button><span>1–6 WEAPONS <i>·</i> Q ACTIVE</span></div>
           <div class="ability-bar" id="ability-bar"></div>
           <div class="weapon-bar" id="weapon-bar"></div>
         </footer>
@@ -136,14 +136,14 @@
               <div class="weapon-stat-list" id="weapon-stat-list"></div>
               <div class="weapon-info-actions">
                 <button class="primary-button" id="weapon-equip-button" type="button" disabled>Equip</button>
-                <button class="secondary-button" id="weapon-destroy-button" type="button" disabled>Destroy</button>
+                <button class="secondary-button" id="weapon-customize-button" type="button">Change model / attachments →</button><button class="secondary-button" id="weapon-destroy-button" type="button" disabled>Destroy</button>
               </div>
             </section>
           </div>
         </div>
       </section>
 
-      <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="arsenal-modal" aria-labelledby="arsenal-title"><div class="arsenal-card"><div class="arsenal-head"><div><p>FRONTIER / WEAPONS LAB</p><h2 id="arsenal-title">Make it yours.</h2></div><button class="icon-button" id="arsenal-close-button" type="button" aria-label="Close arsenal">×</button></div><p class="arsenal-intro">Build your loadout. Rare licenses cost SP; caches and elite aliens drop advanced plans. Buy attachments with Salvage. Swaps are free and apply next deployment.</p><div class="arsenal-goal" id="arsenal-goal"></div><div id="arsenal-content"></div></div></section>
+      <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="arsenal-modal" aria-labelledby="arsenal-title"><div class="arsenal-card"><div class="arsenal-head"><div><p>FRONTIER / WEAPONS LAB</p><h2 id="arsenal-title">Make it yours.</h2></div><button class="icon-button" id="arsenal-close-button" type="button" aria-label="Close arsenal">×</button></div><p class="arsenal-intro">Start with two weapon types. Clear different missions to discover more. Caches unlock attachments; alternate models are optional. Change your loadout here, then deploy — or restart the current mission to apply it.</p><div class="arsenal-goal" id="arsenal-goal"></div><div id="arsenal-content"></div><div id="arsenal-restart-panel" class="arsenal-restart-panel hidden"><p>Apply changes by restarting this mission. Deployed towers and wave progress will reset; permanent rewards stay saved.</p><button id="arsenal-restart-button" class="primary-button" type="button">Apply loadout & restart mission</button></div></div></section>
 
       <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="skill-tree-modal" aria-label="Commander skills">
         <div class="skill-tree-card">

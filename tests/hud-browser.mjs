@@ -86,7 +86,7 @@ try {
     await page.screenshot({path:`${out}/hud-${viewport.width}x${viewport.height}.png`,fullPage:true});
     if(viewport.width===1024) {
       const ability=await page.locator('.ability-bar').boundingBox(),weapons=await page.locator('.weapon-bar').boundingBox();
-      assert.ok(weapons.y>=ability.y+ability.height,'Armory cannot overlap special');
+      assert.ok(weapons.y>=ability.y+ability.height || weapons.x>=ability.x+ability.width,'Armory cannot overlap special');
       assert.ok(weapons.y+weapons.height<=viewport.height,'Notebook armory stays in view');
     }
     await page.context().close();

@@ -1,6 +1,7 @@
 import { assets } from "./assets.js";
 
 export const weapons = [
+
   {
     key: "handgun",
     name: "Handgun",
@@ -130,13 +131,16 @@ export const weapons = [
   } ,
   {
     key: "rocket_launcher", name: "Rocket Launcher", nickname: "RPG",
-    description: "Homing rockets deal blast damage. Equip in the Heavy slot from Commander Lv 4.",
+    description: "Homing rockets deal blast damage. Unlock after six different mission clears, then equip in the Heavy slot.",
     role: "Area demolition", price: 320, level: 1, range: 245, atkSpeed: .65,
     capacity: 3, reloadSpeed: 3, directDamage: 3300, projectileSpeed: 290,
     splashRadius: 72, armorPierce: .5, accent: "#f1ba61",
     asset: "assets/towers/rpg.svg", placedAsset: "assets/towers/rpg.svg",
     slotCardAsset: assets.slots.cards[1], hudAsset: "assets/towers/rpg.svg",
-  }
+  } ,
+  {key:'flamethrower',name:'Flamethrower',nickname:'Flamer',description:'A short-range flame cone hits every alien inside it and leaves a lingering burn. Refills its fuel tank.',role:'Close-range crowd burn',price:240,level:1,range:130,atkSpeed:8,capacity:32,reloadSpeed:2.8,directDamage:140,burnDamage:420,cone:.5,continuous:'flame',projectileSpeed:0,armorPierce:.15,accent:'#ff973d',asset:'assets/frontier/weapons/flamethrower-common.png',placedAsset:'assets/frontier/weapons/flamethrower-common.png',hudAsset:'assets/frontier/weapons/flamethrower-common.png',slotCardAsset:assets.slots.cards[2]},
+  {key:'laser',name:'Laser Array',nickname:'Laser',description:'A continuous energy beam strips shields. Overheats after five seconds and must cool down.',role:'Sustained anti-shield beam',price:270,level:1,range:245,atkSpeed:8,capacity:40,reloadSpeed:3,directDamage:480,continuous:'laser',shieldBonus:1.35,projectileSpeed:0,accent:'#4bf0e0',asset:'assets/frontier/weapons/laser-common.png',placedAsset:'assets/frontier/weapons/laser-common.png',hudAsset:'assets/frontier/weapons/laser-common.png',slotCardAsset:assets.slots.cards[1]}
+
 ];
 
 export function getWeapon(key) {

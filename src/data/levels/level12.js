@@ -2,7 +2,7 @@
 const level12 = {
   "id": "level_12",
   "name": "Cold Reactor",
-  "description": "An armored escort guards the Overseer. Build for both threats.",
+  "description": "An armored escort guards the Overseer. Build for both threats. Amber overdrive tiles make aliens 35% faster. Cover their exits.",
   "sector": 2,
   "stage": 6,
   "biome": "frost",
@@ -906,6 +906,20 @@ const level12 = {
           "at": 12.36
         }
       ]
+    }
+  ],
+  "speedTiles": [
+    {
+      "row": 5,
+      "col": 6
+    },
+    {
+      "row": 1,
+      "col": 9
+    },
+    {
+      "row": 1,
+      "col": 10
     }
   ]
 };

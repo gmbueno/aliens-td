@@ -2,7 +2,7 @@
 const level14 = {
   "id": "level_14",
   "name": "Ember Passage",
-  "description": "Tight packs and armored leaders demand a mixed defense. Water tiles accept weapons after Pontoon Engineering (+35 credits per raft).",
+  "description": "Tight packs and armored leaders demand a mixed defense. Water tiles accept weapons after Pontoon Engineering (+$35 per raft).",
   "sector": 3,
   "stage": 2,
   "biome": "hive",

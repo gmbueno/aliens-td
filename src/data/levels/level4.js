@@ -2,7 +2,7 @@
 const level4 = {
   "id": "level_4",
   "name": "Broken Relay",
-  "description": "Sensor platforms extend range. Armored bulwarks resist small arms. Water tiles accept weapons after Pontoon Engineering (+35 credits per raft).",
+  "description": "Sensor platforms extend range. Armored bulwarks resist small arms. Water tiles accept weapons after Pontoon Engineering (+$35 per raft).",
   "sector": 1,
   "stage": 4,
   "biome": "outpost",

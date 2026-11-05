@@ -1,3 +1,4 @@
+import {missionRecords} from './fixtures.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {normalizeProfile,resetSkills,recordVictory} from '../src/systems/profile.js';
@@ -7,7 +8,7 @@ import {weapons} from '../src/data/weapons.js';
 import {levels} from '../src/data/levels/index.js';
 import {createInitialState,stepState,launchWave,placeTower,clearObstacle,obstacleCost,fireTower,activateChronoBreak,activateNapalm,activateArtillery} from '../src/game.js';
 globalThis.localStorage={getItem(){return null;},setItem(){}};
-const profile=raw=>normalizeProfile({schemaVersion:4,level:12,settings:{muted:true},...raw});
+const profile=raw=>normalizeProfile({schemaVersion:4,missions:missionRecords(),level:12,settings:{muted:true},...raw});
 const make=(p=profile(),level=levels[0])=>createInitialState(level,p,{width:1280,height:720});
 const tick=(s,t)=>{for(let n=0;n<t*60;n++)stepState(s,1/60);};
 function encounter(p=profile(),spawns=[{enemy:'alien_steadfast',at:0}]){
@@ -36,11 +37,11 @@ test('Rare license SP persists across reload and commander refunds; attachments 
  assert.ok(purchaseAttachment(p,'incendiary'));assert.equal(p.salvage,60);assert.equal(purchaseAttachment(p,'incendiary'),false);
  assert.ok(purchaseAttachment(p,'cryo'));assert.equal(p.salvage,0);assert.equal(purchaseAttachment(p,'blast'),false);
 });
-test('midpoint caches pay once, keep rewards on defeat/reload, and guarantee an advanced model',()=>{
- const p=profile();const reward=cacheReward(p,levels[0]);assert.equal(reward.tier,'epic');assert.ok(p.arsenal.unlocked.includes('handgun:epic'));assert.equal(p.salvage,30);
+test('midpoint caches pay once, preserve discoveries on defeat/reload, and unlock attachments before optional models',()=>{
+ const p=profile();const reward=cacheReward(p,levels[0]);assert.equal(reward.attachment,'incendiary');assert.ok(p.arsenal.unlockedAttachments.includes('incendiary'));assert.equal(p.salvage,30);
  assert.equal(cacheReward(p,levels[0]),null);assert.equal(p.salvage,30);
  const saved=normalizeProfile(JSON.parse(JSON.stringify(p)));assert.equal(cacheReward(saved,levels[0]),null);assert.equal(saved.salvage,30);
- assert.equal(cacheReward(p,levels[5]).tier,'legendary');
+ assert.equal(cacheReward(p,levels[5]).attachment,'cryo');cacheReward(p,levels[1]);cacheReward(p,levels[2]);assert.equal(cacheReward(p,levels[11]).tier,'legendary');
 });
 test('elite drops exclude hatchlings, honor chance and guarantee a drop within 20 eligible kills',()=>{
  const p=profile();assert.equal(eliteDrop(p,{key:'alien_hatchling'},0),null);assert.equal(p.lootRolls,0);

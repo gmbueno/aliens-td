@@ -75,6 +75,22 @@ jobs:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:hud
 
+      - name: Validate progression, energy weapons and frontier art
+        env:
+          GAME_URL: http://127.0.0.1:4173
+        run: npm run test:frontier
+
+      - name: Prepare production files
+        run: npm run build
+
+      - name: Validate packaged release
+        env:
+          GAME_URL: http://127.0.0.1:4174
+        run: |
+          python3 -m http.server 4174 --directory _site > /tmp/aliens-release-server.log 2>&1 &
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$GAME_URL" > /dev/null
+          npm run test:build
+
       - name: Save browser test artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -86,13 +102,7 @@ jobs:
             output/arsenal
             output/doctrine
             output/hud
-
-      - name: Prepare production files
-        run: |
-          mkdir _site
-          cp index.html styles.css favicon.ico _site/
-          cp -R src assets _site/
-          touch _site/.nojekyll
+            output/frontier
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
