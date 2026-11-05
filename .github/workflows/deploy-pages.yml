@@ -60,6 +60,11 @@ jobs:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:audio
 
+      - name: Validate arsenal, powers and new enemy behaviors
+        env:
+          GAME_URL: http://127.0.0.1:4173
+        run: npm run test:arsenal
+
       - name: Save browser test artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -68,6 +73,7 @@ jobs:
           path: |
             output/ui-refresh/controls
             output/audio-shotgun
+            output/arsenal
 
       - name: Prepare production files
         run: |

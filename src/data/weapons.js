@@ -48,6 +48,7 @@ export const weapons = [
     description: "Suppressive fire slows targets by 25% for 0.7s. Pair with heavy towers.",
     role: "Slows aliens",
     slow: 0.7,
+    slowStrength: 0.25,
     price: 120,
     level: 1,
     range: 155,
@@ -87,7 +88,7 @@ export const weapons = [
     key: "shotgun",
     name: "Shotgun",
     nickname: "Shotgun",
-    description: "Fires four straight-flying pellets in a cone. Any alien crossing a pellet can be hit. Strongest up close.",
+    description: "Starts with three straight-flying pellets; Buckshot adds more. Any alien crossing a pellet can be hit. Strongest up close.",
     role: "Crowd control",
     price: 180,
     level: 1,
@@ -97,7 +98,7 @@ export const weapons = [
     reloadSpeed: 1.55,
     directDamage: 700,
     projectileSpeed: 440,
-    pelletCount: 4,
+    pelletCount: 3,
     spread: 0.14,
     ballistic: true,
     accent: "#ff5896",
@@ -126,6 +127,15 @@ export const weapons = [
     placedAsset: assets.placedTowers.sniper,
     slotCardAsset: assets.slots.cards[1],
     hudAsset: assets.slots.weapons.sniper,
+  } ,
+  {
+    key: "rocket_launcher", name: "Rocket Launcher", nickname: "RPG",
+    description: "Homing rockets deal blast damage. Equip in the Heavy slot from Commander Lv 4.",
+    role: "Area demolition", price: 320, level: 1, range: 245, atkSpeed: .65,
+    capacity: 3, reloadSpeed: 3, directDamage: 3300, projectileSpeed: 290,
+    splashRadius: 72, armorPierce: .5, accent: "#f1ba61",
+    asset: "assets/towers/rpg.svg", placedAsset: "assets/towers/rpg.svg",
+    slotCardAsset: assets.slots.cards[1], hudAsset: "assets/towers/rpg.svg",
   }
 ];
 

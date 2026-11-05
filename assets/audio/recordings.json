@@ -3,126 +3,140 @@
     "file": "assets/audio/weapons/handgun-1.mp3",
     "original": "Prepared SFX/Walther PPQ/X_39P.wav",
     "offsetSeconds": 1.393,
-    "durationSeconds": 0.46,
-    "sha256": "bb2b9382c55e38417d072cf6b30b615ddbe57af2c2a6af8d23638d1c072f52dc",
+    "durationSeconds": 0.7,
+    "sha256": "def9d8e8c5528bcfd3eceaa0851fa0fb0232b7cfbcc703b18bcb65edcc162104",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "d679a3cd87eae2898d984159f83544392932e6b77526045b672e3aaa9c2dda9f"
+    "sourceSha256": "d679a3cd87eae2898d984159f83544392932e6b77526045b672e3aaa9c2dda9f",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/handgun-2.mp3",
     "original": "Prepared SFX/Walther PPQ/X_39P.wav",
     "offsetSeconds": 6.428,
-    "durationSeconds": 0.46,
-    "sha256": "695c71a79c51bb4b6a23f1fdb913e8612979016078a29956cc30737d4fa4ccb7",
+    "durationSeconds": 0.7,
+    "sha256": "4966d65c6867366656633a32af3ceb2e0dff7a3bbf3cd86568c81da6bc90fd05",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "d679a3cd87eae2898d984159f83544392932e6b77526045b672e3aaa9c2dda9f"
+    "sourceSha256": "d679a3cd87eae2898d984159f83544392932e6b77526045b672e3aaa9c2dda9f",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/handgun-3.mp3",
     "original": "Prepared SFX/Walther PPQ/X_39P.wav",
     "offsetSeconds": 10.648,
-    "durationSeconds": 0.46,
-    "sha256": "0df1fb954c72ca14bcf9aa4af66562bba6b53ec5ed36d2b468137af18507da9a",
+    "durationSeconds": 0.7,
+    "sha256": "82a37e20462e06e1a3aa875b4ea099131e0d7de2bd37f912520fc209857ca98c",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "d679a3cd87eae2898d984159f83544392932e6b77526045b672e3aaa9c2dda9f"
+    "sourceSha256": "d679a3cd87eae2898d984159f83544392932e6b77526045b672e3aaa9c2dda9f",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/assault_rifle-1.mp3",
     "original": "Prepared SFX/AR-15/D_32P.wav",
     "offsetSeconds": 0.688,
-    "durationSeconds": 0.39,
-    "sha256": "9426b23fe3e691e4ef294a00923de855821732bee5bbb34ef30e804811a014b0",
+    "durationSeconds": 0.55,
+    "sha256": "a6d4090fdd75292ed7f1e105152d4cb64046abd2840af165f5f64e01fdab8dcc",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "acee9d2106b68fe5956225a19d7aedf943d97793817f9bda9d486a2b74b0a812"
+    "sourceSha256": "acee9d2106b68fe5956225a19d7aedf943d97793817f9bda9d486a2b74b0a812",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/assault_rifle-2.mp3",
     "original": "Prepared SFX/AR-15/D_32P.wav",
     "offsetSeconds": 5.633,
-    "durationSeconds": 0.39,
-    "sha256": "e9025d4cd43a8035f46500110ff9353e42a28de6682933aad54f760ead850d81",
+    "durationSeconds": 0.55,
+    "sha256": "f837a03cce38ae25eee63316685fe5045c8589eca0bb54c55d283a9304b76f95",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "acee9d2106b68fe5956225a19d7aedf943d97793817f9bda9d486a2b74b0a812"
+    "sourceSha256": "acee9d2106b68fe5956225a19d7aedf943d97793817f9bda9d486a2b74b0a812",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/machine_pistol-1.mp3",
     "original": "Prepared SFX/Carl Gustav M45/G_31P.wav",
     "offsetSeconds": 0.298,
-    "durationSeconds": 0.34,
-    "sha256": "1fbe359b29a5bf60dc90421ae755394e005c723b92707649428d8a3c117e76c6",
+    "durationSeconds": 0.45,
+    "sha256": "6400b56fa6294dc8af9ba5f2fa9ed994fad6d72839c53244916ca0446e0ddfe0",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "5982c6c2fa44545b750ba6217ed57797a6a15c02f5c9943ac0e99e5f3ab2b158"
+    "sourceSha256": "5982c6c2fa44545b750ba6217ed57797a6a15c02f5c9943ac0e99e5f3ab2b158",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/machine_pistol-2.mp3",
     "original": "Prepared SFX/Carl Gustav M45/G_31P.wav",
     "offsetSeconds": 3.488,
-    "durationSeconds": 0.34,
-    "sha256": "07c52a1944c666754b3a352f8573f591f7ea10e4121d527ac2256d83db296a3b",
+    "durationSeconds": 0.45,
+    "sha256": "f429d14cbd0abb565819471ea71c436924d9087c8154f0f6961a3518fc5b0214",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "5982c6c2fa44545b750ba6217ed57797a6a15c02f5c9943ac0e99e5f3ab2b158"
+    "sourceSha256": "5982c6c2fa44545b750ba6217ed57797a6a15c02f5c9943ac0e99e5f3ab2b158",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/machine_pistol-3.mp3",
     "original": "Prepared SFX/Carl Gustav M45/G_31P.wav",
     "offsetSeconds": 6.713,
-    "durationSeconds": 0.34,
-    "sha256": "dab1a17c474951fd0c6bcb38522234d95dce412c6176356d25bfb04122c5dbc6",
+    "durationSeconds": 0.45,
+    "sha256": "506c8269913f5aafc9236303f67c58b9645bf453ce41f1d0f7ecb43b326e0f76",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "5982c6c2fa44545b750ba6217ed57797a6a15c02f5c9943ac0e99e5f3ab2b158"
+    "sourceSha256": "5982c6c2fa44545b750ba6217ed57797a6a15c02f5c9943ac0e99e5f3ab2b158",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/magnum-1.mp3",
     "original": "Prepared SFX/Smith & Wesson 642/V_27P.wav",
     "offsetSeconds": 0.793,
-    "durationSeconds": 0.58,
-    "sha256": "b4720789403b2e43ceef10c0db61d332d43bb751c24e0853b4d7f08c081b095c",
+    "durationSeconds": 0.9,
+    "sha256": "a8f835316b062ee832b4a6de51fb368628901407a98bb3c62801e5545fb53b9b",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "dc9a11f7e6544139f38cadccf3373fed733f2e000caca1b2328575293838fc58"
+    "sourceSha256": "dc9a11f7e6544139f38cadccf3373fed733f2e000caca1b2328575293838fc58",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/magnum-2.mp3",
     "original": "Prepared SFX/Smith & Wesson 642/V_27P.wav",
     "offsetSeconds": 6.203,
-    "durationSeconds": 0.58,
-    "sha256": "c43e4fae6d874bd59caab067f5ffc1c56b625bd10f38668176dacc053f4a1d1e",
+    "durationSeconds": 0.9,
+    "sha256": "2e37a47b8f16f8060c8ed60f7c05cfc0991649942094d6992796aad88e763fd3",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "dc9a11f7e6544139f38cadccf3373fed733f2e000caca1b2328575293838fc58"
+    "sourceSha256": "dc9a11f7e6544139f38cadccf3373fed733f2e000caca1b2328575293838fc58",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/shotgun-1.mp3",
     "original": "Prepared SFX/Nova/O_21P.wav",
     "offsetSeconds": 0.418,
-    "durationSeconds": 0.68,
-    "sha256": "6853c6e7b331f7e0232b6c3aecb32d17f5e0ca24e92cf8f1b9bb0646724c2188",
+    "durationSeconds": 1.05,
+    "sha256": "4c1986dac5f8aaff03d01c6056f35863628a6551fd6e0bc2c19aedb22c9e4e19",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "5661d0625e4634f19e6e316c13693b80c8e28cd9f716cf9c75c465153ae40815"
+    "sourceSha256": "5661d0625e4634f19e6e316c13693b80c8e28cd9f716cf9c75c465153ae40815",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/shotgun-2.mp3",
     "original": "Prepared SFX/Nova/O_21P.wav",
     "offsetSeconds": 3.453,
-    "durationSeconds": 0.68,
-    "sha256": "11fa386a993f9e84013b7334090b287352ca07f269a7a12ebbd4c553585c61a3",
+    "durationSeconds": 1.05,
+    "sha256": "4c4cb7f96be78ac56bfe8b03e4d8a783db039043980091284630eb3599f82448",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "5661d0625e4634f19e6e316c13693b80c8e28cd9f716cf9c75c465153ae40815"
+    "sourceSha256": "5661d0625e4634f19e6e316c13693b80c8e28cd9f716cf9c75c465153ae40815",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/sniper-1.mp3",
     "original": "Prepared SFX/Tikka/W_29P.wav",
     "offsetSeconds": 0.563,
-    "durationSeconds": 0.8,
-    "sha256": "260b552c4482e25898c1801af2abaa5d408cda09c73dab15197edb2c1860eede",
+    "durationSeconds": 1.15,
+    "sha256": "c491c6950543a614851470dac6bb9c49675c4855cbf999664f8a7fc8c4b2bbcf",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "b1ffe3c104391bf8ceb8337aa4d5a2ca47938fb88ccbd051cdd2b2e205d9e72b"
+    "sourceSha256": "b1ffe3c104391bf8ceb8337aa4d5a2ca47938fb88ccbd051cdd2b2e205d9e72b",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   },
   {
     "file": "assets/audio/weapons/sniper-2.mp3",
     "original": "Prepared SFX/Tikka/W_29P.wav",
     "offsetSeconds": 5.648,
-    "durationSeconds": 0.8,
-    "sha256": "2ff0e41caa7cfa8dba93eb6eb94fc5c0fe97436eb35f90cac794c4d0033e62a5",
+    "durationSeconds": 1.15,
+    "sha256": "12031f445bc04d6283c7ab7992c098ca982cb31d75aa20eba04684a9dfaa43b0",
     "sourceRevision": "beb2f4041f3d6740fa0aeaf0e71159bd65a78c1b",
-    "sourceSha256": "b1ffe3c104391bf8ceb8337aa4d5a2ca47938fb88ccbd051cdd2b2e205d9e72b"
+    "sourceSha256": "b1ffe3c104391bf8ceb8337aa4d5a2ca47938fb88ccbd051cdd2b2e205d9e72b",
+    "edit": "45Hz high-pass, recorded low-body parallel layer, +6dB 160Hz shelf, -4dB 3.3kHz, 9.5kHz LP, transient-preserving compression, longer tail"
   }
 ]

@@ -1,7 +1,7 @@
 {
   "name": "alienstowerdefense",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "serve": "python3 -m http.server 4173",
@@ -9,6 +9,7 @@
     "test:browser": "node tests/browser.mjs",
     "test:balance": "node tests/balance.mjs",
     "test:controls": "node tests/tower-controls.mjs",
+    "test:arsenal": "node tests/arsenal-browser.mjs",
     "test:audio": "node tests/audio-shotgun-browser.mjs"
   },
   "devDependencies": {

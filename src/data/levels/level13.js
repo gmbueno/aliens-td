@@ -365,7 +365,7 @@ const level13 = {
           "at": 1.07
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.74
         },
         {
@@ -377,7 +377,7 @@ const level13 = {
           "at": 3.08
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_steadfast",
           "at": 3.75
         },
         {
@@ -429,7 +429,7 @@ const level13 = {
       "reward": 60,
       "spawns": [
         {
-          "enemy": "alien_normal",
+          "enemy": "alien_broodmother",
           "at": 0.4
         },
         {
@@ -437,7 +437,7 @@ const level13 = {
           "at": 1
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.61
         },
         {
@@ -449,7 +449,7 @@ const level13 = {
           "at": 2.82
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_steadfast",
           "at": 3.42
         },
         {
@@ -517,7 +517,7 @@ const level13 = {
           "at": 0.94
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.48
         },
         {
@@ -529,7 +529,7 @@ const level13 = {
           "at": 2.56
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_steadfast",
           "at": 3.1
         },
         {
@@ -605,7 +605,7 @@ const level13 = {
           "at": 0.88
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.35
         },
         {
@@ -617,7 +617,7 @@ const level13 = {
           "at": 2.3
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_steadfast",
           "at": 2.77
         },
         {
@@ -693,7 +693,7 @@ const level13 = {
       "reward": 75,
       "spawns": [
         {
-          "enemy": "alien_normal",
+          "enemy": "alien_broodmother",
           "at": 0.4
         },
         {
@@ -701,7 +701,7 @@ const level13 = {
           "at": 0.81
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.22
         },
         {
@@ -713,7 +713,7 @@ const level13 = {
           "at": 2.04
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_steadfast",
           "at": 2.45
         },
         {
@@ -797,7 +797,7 @@ const level13 = {
       "reward": 80,
       "spawns": [
         {
-          "enemy": "alien_normal",
+          "enemy": "alien_broodmother",
           "at": 0.4
         },
         {
@@ -805,7 +805,7 @@ const level13 = {
           "at": 0.75
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.1
         },
         {
@@ -813,7 +813,7 @@ const level13 = {
           "at": 1.45
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_steadfast",
           "at": 1.5
         },
         {

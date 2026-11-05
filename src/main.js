@@ -2,6 +2,13 @@ import { createGame } from "./game.js";
 import { levels } from "./data/levels/index.js";
 
 const ui = {
+  arsenalModal: document.querySelector("#arsenal-modal"),
+  arsenalContent: document.querySelector("#arsenal-content"),
+  arsenalGoal: document.querySelector("#arsenal-goal"),
+  arsenalNextUnlock: document.querySelector("#arsenal-next-unlock"),
+  menuArsenalButton: document.querySelector("#menu-arsenal-button"),
+  resultArsenalButton: document.querySelector("#result-arsenal-button"),
+  arsenalCloseButton: document.querySelector("#arsenal-close-button"),
   menuSkillsButton: document.querySelector("#menu-skills-button"),
   campaignProgress: document.querySelector("#campaign-progress"),
   sectorTabs: document.querySelector("#sector-tabs"),

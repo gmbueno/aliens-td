@@ -1,18 +1,20 @@
 import { createWeaponAudio } from "./systems/weaponAudio.js";
 import { enemies, getEnemy } from "./data/enemies.js";
+import { equippedWeapons, classUnlocked, equipBlueprint, equipAttachment, arsenalChoice } from "./data/arsenal.js";
+import { renderArsenal, nextArsenalUnlock } from "./ui/arsenalView.js";
 import { weapons } from "./data/weapons.js";
 import { xpNeeded } from "./data/player.js";
 import { activeAbilities, activeAbilityStats, buySkill, isActiveAbilityKey } from "./data/skills.js";
 import { assets as assetPaths } from "./data/assets.js";
 import { addXp, loadProfile, saveProfile, recordVictory, resetSkills } from "./systems/profile.js";
-import { applyTowerUpgrades, towerUpgradeCost, towerUpgradePaths, applySkillBonuses, effectiveWeaponByKey as findEffectiveWeaponByKey, refreshTowerSkillBonuses as refreshTowersWithSkills } from "./systems/weaponStats.js";
+import { applyTowerUpgrades, towerUpgradeCost, towerUpgradePaths, towerUpgradePathsFor, upgradePreview, applySkillBonuses, effectiveWeaponByKey as findEffectiveWeaponByKey, refreshTowerSkillBonuses as refreshTowersWithSkills } from "./systems/weaponStats.js";
 import { equipActiveKeyFromEvent, renderSkillTree, skillKeyFromEvent } from "./ui/skillTreeView.js";
 
 const TWO_PI = Math.PI * 2;
 const BOARD_PAD = 12;
 const NEXT_WAVE_DELAY = 8;
 
-const ASSET_CACHE_BUSTER = "recorded-fire-20261105";
+const ASSET_CACHE_BUSTER = "arsenal-20261105";
 
 function assetUrl(src) {
   return `${src}?v=${ASSET_CACHE_BUSTER}`;
@@ -155,7 +157,16 @@ function makeEnemy(spawn, state) {
     armor: definition.armor || 0,
     shield: Math.round(life * (definition.shield || 0)),
     maxShield: Math.round(life * (definition.shield || 0)),
-    xp: definition.xp || 2,
+    xp: definition.xp ?? 2,
+    healthScale,
+    immuneSlow: Boolean(definition.immuneSlow),
+    rageMultiplier: definition.rageMultiplier || 1,
+    brood: Boolean(definition.brood),
+    broodTimer: 8,
+    births: 0,
+    slowStrength: 0,
+    stunTimer: 0,
+    raged: false,
     slowTimer: 0,
     id: `enemy-${state.nextEnemyId++}`,
     key: definition.key,
@@ -169,7 +180,7 @@ function makeEnemy(spawn, state) {
     gold: definition.gold,
     asset: definition.asset,
     visualSize: definition.visualSize,
-    radius: definition.shape === "pentagon" ? 19 : definition.shape === "square" ? 17 : 15,
+    radius: definition.key === "alien_hatchling" ? 9 : definition.shape === "pentagon" ? 19 : definition.shape === "square" ? 17 : 15,
     segment: 0,
     progress: 0,
     x: state.path[0].x,
@@ -201,6 +212,8 @@ export function activateChronoBreak(state) {
   const status = activeStatus(state, "chronoBreak");
   status.timer = stats.duration;
   status.cooldown = stats.cooldown;
+  addEffect(state, "stasis", state.board.x+state.board.w/2, state.board.y+state.board.h/2, 500, 1);
+  state.audio?.play('chrono');
   state.selectedActiveKey = null;
   return true;
 }
@@ -212,6 +225,8 @@ export function activateNapalm(state) {
   status.timer = stats.duration;
   status.damage = stats.damage;
   status.cooldown = stats.cooldown;
+  state.audio?.play('napalm');
+  addEffect(state, 'napalm', state.board.x+state.board.w/2, state.board.y+state.board.h/2, 500, 1.2);
   state.enemies.forEach((enemy) => {
     enemy.burnTimer = Math.max(enemy.burnTimer, stats.duration);
     enemy.burnDamage = stats.damage;
@@ -220,17 +235,38 @@ export function activateNapalm(state) {
   return true;
 }
 
-export function activateRocketLauncher(state, x, y) {
-  if (!canUseAbility(state, "rocketLauncher")) return false;
-  const stats = abilityStats(state.profile, "rocketLauncher");
-  const status = activeStatus(state, "rocketLauncher");
-  state.enemies.forEach((enemy) => {
-    if (distance(enemy, { x, y }) <= stats.area) damageEnemy(enemy, stats.damage, 1);
-  });
-  state.rocketBlasts.push({ x, y, radius: stats.area, timer: 0.38, maxTimer: 0.38 });
-  status.cooldown = stats.cooldown;
+export function activateArtillery(state, x, y) {
+  if (!canUseAbility(state, 'artillery')) return false;
+  const stats = abilityStats(state.profile,'artillery');
+  const status = activeStatus(state,'artillery');
+  status.timer = stats.duration; status.cooldown = stats.cooldown;
+  state.artillery = { x, y, elapsed: 0, next: .25, strikes: 0, duration: 5, damage: stats.damage, radius: stats.area };
+  addEffect(state, 'target', x, y, stats.area, 5);
+  state.audio?.play('artillery');
   state.selectedActiveKey = null;
   return true;
+}
+
+export function addEffect(state, kind, x, y, radius, duration=.5) {
+  state.effects.push({kind,x,y,radius,timer:duration,maxTimer:duration});
+  if(state.effects.length>90)state.effects.shift();
+}
+function impact(state,x,y,radius,damage,armorPierce=1) {
+  for(const enemy of state.enemies)if(enemy.life>0&&distance(enemy,{x,y})<=radius)damageEnemy(enemy,damage,armorPierce);
+  addEffect(state,'explosion',x,y,radius,.7);
+  state.audio?.play('impact',x);
+}
+function updateArtillery(state,dt) {
+  if(!state.artillery)return;
+  const barrage=state.artillery;barrage.elapsed+=dt;
+  while(barrage.strikes<10&&barrage.elapsed>=barrage.next) {
+    const i=barrage.strikes, angle=i*2.39996;
+    const scatter=i===0?0:Math.sqrt(i/10)*barrage.radius*.38;
+    const x=barrage.x+Math.cos(angle)*scatter,y=barrage.y+Math.sin(angle)*scatter;
+    impact(state,x,y,barrage.radius*.67,barrage.damage);
+    barrage.strikes++;barrage.next+=.5;
+  }
+  if(barrage.elapsed>=5)state.artillery=null;
 }
 
 export function createInitialState(level, profile, canvas) {
@@ -242,6 +278,10 @@ export function createInitialState(level, profile, canvas) {
     tileSets: getTileSets(level),
     path: getPathPoints(level, board),
     profile,
+    arsenalProfile: JSON.parse(JSON.stringify(profile)),
+    effects: [],
+    artillery: null,
+    visualTime: 0,
     gold: level.startGold,
     lives: level.lives,
     selectedWeaponKey: null,
@@ -279,7 +319,6 @@ export function createInitialState(level, profile, canvas) {
       damage: 0,
       area: 0,
     }])),
-    rocketBlasts: [],
     result: null,
     message: "Choose a tower, place it beside the route, then launch the wave.",
     messageTimer: 8,
@@ -300,6 +339,7 @@ export function damageEnemy(enemy, damage, armorPierce = 0) {
   const shieldHit = Math.min(enemy.shield, damage);
   enemy.shield -= shieldHit;
   enemy.life -= (damage - shieldHit) * (1 - enemy.armor * (1 - armorPierce));
+  if (damage > 0 && enemy.rageMultiplier > 1) enemy.raged = true;
 }
 
 function createProjectile(state, tower, target, angleOffset = 0, aimAngle = null) {
@@ -320,11 +360,19 @@ function createProjectile(state, tower, target, angleOffset = 0, aimAngle = null
     speed: tower.weapon.projectileSpeed,
     ballistic,
     targetId: ballistic ? null : target.id,
-    life: ballistic ? tower.range * 1.7 / tower.weapon.projectileSpeed : 1.2,
+    impactX: target.x, impactY: target.y,
+    splashRadius: (tower.weapon.splashRadius || 0) + (tower.weapon.attachments?.includes('blast') && tower.weapon.splashRadius ? 12 : 0),
+    slowStrength: tower.weapon.slowStrength || .25,
+    incendiary: tower.weapon.attachments?.includes('incendiary'),
+    cryo: tower.weapon.attachments?.includes('cryo'),
+    stun: tower.weapon.attachments?.includes('concussive') && tower.shotsFired % 5 === 0,
+    blast: tower.weapon.attachments?.includes('blast'),
+    life: ballistic ? tower.range * 1.7 / tower.weapon.projectileSpeed : 4,
   });
 }
 
 export function fireTower(state, tower, target) {
+  tower.shotsFired = (tower.shotsFired || 0) + 1;
   const pelletCount = tower.weapon.pelletCount || 1;
   if (tower.weapon.ballistic) {
     // Lead the target at firing time; pellets never steer after leaving the muzzle.
@@ -367,10 +415,17 @@ function updateTowers(state, dt) {
 
 function updateEnemies(state, dt) {
   const movementDt = activeStatus(state, "chronoBreak").timer > 0 ? 0 : dt;
+  const births = [];
   for (const enemy of state.enemies) {
     const tile = state.level.track[enemy.segment];
     const onIce = state.level.slowTiles?.some((item) => item.row === tile.row && item.col === tile.col);
-    let remaining = enemy.speed * movementDt * (onIce ? 0.75 : 1) * (enemy.slowTimer > 0 ? 0.75 : 1);
+    const frozen = enemy.stunTimer > 0;
+    let remaining = enemy.speed * movementDt * (frozen ? 0 : 1) * (onIce && !enemy.immuneSlow ? .75 : 1) * (enemy.raged ? enemy.rageMultiplier : 1) * (enemy.slowTimer > 0 && !enemy.immuneSlow ? 1-(enemy.slowStrength || .25) : 1);
+    enemy.stunTimer = Math.max(0,(enemy.stunTimer || 0)-dt);
+    if(enemy.brood && movementDt > 0 && !frozen && enemy.births < 3) {
+      enemy.broodTimer -= dt;
+      if(enemy.broodTimer<=0) { enemy.births++; enemy.broodTimer=8; births.push(...spawnHatchlings(state,enemy,1)); }
+    }
     enemy.slowTimer = Math.max(0, enemy.slowTimer - dt);
     while (remaining > 0 && enemy.segment < state.path.length - 1) {
       const from = state.path[enemy.segment];
@@ -398,17 +453,42 @@ function updateEnemies(state, dt) {
     state.leaks += 1;
     notify(state, `Breach! −${enemy.damage} lives. Cover the exit or upgrade your defense.`);
   }
-  state.enemies = state.enemies.filter((item) => !item.reachedEnd);
+  state.enemies = [...state.enemies.filter((item) => !item.reachedEnd), ...births];
 }
 
-function collectKilledEnemies(state) {
-  const killed = state.enemies.filter((enemy) => enemy.life <= 0);
-  for (const enemy of killed) {
-    state.gold += enemy.gold;
-    state.kills += 1;
-    awardRunXp(state, enemy.xp);
+function spawnHatchlings(state,parent,count) {
+  const children=[];
+  for(let i=0;i<count;i++) {
+    const child=makeEnemy({enemy:'alien_hatchling'},state);
+    Object.assign(child,{x:parent.x,y:parent.y,segment:parent.segment,progress:parent.progress,angle:parent.angle});
+    children.push(child);
   }
-  state.enemies = state.enemies.filter((enemy) => enemy.life > 0);
+  state.totalEnemies+=children.length;
+  return children;
+}
+function collectKilledEnemies(state) {
+  const killed=state.enemies.filter(enemy=>enemy.life<=0),children=[];
+  for(const enemy of killed) {
+    state.gold+=enemy.gold;state.kills++;
+    awardRunXp(state,enemy.xp);
+    if(enemy.brood)children.push(...spawnHatchlings(state,enemy,3));
+  }
+  state.enemies=[...state.enemies.filter(enemy=>enemy.life>0),...children];
+}
+export function projectileHit(state,projectile,enemy) {
+  damageEnemy(enemy,projectile.damage,projectile.armorPierce);
+  if(!enemy.immuneSlow && (projectile.slow || projectile.cryo)) {
+    enemy.slowStrength=Math.max(enemy.slowTimer>0?enemy.slowStrength||0:0,projectile.slow?projectile.slowStrength||.25:.16);
+    enemy.slowTimer=Math.max(enemy.slowTimer||0,projectile.slow||1);
+  }
+  if(projectile.incendiary) {enemy.burnTimer=Math.max(enemy.burnTimer||0,2);enemy.burnDamage=Math.max(enemy.burnDamage||0,projectile.damage*.12);}
+  if(projectile.stun)enemy.stunTimer=Math.max(enemy.stunTimer||0,enemy.key==='alien_boss'||enemy.key==='alien_saucer'?.1:.35);
+  const radius=projectile.splashRadius || (projectile.blast?34:0);
+  if(radius) {
+    for(const other of state.enemies)if(other!==enemy&&other.life>0&&distance(other,enemy)<=radius)damageEnemy(other,projectile.damage*(projectile.splashRadius?1:.2),projectile.armorPierce);
+    addEffect(state,projectile.splashRadius?'explosion':'spark',enemy.x,enemy.y,radius,.55);
+    if(projectile.splashRadius)state.audio?.play('impact',enemy.x);
+  }
 }
 
 // Earliest impact along a swept pellet segment, so fast projectiles cannot tunnel
@@ -440,7 +520,7 @@ export function updateProjectiles(state, dt) {
       }
       projectile.life -= dt;
       if (hit) {
-        damageEnemy(hit, projectile.damage, projectile.armorPierce);
+        projectileHit(state, projectile, hit);
         projectile.x += (end.x - projectile.x) * hitTime;
         projectile.y += (end.y - projectile.y) * hitTime;
         projectile.life = 0;
@@ -449,16 +529,18 @@ export function updateProjectiles(state, dt) {
     }
     projectile.life -= dt;
     const target = state.enemies.find((enemy) => enemy.id === projectile.targetId && enemy.life > 0);
-    if (!target) { projectile.life = 0; continue; }
-    const d = distance(projectile, target);
+    if (!target && !projectile.splashRadius) { projectile.life = 0; continue; }
+    if(target) {projectile.impactX=target.x;projectile.impactY=target.y;}
+    const destination=target || {x:projectile.impactX,y:projectile.impactY,radius:0};
+    const d = distance(projectile, destination);
     const travel = projectile.speed * dt;
-    if (d <= travel + target.radius) {
-      damageEnemy(target, projectile.damage, projectile.armorPierce);
-      if (projectile.slow) target.slowTimer = projectile.slow;
+    if (d <= travel + destination.radius) {
+      if(target)projectileHit(state,projectile,target);
+      else impact(state,destination.x,destination.y,projectile.splashRadius,projectile.damage,projectile.armorPierce);
       projectile.life = 0;
     } else {
-      projectile.x += ((target.x - projectile.x) / d) * travel;
-      projectile.y += ((target.y - projectile.y) / d) * travel;
+      projectile.x += ((destination.x - projectile.x) / d) * travel;
+      projectile.y += ((destination.y - projectile.y) / d) * travel;
     }
   }
   state.projectiles = state.projectiles.filter((projectile) => projectile.life > 0);
@@ -500,7 +582,7 @@ function updateWaves(state, dt) {
       state.spawnedInWave.add(index);
     }
   });
-  if (state.spawnedInWave.size === wave.spawns.length && state.enemies.length === 0) {
+  if (state.spawnedInWave.size === wave.spawns.length && state.enemies.length === 0 && !state.artillery) {
     const cleanBonus = state.waveLeaks === 0 ? 15 : 0;
     state.gold += wave.reward + cleanBonus;
     awardRunXp(state, 8 + state.level.sector * 2);
@@ -533,7 +615,8 @@ function updateResult(state) {
 
 export function placeTower(state, weaponKey, row, col) {
   if (state.result || row < 0 || col < 0 || row >= state.level.rows || col >= state.level.cols) return null;
-  const weapon = findEffectiveWeaponByKey(weapons, weaponKey, state.profile);
+  const weapon = findEffectiveWeaponByKey(weapons, weaponKey, { ...state.profile, arsenal: state.arsenalProfile.arsenal });
+  if(!classUnlocked(state.profile,weaponKey))return null;
   const key = tileKey(row, col);
   if (!weapon || state.gold < weapon.price || state.tileSets.path.has(key) || state.tileSets.blockers.has(key) || state.towers.some(t => t.row === row && t.col === col)) return null;
   const tower = {
@@ -558,7 +641,7 @@ export function upgradeTower(state, tower, key) {
   state.gold -= cost;
   tower.invested += cost;
   tower.upgrades[key] += 1;
-  refreshTowersWithSkills(state.towers, weapons, state.profile);
+  refreshTowersWithSkills(state.towers, weapons, { ...state.profile, arsenal: state.arsenalProfile.arsenal });
   return true;
 }
 
@@ -589,17 +672,17 @@ export function clearObstacle(state, obstacle) {
 export function stepState(state, dt) {
   if (state.isPaused || state.result) return;
   const scaledDt = dt * state.gameSpeed;
+  state.visualTime += scaledDt;
+  state.effects = state.effects.map(effect=>({...effect,timer:effect.timer-scaledDt})).filter(effect=>effect.timer>0);
   state.messageTimer = Math.max(0, state.messageTimer - scaledDt);
   // Cooldowns only recover in combat: waiting between waves cannot recharge abilities for free.
   if (state.phase === "combat") Object.values(state.activeAbilities).forEach((status) => {
     status.timer = Math.max(0, status.timer - scaledDt);
     status.cooldown = Math.max(0, status.cooldown - scaledDt);
   });
-  state.rocketBlasts = state.rocketBlasts
-    .map((blast) => ({ ...blast, timer: blast.timer - scaledDt }))
-    .filter((blast) => blast.timer > 0);
   updateWaves(state, scaledDt);
   if (state.phase === "combat") {
+    updateArtillery(state, scaledDt);
     updateTowers(state, scaledDt);
     updateProjectiles(state, scaledDt);
     updateBurningEnemies(state, scaledDt);
@@ -715,7 +798,7 @@ function drawTower(ctx, tower, assets) {
   ctx.shadowBlur = 8;
   ctx.shadowOffsetY = 4;
   ctx.rotate(tower.angle || 0);
-  ctx.rotate(-Math.PI / 2);
+  ctx.rotate(tower.weapon.key === "rocket_launcher" ? Math.PI / 2 : -Math.PI / 2);
   ctx.drawImage(weaponImage, -weaponW / 2, -weaponH / 2, weaponW, weaponH);
   ctx.restore();
 }
@@ -834,6 +917,44 @@ function drawObstacle(ctx, x, y, size, obstacle, selected) {
   ctx.restore();
 }
 
+function drawCombatEffects(ctx,state) {
+  for(const effect of state.effects) {
+    const t=clamp(1-effect.timer/effect.maxTimer,0,1),r=effect.radius;
+    ctx.save();ctx.translate(effect.x,effect.y);
+    if(effect.kind==='target') {
+      const pulse=.7+Math.sin(state.visualTime*8)*.15;
+      ctx.strokeStyle=`rgba(255,189,98,${pulse})`;ctx.fillStyle='#e4992c15';ctx.lineWidth=2;
+      ctx.setLineDash([12,9]);ctx.beginPath();ctx.arc(0,0,r,0,TWO_PI);ctx.fill();ctx.stroke();ctx.setLineDash([]);
+      for(let i=0;i<4;i++){ctx.save();ctx.rotate(i*Math.PI/2);ctx.beginPath();ctx.moveTo(r-16,0);ctx.lineTo(r+13,0);ctx.stroke();ctx.restore();}
+      ctx.font='bold 16px monospace';ctx.textAlign='center';ctx.fillStyle='#ffe4a4';ctx.fillText('ARTILLERY',0,-r-15);
+      // Incoming shells telegraph the next detonation in the marked area.
+      const phase=(state.artillery?.elapsed || 0)*2%1;
+      ctx.strokeStyle='#ffe7b8';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(90*(1-phase),-240*(1-phase));ctx.lineTo(90*(1-phase)+10,-240*(1-phase)-28);ctx.stroke();
+    } else if(effect.kind==='explosion'||effect.kind==='spark') {
+      ctx.globalAlpha=1-t;
+      const ring=r*(.25+t);const gradient=ctx.createRadialGradient(0,0,0,0,0,Math.max(1,ring));
+      gradient.addColorStop(0,'#fff0b6ee');gradient.addColorStop(.25,'#ffbd49c9');gradient.addColorStop(.65,'#ec5d3070');gradient.addColorStop(1,'#5d453700');
+      ctx.fillStyle=gradient;ctx.beginPath();ctx.arc(0,0,ring,0,TWO_PI);ctx.fill();
+      ctx.strokeStyle='#ffdb90';ctx.lineWidth=3*(1-t)+1;ctx.beginPath();ctx.arc(0,0,r*(.35+t),0,TWO_PI);ctx.stroke();
+      for(let i=0;i<12;i++){
+        const a=i*2.39996,d=r*(.15+t)*(.5+(i%3)*.2);
+        ctx.strokeStyle=i%2?'#fff1be':'#ff9d4c';ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(Math.cos(a)*d,Math.sin(a)*d);ctx.lineTo(Math.cos(a)*(d+11*(1-t)),Math.sin(a)*(d+11*(1-t)));ctx.stroke();
+      }
+      if(t>.2 && effect.kind==='explosion'){
+        ctx.globalAlpha=(1-t)*.32;ctx.fillStyle='#b4aaa0';
+        for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(Math.cos(i*2.4)*r*t*.4,Math.sin(i*2.4)*r*t*.25-r*t*.3, r*(.12+t*.1),0,TWO_PI);ctx.fill();}
+      }
+    } else if(effect.kind==='stasis') {
+      ctx.strokeStyle=`rgba(255,220,125,${(1-t)*.9})`;ctx.lineWidth=5;ctx.beginPath();ctx.arc(0,0,r*t,0,TWO_PI);ctx.stroke();
+    } else if(effect.kind==='napalm') {
+      ctx.globalAlpha=(1-t)*.6;
+      for(let i=0;i<9;i++){const x=(i-4)*150,y=Math.sin(i*2)*180;ctx.strokeStyle='#ff9b50';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(x-150*(1-t),y-500*(1-t));ctx.lineTo(x,y);ctx.stroke();ctx.fillStyle='#ffcd73';ctx.beginPath();ctx.arc(x,y,10+35*t,0,TWO_PI);ctx.fill();}
+    }
+    ctx.restore();
+  }
+}
+
 function drawGame(ctx, state, assets) {
   const { board, level, tileSets } = state;
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -916,7 +1037,7 @@ function drawGame(ctx, state, assets) {
   }
   ctx.restore();
 
-  const selected = findEffectiveWeaponByKey(weapons, state.selectedWeaponKey, state.profile);
+  const selected = findEffectiveWeaponByKey(weapons, state.selectedWeaponKey, { ...state.profile, arsenal: state.arsenalProfile.arsenal });
   if (selected) {
     ctx.fillStyle = "rgba(120, 226, 127, 0.12)";
     for (let row = 0; row < level.rows; row += 1) {
@@ -940,8 +1061,8 @@ function drawGame(ctx, state, assets) {
     }
   }
 
-  if (state.selectedActiveKey === "rocketLauncher" && state.hoverPoint) {
-    const stats = abilityStats(state.profile, "rocketLauncher");
+  if (state.selectedActiveKey === "artillery" && state.hoverPoint) {
+    const stats = abilityStats(state.profile, "artillery");
     drawRangeCircle(ctx, state.hoverPoint.x, state.hoverPoint.y, stats.area, "rgba(255, 194, 76, 0.92)");
   }
 
@@ -973,6 +1094,13 @@ function drawGame(ctx, state, assets) {
 
   state.projectiles.forEach((projectile) => {
     ctx.fillStyle = "#ffe57c";
+    if(projectile.weaponKey==='rocket_launcher') {
+      ctx.save();ctx.translate(projectile.x,projectile.y);
+      ctx.rotate(Math.atan2(projectile.impactY-projectile.y,projectile.impactX-projectile.x));
+      ctx.fillStyle='#ff9e38';ctx.shadowColor='#ff7934';ctx.shadowBlur=10;
+      ctx.beginPath();ctx.moveTo(-22,-4);ctx.lineTo(-42,0);ctx.lineTo(-22,4);ctx.fill();
+      ctx.fillStyle='#d8ded1';ctx.fillRect(-12,-4,22,8);ctx.fillStyle='#718b5d';ctx.fillRect(5,-5,10,10);ctx.restore();
+    }
     if (projectile.ballistic) {
       ctx.strokeStyle = "#fff1b0"; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(projectile.x-projectile.vx*.025,projectile.y-projectile.vy*.025); ctx.lineTo(projectile.x,projectile.y); ctx.stroke();
@@ -982,25 +1110,24 @@ function drawGame(ctx, state, assets) {
     ctx.fill();
   });
 
-  state.rocketBlasts.forEach((blast) => {
-    const t = clamp(blast.timer / blast.maxTimer, 0, 1);
-    ctx.save();
-    ctx.fillStyle = `rgba(255, 125, 40, ${0.18 * t})`;
-    ctx.strokeStyle = `rgba(255, 220, 112, ${0.85 * t})`;
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(blast.x, blast.y, blast.radius * (1.06 - t * 0.18), 0, TWO_PI);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = `rgba(255, 242, 182, ${0.32 * t})`;
-    ctx.beginPath();
-    ctx.arc(blast.x, blast.y, blast.radius * 0.18, 0, TWO_PI);
-    ctx.fill();
-    ctx.restore();
-  });
+  drawCombatEffects(ctx,state);
 
   state.enemies.forEach((enemy) => {
     drawAlien(ctx, enemy, assets);
+    const radius=(enemy.visualSize || 50)*.42;
+    if(enemy.immuneSlow || enemy.raged || enemy.brood) {
+      const color=enemy.immuneSlow?'#72dbe2':enemy.raged?'#ff6c58':'#d4acff';
+      ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();
+      if(enemy.immuneSlow)ctx.roundRect(enemy.x-radius,enemy.y-radius,radius*2,radius*2,8);
+      else ctx.arc(enemy.x,enemy.y,radius,0,TWO_PI);
+      ctx.stroke();
+      // Compact trait badges remain legible when several aliens overlap.
+      const bx=enemy.x+radius*.7,by=enemy.y-radius*.8;
+      ctx.fillStyle='#102128';ctx.beginPath();ctx.arc(bx,by,9,0,TWO_PI);ctx.fill();ctx.stroke();
+      ctx.fillStyle=color;ctx.font='bold 14px monospace';ctx.textAlign='center';
+      ctx.fillText(enemy.immuneSlow?'×':enemy.raged?'!':'…',bx,by+4);
+    }
+    if(enemy.stunTimer>0) {ctx.fillStyle='#f9d77f';ctx.font='20px sans-serif';ctx.textAlign='center';ctx.fillText('✦',enemy.x,enemy.y-radius-16);}
     if (enemy.shield > 0 || enemy.slowTimer > 0) {
       ctx.strokeStyle = enemy.shield > 0 ? "#81caff" : "#a9a4ff";
       ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(enemy.x,enemy.y,enemy.visualSize*.48,0,TWO_PI); ctx.stroke();
@@ -1017,16 +1144,30 @@ function drawGame(ctx, state, assets) {
     ctx.arc(enemy.x, enemy.y, enemy.radius + 9, 0, TWO_PI);
     ctx.fill();
     ctx.stroke();
+    for(let i=0;i<5;i++) {
+      const phase=(state.visualTime*1.7+i*.19)%1;
+      const x=enemy.x+Math.sin(i*2.4)*enemy.radius;
+      const y=enemy.y+enemy.radius-phase*(enemy.radius*2+15);
+      ctx.globalAlpha=1-phase;ctx.fillStyle=i%2?'#ff9d31':'#ffdf75';
+      ctx.beginPath();ctx.ellipse(x,y,3*(1-phase)+1,7*(1-phase)+2,Math.sin(i),0,TWO_PI);ctx.fill();
+    }
     ctx.restore();
   });
 
   if (activeStatus(state, "chronoBreak").timer > 0) {
-    ctx.fillStyle = "rgba(116, 220, 255, 0.12)";
+    ctx.fillStyle = "rgba(225, 175, 62, 0.07)";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.fillStyle = "rgba(230, 251, 255, 0.84)";
+        for(const enemy of state.enemies) {
+      ctx.save();ctx.translate(enemy.x,enemy.y);
+      ctx.fillStyle='#f8cf5b55';ctx.strokeStyle='#ffe595';ctx.lineWidth=2;
+      ctx.beginPath();ctx.ellipse(0,0,enemy.radius+10,enemy.radius+22,0,0,TWO_PI);ctx.fill();ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-7,-10);ctx.lineTo(7,-10);ctx.lineTo(-7,10);ctx.lineTo(7,10);ctx.stroke();
+      ctx.restore();
+    }
+    ctx.fillStyle = "#ffe4a0";
     ctx.font = "700 30px system-ui";
     ctx.textAlign = "center";
-    ctx.fillText("CHRONO BREAK", ctx.canvas.width / 2, 54);
+    ctx.fillText("CHRONO BREAK / STASIS", ctx.canvas.width / 2, 54);
   }
 
   if (activeStatus(state, "napalm").timer > 0) {
@@ -1083,6 +1224,7 @@ export function createGame({ ui, levels }) {
   }
 
   function syncMenu() {
+    ui.arsenalNextUnlock.textContent = nextArsenalUnlock(profile.level);
     ui.menuSkillsButton.innerHTML = `<span>COMMANDER / LV ${profile.level}</span><strong>${profile.skillPoints} SP available ↗</strong><i style="--xp:${Math.round(profile.xp / xpNeeded(profile.level) * 100)}%"></i>`;
     const stars = Object.values(profile.missions).reduce((total, item) => total + item.stars, 0);
     ui.campaignProgress.textContent = `CAMPAIGN RECORD / ${stars} ★ of 54`;
@@ -1134,7 +1276,7 @@ export function createGame({ ui, levels }) {
     const bonus = state.waveIndex > 0 && state.waveDelay > 0 ? ` (+${Math.ceil(state.waveDelay) * 2}g)` : "";
     ui.launchWaveButton.textContent = state.phase === "combat" ? "Wave in progress" : `Launch wave ${state.waveIndex + 1}${bonus}`;
     ui.autoWaveToggle.checked = profile.settings.autoWave;
-    ui.battleMessage.textContent = state.messageTimer > 0 ? state.message : state.selectedActiveKey ? "Choose the blast location. Escape to cancel." : state.selectedWeaponKey ? "Choose a free tile. Blue pads extend range; amber pads boost damage." : state.phase === "prepare" ? "Prepare your defense. Click a tower to upgrade it or a crate to clear space." : "Click a tower to upgrade, change target, or sell.";
+    ui.battleMessage.textContent = state.messageTimer > 0 ? state.message : state.selectedActiveKey ? "Mark an area for a 5-second artillery barrage. Escape to cancel." : state.selectedWeaponKey ? "Choose a free tile. Blue pads extend range; amber pads boost damage." : state.phase === "prepare" ? "Prepare your defense. Click a tower to upgrade it or a crate to clear space." : "Click a tower to upgrade, change target, or sell.";
     ui.playerLevelButton.title = `Commander Lv ${profile.level} · ${profile.xp}/${xpNeeded(profile.level)} XP · ${profile.skillPoints} SP available`;
     ui.playerLevelButton.classList.toggle("has-points", profile.skillPoints >= 5);
     ui.soundButton.textContent = profile.settings.muted ? "Sound off" : "Sound on";
@@ -1172,12 +1314,12 @@ export function createGame({ ui, levels }) {
   }
 
   function effectiveWeaponByKey(key) {
-    return findEffectiveWeaponByKey(weapons, key, profile);
+    return findEffectiveWeaponByKey(weapons, key, state ? { ...profile, arsenal: state.arsenalProfile.arsenal } : profile);
   }
 
   function refreshTowerSkillBonuses() {
     if (!state) return;
-    refreshTowersWithSkills(state.towers, weapons, profile);
+    refreshTowersWithSkills(state.towers, weapons, { ...profile, arsenal: state.arsenalProfile.arsenal });
   }
 
   function syncTowerSidebar() {
@@ -1186,7 +1328,7 @@ export function createGame({ ui, levels }) {
     ui.towerSidebar.classList.toggle("inspecting-tower", Boolean(tower));
     ui.towerSidebarCloseButton.classList.toggle("hidden", !tower && !state.selectedObstacle);
     if (tower) {
-      ui.towerSidebarTitle.textContent = tower.weapon.name;
+      ui.towerSidebarTitle.textContent = `${tower.weapon.name} · ${tower.weapon.blueprint}`;
       const overview = [
         ["Damage", tower.weapon.directDamage.toLocaleString("en-US")],
         ["Fire rate", `${tower.weapon.atkSpeed}/s`],
@@ -1196,12 +1338,13 @@ export function createGame({ ui, levels }) {
       setMarkup(ui.towerStatList, `<p class="tower-role">${tower.weapon.role}${tower.pad ? ` · ${tower.pad === "range" ? "+18% range pad" : "+15% damage pad"}` : ""}</p>${overview.map(([label, value]) => `<div class="weapon-stat-row"><span>${label}</span><strong>${value}</strong></div>`).join("")}`);
       // Keep controls mounted for the selected tower, including when gold/ammo changes
       // between pointerdown and pointerup. Only patch their text and availability.
+      const paths = towerUpgradePathsFor(tower.weapon.key);
       mountActions(`tower:${tower.id}`, `
         <div class="panel-section-label">TARGET PRIORITY <span>Firing order</span></div>
         <div class="target-buttons" role="group" aria-label="Target priority">${targetModes.map(mode => `<button type="button" data-target="${mode.key}" title="${mode.hint}"><i aria-hidden="true">${mode.icon}</i><span>${mode.name}</span></button>`).join("")}</div>
         <p class="target-description" data-target-description></p>
         <div class="panel-section-label upgrade-heading">FIELD UPGRADES <span data-upgrade-budget></span></div>
-        ${towerUpgradePaths.map(path => `<button type="button" class="upgrade-button upgrade-${path.key}" data-upgrade="${path.key}">
+        ${paths.map(path => `<button type="button" class="upgrade-button upgrade-${path.key}" data-upgrade="${path.key}">
           <span class="upgrade-topline"><strong>${path.name}</strong><span class="upgrade-ranks" aria-hidden="true">${[0,1,2].map(rank => `<i data-rank="${rank}"></i>`).join("")}</span></span>
           <span class="upgrade-preview" data-preview></span>
           <span class="upgrade-purchase"><span data-upgrade-status></span><b data-cost></b></span>
@@ -1218,7 +1361,7 @@ export function createGame({ ui, levels }) {
       });
       ui.towerActions.querySelector("[data-target-description]").textContent = targetModes.find(mode => mode.key === tower.targeting)?.hint || targetModes[0].hint;
       ui.towerActions.querySelector("[data-upgrade-budget]").textContent = `${total} / 4 installed`;
-      towerUpgradePaths.forEach(path => {
+      paths.forEach(path => {
         const button = ui.towerActions.querySelector(`[data-upgrade="${path.key}"]`);
         const rank = tower.upgrades[path.key];
         const cost = towerUpgradeCost(tower, path.key);
@@ -1230,9 +1373,7 @@ export function createGame({ ui, levels }) {
         button.classList.toggle("needs-gold", !branchMaxed && !limitReached && state.gold < cost);
         button.querySelectorAll("[data-rank]").forEach(pip => pip.classList.toggle("filled", Number(pip.dataset.rank) < rank));
         const next = applyTowerUpgrades(effectiveWeaponByKey(tower.weapon.key), { ...tower, upgrades: { ...tower.upgrades, [path.key]: rank + 1 } });
-        const preview = branchMaxed || limitReached ? path.detail : path.key === "power"
-          ? `Damage ${tower.weapon.directDamage.toLocaleString("en-US")} → ${next.directDamage.toLocaleString("en-US")}`
-          : `Range ${tower.range} → ${next.range} · Rate ${tower.weapon.atkSpeed} → ${next.atkSpeed}/s`;
+        const preview = branchMaxed || limitReached ? path.detail : upgradePreview(tower.weapon,next,path.key);
         button.querySelector("[data-preview]").textContent = preview;
         button.querySelector("[data-upgrade-status]").textContent = branchMaxed ? "Fully upgraded" : limitReached ? "Tower limit reached" : state.gold < cost ? `Need ${cost - state.gold}g more` : "Upgrade";
         button.querySelector("[data-cost]").textContent = branchMaxed ? "3 / 3" : limitReached ? "4 / 4" : `${cost}g`;
@@ -1256,19 +1397,19 @@ export function createGame({ ui, levels }) {
     ui.towerSidebarTitle.textContent = state.phase === "prepare" ? "Plan your defense" : "Hold the line";
     const wave = state.level.waves[state.waveIndex];
     const types = [...new Set(wave?.spawns.map(spawn => spawn.enemy))];
-    const tips = { alien_normal: "Scout · reliable fire wears it down.", alien_fast: "Skitter · fast and fragile. Cover the exit.", alien_tank: "Bulwark · 35% armor. Magnum or Sniper.", alien_shielded: "Shielded · extra shield absorbs hits first.", alien_boss: "Overseer · set heavy towers to Strongest.", alien_saucer: "Mothership · shields, armor, lethal breach." };
+    const tips = { alien_normal: "Scout · reliable fire wears it down.", alien_fast: "Skitter · fast and fragile. Cover the exit.", alien_tank: "Bulwark · 35% armor. Magnum or Sniper.", alien_shielded: "Shielded · extra shield absorbs hits first.", alien_boss: "Overseer · set heavy towers to Strongest.", alien_saucer: "Mothership · shields, armor, lethal breach.", alien_steadfast: "Juggernaut × · immune to slow. Use raw damage or stun.", alien_rager: "Ravager ! · speeds up after its first hit. Finish it quickly.", alien_broodmother: "Broodmother … · releases hatchlings. Cover its spawn with splash.", alien_hatchling: "Hatchling · fast offspring, no gold or XP bounty." };
     setMarkup(ui.towerStatList, `<p class="field-guide">${state.level.description}</p><div class="enemy-intel">${types.map(key => `<div><img src="${assetUrl(enemies[key].asset)}" alt=""><span>${tips[key]}</span></div>`).join("")}</div>`);
     mountActions(`guide:${state.level.id}:${profile.skillPoints}`, `<div class="map-legend"><span><i class="range-dot"></i> Sensor pad: +18% range</span><span><i class="power-dot"></i> Power pad: +15% damage</span>${state.level.biome === "frost" ? "<span>❄ Frozen route: aliens 25% slower</span>" : ""}<span>▧ Crates: click to clear</span></div><p class="upgrade-limit">${profile.skillPoints >= 5 ? `${profile.skillPoints} SP available. Open the commander badge to upgrade.` : "3 stars = no leaks · 2 stars = 60% lives"}</p>`);
   }
 
   function renderWeaponBar() {
-    ui.weaponBar.innerHTML = weapons.map((weapon, index) => `
+    ui.weaponBar.innerHTML = equippedWeapons(weapons,state.arsenalProfile).map((weapon, index) => `
       <article class="weapon-card" data-weapon-key="${weapon.key}" style="--weapon-accent: ${weapon.accent}">
         <button class="weapon-select" type="button" aria-label="Build ${weapon.name}, ${weapon.price} gold" aria-pressed="false">
           <span class="weapon-topline"><kbd>${index + 1}</kbd><span class="weapon-state">READY</span></span>
           <span class="weapon-art-stage"><img class="weapon-art" src="${assetUrl(weapon.hudAsset)}" alt="" draggable="false"></span>
           <span class="weapon-caption"><strong class="weapon-nickname">${weapon.nickname}</strong><span class="weapon-price">${weapon.price}<small>g</small></span></span>
-          <span class="weapon-role">${weapon.role}</span>
+          <span class="weapon-role">${arsenalChoice(state.arsenalProfile,weapon.key).blueprint.key === 'common' ? weapon.role : `${arsenalChoice(state.arsenalProfile,weapon.key).blueprint.name} · ${arsenalChoice(state.arsenalProfile,weapon.key).blueprint.key}`}</span>
         </button>
         <button class="weapon-info-button" data-info-weapon-key="${weapon.key}" type="button" aria-label="View ${weapon.name} attributes">i</button>
       </article>
@@ -1340,6 +1481,33 @@ export function createGame({ ui, levels }) {
     }
   }
 
+  let arsenalClass = 'handgun';
+  function syncArsenal() {
+    renderArsenal(ui.arsenalContent,profile,weapons,arsenalClass);
+    ui.arsenalGoal.textContent = `COMMANDER LV ${profile.level} / ${nextArsenalUnlock(profile.level)}`;
+  }
+  function openArsenal() {
+    if(state) { state.wasPausedBeforeArsenal=state.isPaused; state.isPaused=true; }
+    syncArsenal(); ui.arsenalModal.classList.remove('hidden'); ui.arsenalCloseButton.focus(); syncHud();
+  }
+  function closeArsenal() {
+    ui.arsenalModal.classList.add('hidden');
+    if(state) {state.isPaused=state.wasPausedBeforeArsenal; syncHud();} else syncMenu();
+    (state?ui.resultArsenalButton:ui.menuArsenalButton).focus();
+  }
+  ui.menuArsenalButton.addEventListener('click',openArsenal);
+  ui.resultArsenalButton.addEventListener('click',openArsenal);
+  ui.arsenalCloseButton.addEventListener('click',closeArsenal);
+  ui.arsenalModal.addEventListener('click',event=>{if(event.target===ui.arsenalModal)closeArsenal();});
+  ui.arsenalContent.addEventListener('click',event=>{
+    const button=event.target.closest('button');if(!button||button.disabled)return;
+    if(button.dataset.arsenalClass)arsenalClass=button.dataset.arsenalClass;
+    else if(button.dataset.equipHeavy&&classUnlocked(profile,button.dataset.equipHeavy))profile.arsenal.heavy=button.dataset.equipHeavy;
+    else if(button.dataset.blueprint)equipBlueprint(profile,arsenalClass,button.dataset.blueprint);
+    else if(button.dataset.attachment)equipAttachment(profile,arsenalClass,button.dataset.attachment);
+    saveProfile(profile);syncArsenal();
+  });
+
   function openSkillTree() {
     if (state) {
       state.wasPausedBeforeSkillTree = state.isPaused;
@@ -1366,6 +1534,7 @@ export function createGame({ ui, levels }) {
     saveProfile(profile);
     ui.weaponInfoModal.classList.add("hidden");
     ui.skillTreeModal.classList.add("hidden");
+    ui.arsenalModal.classList.add("hidden");
     state = createInitialState(level, profile, ui.canvas);
     state.audio = audio;
     actionsPanelKey = null;
@@ -1407,7 +1576,7 @@ export function createGame({ ui, levels }) {
     ui.resultTitle.textContent = won ? (state.level.stage === 6 ? "Sector secured" : "Mission complete") : "Regroup. Rebuild. Return.";
     ui.resultStars.textContent = won ? "★".repeat(state.reward.stars) + "☆".repeat(3 - state.reward.stars) : "↻";
     ui.resultCopy.textContent = won ? `${state.level.name} · ${state.lives}/${state.level.lives} lives protected.` : `${state.level.name} · ${state.waveIndex} waves completed. Your earned XP is safe.`;
-    ui.resultRewards.innerHTML = `<strong>+${state.runXp} XP earned</strong><span>Commander Lv ${profile.level} · ${profile.skillPoints} SP available</span>${state.reward?.firstClear ? `<span>First-clear bonus included: +${state.level.firstClearXp} XP</span>` : ""}<p>${won ? "Replay for more stars, or advance to the next mission." : "Try crossfire at bends, upgrade key towers, and spend your skill points."}</p>`;
+    ui.resultRewards.innerHTML = `<strong>+${state.runXp} XP earned</strong><span>Commander Lv ${profile.level} · ${profile.skillPoints} SP available</span>${state.reward?.firstClear ? `<span>First-clear bonus included: +${state.level.firstClearXp} XP</span>` : ""}<p>${won ? "Replay for more stars, or advance to the next mission." : "Try crossfire at bends, upgrade key towers, and spend your skill points."}</p><span>${nextArsenalUnlock(profile.level)}</span>`;
     ui.resultNextButton.classList.toggle("hidden", !won || levels.indexOf(state.level) === levels.length - 1);
     ui.resultSkillsButton.textContent = `Commander skills · ${profile.skillPoints} SP`;
     ui.resultModal.classList.remove("hidden");
@@ -1446,7 +1615,7 @@ export function createGame({ ui, levels }) {
     if (!ability) return;
     if (ability.key === "chronoBreak") activateChronoBreak(state);
     if (ability.key === "napalm") activateNapalm(state);
-    if (ability.key === "rocketLauncher") {
+    if (ability.key === "artillery") {
       state.selectedActiveKey = state.selectedActiveKey === ability.key ? null : ability.key;
       state.selectedWeaponKey = null;
       state.selectedTowerId = null;
@@ -1517,9 +1686,9 @@ export function createGame({ ui, levels }) {
   ui.canvas.addEventListener("click", (event) => {
     if (!state || state.result) return;
     const point = canvasPointFromEvent(event);
-    if (state.selectedActiveKey === "rocketLauncher") {
+    if (state.selectedActiveKey === "artillery") {
       if (point) {
-        activateRocketLauncher(state, point.x, point.y);
+        activateArtillery(state, point.x, point.y);
         collectKilledEnemies(state);
         syncHud();
       }
@@ -1636,7 +1805,8 @@ export function createGame({ ui, levels }) {
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
       if (event.key === "Escape") {
-        if (modal === ui.skillTreeModal) closeSkillTree();
+        if (modal === ui.arsenalModal) closeArsenal();
+        else if (modal === ui.skillTreeModal) closeSkillTree();
         else if (modal === ui.weaponInfoModal) closeWeaponInfo();
         else if (modal === ui.pauseModal) ui.resumeButton.click();
       }
@@ -1694,6 +1864,7 @@ export function createGame({ ui, levels }) {
     player: { level: profile.level, xp: profile.xp, skillPoints: profile.skillPoints },
     skills: profile.skills,
     skillTreeOpen: !ui.skillTreeModal.classList.contains("hidden"),
+    arsenalOpen: !ui.arsenalModal.classList.contains("hidden"),
     wave: state ? `${Math.min(state.waveIndex + 1, state.level.waves.length)}/${state.level.waves.length}` : null,
     kills: state ? `${state.kills}/${state.totalEnemies}` : null,
     selectedWeapon: state?.selectedWeaponKey,
@@ -1719,6 +1890,12 @@ export function createGame({ ui, levels }) {
       atkSpeed: tower.weapon.atkSpeed,
       reloadSpeed: tower.weapon.reloadSpeed,
       ammo: tower.ammo,
+      pelletCount: tower.weapon.pelletCount,
+      slowStrength: tower.weapon.slowStrength,
+      slowDuration: tower.weapon.slow,
+      attachments: tower.weapon.attachments,
+      blueprint: tower.weapon.blueprint,
+      rarity: tower.weapon.rarity,
       upgrades: tower.upgrades,
       invested: tower.invested,
       targeting: tower.targeting,
@@ -1738,10 +1915,18 @@ export function createGame({ ui, levels }) {
       life: Math.round(enemy.life),
       shield: Math.round(enemy.shield),
       slowTimer: enemy.slowTimer,
+      slowStrength: enemy.slowStrength,
+      immuneSlow: enemy.immuneSlow,
+      stunTimer: enemy.stunTimer,
+      raged: enemy.raged,
+      brood: enemy.brood,
       burnTimer: Number(enemy.burnTimer.toFixed(2)),
     })) || [],
     result: state?.result,
     reward: state?.reward,
+    artillery: state?.artillery,
+    effects: state?.effects.map(e=>({kind:e.kind,x:e.x,y:e.y,timer:e.timer})),
+    arsenal: profile.arsenal,
   });
 
   window.advanceTime = (ms) => {

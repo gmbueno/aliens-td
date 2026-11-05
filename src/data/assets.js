@@ -37,7 +37,7 @@ export const assets = {
     activePlaque: "assets/slots/ui/active-plaque.png",
     activeCards: {
       chronoBreak: "assets/slots/cards/time-stop.png",
-      rocketLauncher: "assets/slots/cards/rocket_launcher.png",
+      artillery: "assets/slots/cards/artillery.svg",
       napalm: "assets/slots/cards/napalm.png.png",
     },
     cards: [

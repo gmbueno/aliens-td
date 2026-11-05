@@ -1,0 +1,37 @@
+[
+  {
+    "file": "assets/audio/effects/artillery.mp3",
+    "sha256": "bfe59b990578d0c40013b29fd7e835b7867fcadad55ae3f1e2c5e991adb53ca1",
+    "source": "https://opengameart.org/sites/default/files/explosion1_0.ogg",
+    "sourceSha256": "5fb4f29c68513ba69c8e4e4a0820596f609827435615a713b5a8487266f37401",
+    "license": "CC0-1.0"
+  },
+  {
+    "file": "assets/audio/effects/chrono.mp3",
+    "sha256": "aeb14d9e143c864ce5aed0c0ec5d9c56621ea56567e017e156d804a12323a953",
+    "source": "Original project-designed rendered effect",
+    "sourceSha256": "3c6fe4a5d281fef9e901c8c7a636451ac0622c33fed723fc7ce82e10c7656d4a",
+    "license": "CC0-1.0"
+  },
+  {
+    "file": "assets/audio/effects/impact.mp3",
+    "sha256": "acbaee85ae6d0264eeac19e8d64abd1de61c3111226a788a7319fcd8c5d71868",
+    "source": "https://opengameart.org/sites/default/files/explosion1_0.ogg",
+    "sourceSha256": "5fb4f29c68513ba69c8e4e4a0820596f609827435615a713b5a8487266f37401",
+    "license": "CC0-1.0"
+  },
+  {
+    "file": "assets/audio/effects/napalm.mp3",
+    "sha256": "1c88d694c64013aafcc9b9f240294a4636f88143e5d8d0c516ef14023683689f",
+    "source": "Original project-designed rendered effect",
+    "sourceSha256": "9ddc20150eebd40d99888ebdb48f40e335a5356bf35f58f70980267c6bdb32ff",
+    "license": "CC0-1.0"
+  },
+  {
+    "file": "assets/audio/effects/rocket-launch.mp3",
+    "sha256": "b95a2de19400db77bc24a891cc211dac4a416288be85ee7313cd71803ef360d7",
+    "source": "https://opengameart.org/sites/default/files/explosion1_0.ogg",
+    "sourceSha256": "5fb4f29c68513ba69c8e4e4a0820596f609827435615a713b5a8487266f37401",
+    "license": "CC0-1.0"
+  }
+]

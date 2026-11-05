@@ -393,7 +393,7 @@ const level6 = {
           "at": 1.17
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.94
         },
         {
@@ -469,7 +469,7 @@ const level6 = {
           "at": 1.1
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.81
         },
         {
@@ -553,7 +553,7 @@ const level6 = {
           "at": 1.04
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.68
         },
         {
@@ -649,7 +649,7 @@ const level6 = {
           "at": 1.5
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.55
         },
         {

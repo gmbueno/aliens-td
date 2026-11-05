@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { levels } from '../src/data/levels/index.js';
 import { enemies } from '../src/data/enemies.js';
 import { weapons } from '../src/data/weapons.js';
-import { createInitialState, stepState, launchWave, placeTower, upgradeTower, sellTower, sellValue, clearObstacle, damageEnemy, activateChronoBreak, activateRocketLauncher, activateNapalm } from '../src/game.js';
+import { createInitialState, stepState, launchWave, placeTower, upgradeTower, sellTower, sellValue, clearObstacle, damageEnemy, activateChronoBreak, activateArtillery, activateNapalm } from '../src/game.js';
 import { normalizeProfile, loadProfile, saveProfile, recordVictory, missionStars, resetSkills } from '../src/systems/profile.js';
 import { buySkill, spentSkillPoints } from '../src/data/skills.js';
 import { refreshTowerSkillBonuses, towerUpgradeCost } from '../src/systems/weaponStats.js';
@@ -108,12 +108,12 @@ test('pause freezes simulation and cooldowns; 2x advances them twice as fast',()
   state.phase='prepare';const c=state.activeAbilities.chronoBreak.cooldown;tick(state,10);assert.equal(state.activeAbilities.chronoBreak.cooldown,c);
 });
 
-test('rocket and napalm apply damage and cooldown, without duplicate kill rewards',()=>{
+test('artillery and napalm apply damage and cooldown, without duplicate kill rewards',()=>{
   const state=make(undefined,{equippedActiveKey:'rocketLauncher',settings:{muted:true}});
   launchWave(state);tick(state,1);const enemy=state.enemies[0];
-  assert.ok(activateRocketLauncher(state,enemy.x,enemy.y));tick(state,.02);
-  assert.ok(state.kills>0);const kills=state.kills;
-  assert.equal(activateRocketLauncher(state,enemy.x,enemy.y),false);tick(state,.02);assert.equal(state.kills,kills);
+  assert.ok(activateArtillery(state,enemy.x,enemy.y));tick(state,.3);
+  assert.ok(enemy.life<enemy.maxLife);tick(state,1);assert.ok(state.kills>0);const kills=state.kills;
+  assert.equal(activateArtillery(state,enemy.x,enemy.y),false);tick(state,.02);assert.equal(state.kills,kills);
   const burn=make(undefined,{equippedActiveKey:'napalm',settings:{muted:true}});launchWave(burn);tick(burn,1);
   const hp=burn.enemies[0].life;assert.ok(activateNapalm(burn));tick(burn,1);assert.ok(burn.enemies[0].life<hp);
 });
@@ -187,9 +187,9 @@ test('shotgun emits its whole fan at one enemy, using one shell and one sound', 
   state.enemies=[target];const before=tower.ammo;let sounds=0;
   state.profile.settings.muted=false;state.audio={play(){sounds++;}};
   fireTower(state,tower,target);
-  assert.equal(state.projectiles.length,4);assert.equal(tower.ammo,before-1);assert.equal(sounds,1);
+  assert.equal(state.projectiles.length,3);assert.equal(tower.ammo,before-1);assert.equal(sounds,1);
   assert.ok(state.projectiles.every(p=>p.ballistic&&p.targetId===null));
-  assert.equal(new Set(state.projectiles.map(p=>p.vy.toFixed(3))).size,4);
+  assert.equal(new Set(state.projectiles.map(p=>p.vy.toFixed(3))).size,3);
 });
 
 test('ballistic pellets keep their trajectory after target movement or death', async()=>{
@@ -199,7 +199,7 @@ test('ballistic pellets keep their trajectory after target movement or death', a
   state.enemies=[target];fireTower(state,tower,target);
   const trajectories=state.projectiles.map(p=>({x:p.x,y:p.y,vx:p.vx,vy:p.vy}));
   state.enemies=[];updateProjectiles(state,.1);
-  assert.equal(state.projectiles.length,4,'death of the original target must not erase pellets');
+  assert.equal(state.projectiles.length,3,'death of the original target must not erase pellets');
   state.projectiles.forEach((p,i)=>{assert.equal(p.vx,trajectories[i].vx);assert.equal(p.vy,trajectories[i].vy);assert.ok(Math.abs(p.x-trajectories[i].x-p.vx*.1)<.001);});
 });
 
@@ -229,4 +229,95 @@ test('pellets expire and never damage the same alien repeatedly', async()=>{
   updateProjectiles(state,.1);updateProjectiles(state,.1);assert.equal(enemy.life,1300);
   state.projectiles=[{id:'expired',ballistic:true,x:0,y:100,vx:1000,vy:0,damage:700,armorPierce:0,life:.02}];
   updateProjectiles(state,.3);assert.equal(enemy.life,1300);assert.equal(state.projectiles.length,0);
+});
+
+// Arsenal scenarios validate outcomes, migration and saved-build boundaries.
+test('weapon-specific upgrades change the intended combat roles',()=>{
+ const state=make(undefined,{level:10});state.gold=100000;
+ const build=key=>{for(let row=0;row<state.level.rows;row++)for(let col=0;col<state.level.cols;col++){const tower=placeTower(state,key,row,col);if(tower)return tower;}};
+ const shotgun=build('shotgun');assert.equal(shotgun.weapon.pelletCount,3);
+ upgradeTower(state,shotgun,'power');assert.equal(shotgun.weapon.pelletCount,4);
+ upgradeTower(state,shotgun,'power');assert.equal(shotgun.weapon.pelletCount,5);
+ const mp=build('machine_pistol');const slow=mp.weapon.slow;upgradeTower(state,mp,'tactical');
+ assert.equal(mp.weapon.slowStrength,.35);assert.ok(mp.weapon.slow>slow);assert.equal(mp.weapon.slow,1.3);
+ const magnum=build('magnum'),damage=magnum.weapon.directDamage;upgradeTower(state,magnum,'power');assert.equal(magnum.weapon.directDamage,damage*1.5);
+ const sniper=build('sniper'),range=sniper.range;upgradeTower(state,sniper,'tactical');assert.equal(sniper.range,Math.round(range*1.25));
+ const rpg=build('rocket_launcher'),radius=rpg.weapon.splashRadius;upgradeTower(state,rpg,'power');assert.equal(rpg.weapon.splashRadius,radius+12);
+});
+
+test('models and attachments have deterministic unlocks, socket caps and persistent choices',async()=>{
+ const {equipBlueprint,equipAttachment,normalizeArsenal,equippedWeapons}=await import('../src/data/arsenal.js');
+ const fresh=normalizeProfile();assert.equal(equipBlueprint(fresh,'handgun','rare'),false);assert.equal(equipAttachment(fresh,'handgun','incendiary'),false);
+ const state=make();state.gold=10000;const tile=freeTile(state);assert.equal(placeTower(state,'rocket_launcher',tile.row,tile.col),null);
+ const profile=normalizeProfile({level:10});assert.equal(equipBlueprint(profile,'handgun','legendary'),true);
+ assert.equal(equipAttachment(profile,'handgun','incendiary'),true);assert.equal(equipAttachment(profile,'handgun','concussive'),true);assert.equal(equipAttachment(profile,'handgun','cryo'),false);
+ assert.equal(equipAttachment(profile,'handgun','incendiary'),true);assert.equal(equipAttachment(profile,'handgun','cryo'),true);
+ profile.arsenal.heavy='rocket_launcher';assert.equal(equippedWeapons(weapons,profile).length,6);assert.equal(equippedWeapons(weapons,profile).at(-1).key,'rocket_launcher');
+ assert.deepEqual(normalizeProfile(JSON.parse(JSON.stringify(profile))).arsenal,profile.arsenal);
+ const forged=normalizeArsenal({heavy:'rocket_launcher',blueprints:{handgun:'legendary'},attachments:{handgun:['cryo','cryo','fake']}},fresh);
+ assert.equal(forged.heavy,'sniper');assert.equal(forged.blueprints.handgun,'common');assert.deepEqual(forged.attachments.handgun,[]);
+ equipBlueprint(profile,'handgun','common');assert.deepEqual(profile.arsenal.attachments.handgun,[]);
+});
+
+test('arsenal changes wait for next deployment, including later tower upgrades',async()=>{
+ const {equipBlueprint,equipAttachment}=await import('../src/data/arsenal.js');
+ const state=make(undefined,{level:10});state.gold=10000;
+ const tile=freeTile(state),tower=placeTower(state,'handgun',tile.row,tile.col);
+ equipBlueprint(state.profile,'handgun','legendary');equipAttachment(state.profile,'handgun','incendiary');
+ upgradeTower(state,tower,'power');assert.equal(tower.weapon.rarity,'common');assert.deepEqual(tower.weapon.attachments,[]);
+ const next=createInitialState(levels[0],state.profile,{width:1280,height:720});next.gold=10000;
+ const future=placeTower(next,'handgun',tile.row,tile.col);assert.equal(future.weapon.rarity,'legendary');assert.deepEqual(future.weapon.attachments,['incendiary']);
+});
+
+test('legacy rocket active and invested ranks migrate to artillery without losing SP',()=>{
+ const profile=normalizeProfile({level:8,skillPoints:31,skills:{rocketLauncher:3},equippedActiveKey:'rocketLauncher'});
+ assert.equal(profile.equippedActiveKey,'artillery');assert.equal(profile.skills.artillery,3);assert.equal(profile.skills.rocketLauncher,undefined);assert.ok(profile.skillPoints>=31);
+});
+
+const customState=(enemyKey,active='chronoBreak')=>{
+ const level={...levels[0],threat:1,waves:[{name:'Trait test',healthScale:1,reward:0,spawns:[{enemy:enemyKey,at:0},{enemy:'alien_normal',at:100}]}]};
+ const s=make(level,{level:10,equippedActiveKey:active});launchWave(s);tick(s,.02);return s;
+};
+test('slow-immune enemies resist weapons; rage triggers only after a damaging hit',async()=>{
+ const {projectileHit}=await import('../src/game.js');
+ const immune=customState('alien_steadfast'),enemy=immune.enemies[0];
+ projectileHit(immune,{damage:1,armorPierce:0,slow:2,slowStrength:.6,cryo:true},enemy);assert.equal(enemy.slowTimer,0);
+ const rage=customState('alien_rager'),rager=rage.enemies[0];assert.equal(rager.raged,false);
+ const start=rager.x;tick(rage,.5);const normal=rager.x-start;
+ damageEnemy(rager,1,1);assert.equal(rager.raged,true);const x=rager.x;tick(rage,.5);assert.ok(rager.x-x>normal*1.5);
+});
+
+test('broodmother spawns live hatchlings over time and on death; babies give no farmable rewards',()=>{
+ const s=customState('alien_broodmother'),parent=s.enemies[0];const total=s.totalEnemies;
+ tick(s,8.1);assert.ok(s.enemies.some(e=>e.key==='alien_hatchling'));assert.equal(s.totalEnemies,total+1);
+ parent.life=0;tick(s,.02);const babies=s.enemies.filter(e=>e.key==='alien_hatchling');assert.equal(babies.length,4);assert.equal(s.kills,1);
+ const gold=s.gold,xp=s.runXp;babies.forEach(b=>b.life=0);tick(s,.02);assert.equal(s.gold,gold);assert.equal(s.runXp,xp);assert.equal(s.kills,5);
+});
+
+test('attachments burn, stun on each fifth shell, slow and splash with bounded strength',async()=>{
+ const {equipBlueprint,equipAttachment}=await import('../src/data/arsenal.js');
+ const {fireTower,projectileHit}=await import('../src/game.js');
+ const s=customState('alien_steadfast');s.gold=10000;const p=s.profile;
+ equipBlueprint(p,'handgun','legendary');equipAttachment(p,'handgun','incendiary');equipAttachment(p,'handgun','concussive');s.arsenalProfile=JSON.parse(JSON.stringify(p));
+ const tile=freeTile(s),tower=placeTower(s,'handgun',tile.row,tile.col),enemy=s.enemies[0];
+ for(let i=1;i<=5;i++){fireTower(s,tower,enemy);const shot=s.projectiles.at(-1);assert.equal(Boolean(shot.stun),i===5);projectileHit(s,shot,enemy);}
+ assert.ok(enemy.burnTimer>0);assert.ok(enemy.stunTimer>0);
+ const other={...enemy,id:'other',x:enemy.x+10,life:10000,armor:0,shield:0};s.enemies.push(other);
+ projectileHit(s,{damage:100,armorPierce:1,blast:true},enemy);assert.equal(other.life,9980);
+ other.immuneSlow=false;projectileHit(s,{damage:1,armorPierce:1,cryo:true},other);assert.equal(other.slowStrength,.16);assert.equal(other.slowTimer,1);
+});
+
+test('artillery produces exactly ten impacts across five seconds; pause stops it',()=>{
+ const s=customState('alien_steadfast','artillery'),enemy=s.enemies[0],sounds=[];s.audio={play:key=>sounds.push(key)};
+ enemy.speed=0;enemy.life=100000;enemy.maxLife=100000;
+ activateArtillery(s,enemy.x,enemy.y);assert.equal(s.artillery.strikes,0);tick(s,.3);assert.equal(s.artillery.strikes,1);
+ s.isPaused=true;tick(s,3);assert.equal(s.artillery.strikes,1);s.isPaused=false;
+ tick(s,4.8);assert.equal(s.artillery,null);assert.equal(sounds.filter(k=>k==='impact').length,10);assert.ok(enemy.life<100000);assert.ok(s.activeAbilities.artillery.cooldown>0);
+});
+
+test('RPG detonates in an area even when the original target dies in flight',async()=>{
+ const {fireTower,updateProjectiles}=await import('../src/game.js');
+ const s=customState('alien_steadfast');s.gold=10000;const tile=freeTile(s),tower=placeTower(s,'rocket_launcher',tile.row,tile.col);
+ const target={...s.enemies[0],x:tower.x+100,y:tower.y,id:'target'},other={...s.enemies[0],x:tower.x+105,y:tower.y,id:'other'};s.enemies=[target,other];
+ fireTower(s,tower,target);target.life=0;updateProjectiles(s,.5);assert.ok(other.life<other.maxLife);assert.ok(s.effects.some(e=>e.kind==='explosion'));
 });

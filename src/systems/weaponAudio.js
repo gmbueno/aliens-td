@@ -3,7 +3,7 @@ import { weaponAudio } from '../data/audio.js';
 // Keep audio outside the deterministic simulation. One recorded shot per shell,
 // not per pellet; a bounded voice pool prevents large armies from overloading it.
 export function createWeaponAudio() {
-  let context = null, master = null, compressor = null;
+  let context = null, master = null, compressor = null, body = null;
   let muted = false, paused = true, decoding = null;
   let played = 0, suppressed = 0, errors = 0, lastShot = null;
   const voices = new Set();
@@ -33,7 +33,7 @@ export function createWeaponAudio() {
     if (muted || paused) silence();
     if (master) {
       master.gain.cancelScheduledValues(context.currentTime);
-      master.gain.setTargetAtTime(muted || paused ? 0 : 0.6, context.currentTime, 0.008);
+      master.gain.setTargetAtTime(muted || paused ? 0 : 0.72, context.currentTime, 0.008);
     }
   }
 
@@ -43,13 +43,16 @@ export function createWeaponAudio() {
       if (!Context) return;
       context = new Context();
       compressor = context.createDynamicsCompressor();
-      compressor.threshold.value = -16;
+      compressor.threshold.value = -13;
       compressor.knee.value = 12;
-      compressor.ratio.value = 4;
-      compressor.attack.value = 0.002;
+      compressor.ratio.value = 3;
+      compressor.attack.value = 0.015;
       compressor.release.value = 0.1;
       master = context.createGain();
-      master.gain.value = muted || paused ? 0 : 0.6;
+      master.gain.value = muted || paused ? 0 : 0.72;
+      body = context.createBiquadFilter(); body.type = 'lowshelf'; body.frequency.value = 150; body.gain.value = 3;
+      const presence = context.createBiquadFilter(); presence.type = 'peaking'; presence.frequency.value = 3200; presence.Q.value = .7; presence.gain.value = -2;
+      body.connect(presence); presence.connect(compressor);
       compressor.connect(master); master.connect(context.destination);
     }
     if (context.state === 'suspended') await context.resume().catch(() => {});
@@ -86,7 +89,7 @@ export function createWeaponAudio() {
     gain.gain.value = amplitude;
     const panner = context.createStereoPanner();
     panner.pan.value = Math.max(-0.6, Math.min(0.6, (x / width - 0.5) * 1.2));
-    source.connect(gain); gain.connect(panner); panner.connect(compressor);
+    source.connect(gain); gain.connect(panner); panner.connect(body);
     const voice = { key, source, gain };
     voices.add(voice);
     source.onended = () => { voices.delete(voice); source.disconnect(); gain.disconnect(); panner.disconnect(); };

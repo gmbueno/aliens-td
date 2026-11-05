@@ -12,7 +12,7 @@ function skillPreview(skill, profile) {
   const current = activeAbilityStats(ability, profile);
   const next = activeAbilityStats(ability, { ...profile, skills: { ...profile.skills, [skill.key]: rank + 1 } });
   if (skill.key === "chronoBreak") return `${current.duration}s → ${next.duration}s freeze · ${current.cooldown}s → ${next.cooldown}s cooldown`;
-  if (skill.key === "rocketLauncher") return `${(current.damage / 1000).toFixed(1)}k → ${(next.damage / 1000).toFixed(1)}k damage · ${current.area} → ${next.area} radius`;
+  if (skill.key === "artillery") return `${(current.damage / 1000).toFixed(1)}k → ${(next.damage / 1000).toFixed(1)}k per shell × 10 / 5s · ${current.area} → ${next.area} radius`;
   return `${current.damage} → ${next.damage} DPS · ${current.duration}s → ${next.duration}s burn`;
 }
 

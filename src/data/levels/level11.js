@@ -366,7 +366,7 @@ const level11 = {
           "at": 1.12
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.84
         },
         {
@@ -378,7 +378,7 @@ const level11 = {
           "at": 3.28
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_steadfast",
           "at": 4
         },
         {
@@ -438,7 +438,7 @@ const level11 = {
       "reward": 55,
       "spawns": [
         {
-          "enemy": "alien_normal",
+          "enemy": "alien_broodmother",
           "at": 0.4
         },
         {
@@ -446,7 +446,7 @@ const level11 = {
           "at": 1.05
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.71
         },
         {
@@ -458,7 +458,7 @@ const level11 = {
           "at": 3.02
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_steadfast",
           "at": 3.67
         },
         {
@@ -534,7 +534,7 @@ const level11 = {
           "at": 0.99
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.58
         },
         {
@@ -546,7 +546,7 @@ const level11 = {
           "at": 2.76
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_steadfast",
           "at": 3.35
         },
         {
@@ -630,7 +630,7 @@ const level11 = {
           "at": 0.93
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.45
         },
         {
@@ -642,7 +642,7 @@ const level11 = {
           "at": 2.5
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_steadfast",
           "at": 3.02
         },
         {
@@ -726,7 +726,7 @@ const level11 = {
       "reward": 70,
       "spawns": [
         {
-          "enemy": "alien_normal",
+          "enemy": "alien_broodmother",
           "at": 0.4
         },
         {
@@ -734,11 +734,11 @@ const level11 = {
           "at": 0.86
         },
         {
-          "enemy": "alien_fast",
+          "enemy": "alien_rager",
           "at": 1.32
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_steadfast",
           "at": 1.5
         },
         {

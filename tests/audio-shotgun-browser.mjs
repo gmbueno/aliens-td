@@ -27,7 +27,7 @@ try {
    await page.goto(url);assert.equal((await read(page)).audio.state,'locked');
    await page.click('#menu-play-button');
    await page.waitForFunction(()=>{const s=JSON.parse(window.render_game_to_text());return s.audio.loadedClips===s.audio.totalClips;});
-   assert.equal((await read(page)).audio.totalClips,14);assert.equal((await read(page)).audio.errors,0);
+   assert.equal((await read(page)).audio.totalClips,19);assert.equal((await read(page)).audio.errors,0);
    await page.click(`.weapon-card[data-weapon-key="${key}"] .weapon-select`);
    const s=await read(page),rect=await page.locator('#game-canvas').boundingBox(),pad=s.pads[0];
    await page.mouse.click(rect.x+(s.board.x+(pad.col+.5)*s.board.tile)/1280*rect.width,rect.y+(s.board.y+(pad.row+.5)*s.board.tile)/720*rect.height);
@@ -48,11 +48,11 @@ try {
      let volley;
      for(let i=0;i<240;i++){
        await advance(page,1000/60);const now=await read(page);
-       if(now.projectiles.filter(p=>p.ballistic).length>=4){volley=now;break;}
+       if(now.projectiles.filter(p=>p.ballistic).length>=3){volley=now;break;}
      }
      assert.ok(volley,'shotgun fan must be visible in live gameplay');
      assert.ok(volley.projectiles.filter(p=>p.ballistic).every(p=>p.target===null));
-     assert.ok(new Set(volley.projectiles.filter(p=>p.ballistic).map(p=>p.vy)).size>=4);
+     assert.ok(new Set(volley.projectiles.filter(p=>p.ballistic).map(p=>p.vy)).size>=3);
      await page.evaluate(()=>{ document.querySelector('#play-pause-button').click(); window.advanceTime(0); });
      await page.screenshot({path:`${out}/shotgun-fan.png`,fullPage:true});
      await fs.writeFile(`${out}/shotgun-state.json`,JSON.stringify(volley,null,2));
@@ -75,12 +75,12 @@ try {
          rows.push({weapon,duration:buffer.duration,peak,rms:Math.sqrt(energy/data.length)});
        }return rows;
      });
-     assert.equal(audioMetrics.length,14);assert.ok(audioMetrics.every(m=>m.peak>.02&&m.peak<1&&m.rms>.0001&&m.duration<1));
+     assert.equal(audioMetrics.length,19);assert.ok(audioMetrics.every(m=>m.peak>.02&&m.peak<1&&m.rms>.0001&&m.duration<2.5));
      await fs.writeFile(`${out}/audio-metrics.json`,JSON.stringify(audioMetrics,null,2));
    }
    await context.close();
  }
  assert.deepEqual(errors,[]);assert.deepEqual(failed,[]);
  await fs.writeFile(`${out}/audio-variation.json`,JSON.stringify(reports,null,2));
- console.log('PASS: 14 recorded clips decode with signal, all 6 weapons play varied samples, no oscillators, pause/mute/menu silence, ballistic shotgun fan visible.');
+ console.log('PASS: 19 recorded clips decode with signal, all 6 weapons play varied samples, no oscillators, pause/mute/menu silence, ballistic shotgun fan visible.');
 } finally {await browser.close();}

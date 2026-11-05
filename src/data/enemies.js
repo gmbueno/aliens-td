@@ -81,7 +81,11 @@ export const enemies = {
     color: "#ff0000",
     asset: assets.aliens.saucer,
     visualSize: 80,
-  }
+  },
+  alien_steadfast: { key: 'alien_steadfast', label: 'Juggernaut', life: 16000, speed: 48, damage: 2, gold: 23, xp: 4, armor: .15, immuneSlow: true, shape: 'square', color: '#93e6d9', asset: assets.aliens.tank, visualSize: 72 },
+  alien_rager: { key: 'alien_rager', label: 'Ravager', life: 6500, speed: 65, damage: 1, gold: 14, xp: 3, rageMultiplier: 1.7, shape: 'triangle', color: '#ff8667', asset: assets.aliens.fast, visualSize: 64 },
+  alien_broodmother: { key: 'alien_broodmother', label: 'Broodmother', life: 21000, speed: 34, damage: 4, gold: 35, xp: 7, brood: true, shape: 'pentagon', color: '#bfa3ee', asset: assets.aliens.boss, visualSize: 82 },
+  alien_hatchling: { key: 'alien_hatchling', label: 'Hatchling', life: 1000, speed: 95, damage: 1, gold: 0, xp: 0, shape: 'circle', color: '#b7f096', asset: assets.aliens.basic, visualSize: 32 },
 };
 
 export function getEnemy(key) {

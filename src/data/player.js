@@ -1,3 +1,4 @@
+import { defaultArsenal } from "./arsenal.js";
 import { DEFAULT_EQUIPPED_ACTIVE_KEY, createDefaultSkills } from "./skills.js";
 
 export const PLAYER_PROFILE_KEY = "aliens-tower-defense-profile";
@@ -10,6 +11,7 @@ export function createDefaultProfile() {
     skills: createDefaultSkills(),
     equippedActiveKey: DEFAULT_EQUIPPED_ACTIVE_KEY,
     missions: {},
+    arsenal: defaultArsenal(),
     settings: { muted: false, autoWave: false },
   };
 }

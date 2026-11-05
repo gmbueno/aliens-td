@@ -1,9 +1,14 @@
+import { normalizeArsenal } from "../data/arsenal.js";
 import { PLAYER_PROFILE_KEY, createDefaultProfile, xpNeeded } from "../data/player.js";
 import { DEFAULT_EQUIPPED_ACTIVE_KEY, SP_PER_LEVEL, createDefaultSkills, isActiveAbilityKey, skillTree, spentSkillPoints } from "../data/skills.js";
 
 export function normalizeProfile(rawProfile = {}) {
   if (!rawProfile || typeof rawProfile !== "object") rawProfile = {};
   const integer = (value, fallback = 0) => Number.isFinite(Number(value)) ? Math.max(0, Math.floor(Number(value))) : fallback;
+  rawProfile = { ...rawProfile, skills: { ...rawProfile.skills } };
+  if (rawProfile.skills.artillery === undefined && rawProfile.skills.rocketLauncher !== undefined) rawProfile.skills.artillery = rawProfile.skills.rocketLauncher;
+  delete rawProfile.skills.rocketLauncher;
+  if (rawProfile.equippedActiveKey === 'rocketLauncher') rawProfile.equippedActiveKey = 'artillery';
   const base = createDefaultProfile();
   const skills = { ...createDefaultSkills(), ...(rawProfile.skills || {}) };
   for (const skill of skillTree) {
@@ -25,6 +30,7 @@ export function normalizeProfile(rawProfile = {}) {
       ? rawProfile.equippedActiveKey
       : DEFAULT_EQUIPPED_ACTIVE_KEY,
   };
+  profile.arsenal = normalizeArsenal(rawProfile.arsenal, profile);
   const earned = Math.max(0, profile.level - 1) * SP_PER_LEVEL;
   const available = Math.max(Number(rawProfile.skillPoints) || 0, earned - spentSkillPoints(profile));
   profile.skillPoints = Math.max(0, available);

@@ -7,10 +7,12 @@ A static HTML/CSS/JavaScript tower-defense game. Play at **https://gmbueno.githu
 - 18 individually authored missions across the Outpost, Frozen Frontier, and Hive.
 - Five to nine waves per mission, visible incoming enemy compositions, and manual preparation or optional auto waves.
 - Clearable cargo/ice/growth obstacles, permanent rocks, sensor pads (+18% range), power pads (+15% damage), and frost tiles (25% enemy slowdown).
-- Six complementary weapons: budget defense, sustained fire, suppression, armor penetration, crowd damage, and long-range armor-piercing shots.
-- Two tower upgrade branches: Firepower and Control. Four upgrades total per tower, with at most three in a branch. First/Last/Strongest/Nearest targeting.
+- Six deployment slots. Five fixed classes plus a Heavy slot that selects Sniper or RPG (RPG unlocks at commander Lv 4).
+- Two distinct upgrade branches per weapon: Buckshot / Choke & pump, Suppression, Devastator, Long-range optics and more. Four upgrades total per tower, at most three per branch. First/Last/Strongest/Nearest targeting stays freely accessible.
 - Sell towers for a full refund before the first wave, or 70% of the total investment afterward.
-- Three active abilities with an equipped loadout: Chrono Break, Rocket Launcher, Napalm.
+- Three active abilities with an equipped loadout: Chrono Break, Artillery Strike (ten impacts across five seconds), Napalm.
+- Models unlock at commander levels 1/3/6/10: Common/Rare/Epic/Legendary, with 0/1/1/2 attachment slots. Free swaps, four deterministic attachments, no loot rolls or extra currency.
+- Ravagers accelerate after a hit, Juggernauts resist slow, and Broodmothers release small aliens over time and on death. Their traits appear in wave intel.
 - Persistent XP, 10 skill points per commander level, free skill refunds, mission records, and first-clear/new-star bonuses. Existing profiles migrate automatically.
 
 Mission difficulty is fixed. Investing in permanent skills makes earlier maps easier; later maps add stronger enemies and more demanding wave compositions. All missions are selectable so players can experiment without replay gates. Gold is local to each run; skills and records persist in this browser.
@@ -33,6 +35,7 @@ npx playwright install chromium
 GAME_URL=http://localhost:4173 npm run test:browser
 GAME_URL=http://localhost:4173 npm run test:controls
 GAME_URL=http://localhost:4173 npm run test:audio
+GAME_URL=http://localhost:4173 npm run test:arsenal
 ```
 
 The unit/campaign tests use Node 22 without dependencies. The browser suite uses Playwright and saves screenshots under ignored `output/`. The balance runner uses a repeatable placement policy, reinvests between waves, and deliberately does not use active abilities. It is a regression benchmark, not a promise that every strategy wins.
@@ -45,7 +48,7 @@ The unit/campaign tests use Node 22 without dependencies. The browser suite uses
 - **Escape** cancels selection, closes a popup, or opens the command menu; **F** toggles fullscreen.
 - Auto waves, speed, sound, and the skill tree are available in the interface. Hidden browser tabs pause the mission.
 
-Abilities and cooldowns advance with combat time and game speed, stop while paused, and do not recharge during preparation. Changing the equipped active applies on the next mission; permanent tower skills update existing towers immediately.
+Abilities and cooldowns advance with combat time and game speed, stop while paused, and do not recharge during preparation. Changing models, attachments, the Heavy slot or equipped active applies on the next deployment; permanent tower skills update existing towers immediately.
 
 ## Structure and deployment
 
@@ -64,8 +67,10 @@ Target and upgrade controls keep their DOM identity while gold/ammo updates. The
 
 ## Recorded sound and shotgun ballistics
 
-Weapon audio uses 14 self-hosted recordings from The Free Firearm Sound Library (CC0). Sources, editing notes, license and output hashes are under `assets/audio/`. Two or three recorded shots per weapon alternate without immediate repeats, with small pitch/gain variation, restrained stereo positioning, compression and a 24-voice ceiling. Audio unlocks after player interaction, stops on pause/mute/menu, and is never queued to play later. The old oscillator sound generator has been removed.
+Weapon audio uses 14 self-hosted gun recordings from The Free Firearm Sound Library (CC0), plus five launch/power/impact clips. Sources, editing notes, license and output hashes are under `assets/audio/`. Two or three recorded shots per weapon alternate without immediate repeats, with small pitch/gain variation, restrained stereo positioning, a bass body layer, reduced harsh presence, transient-preserving compression and a 24-voice ceiling. Audio unlocks after player interaction, stops on pause/mute/menu, and is never queued to play later. The old oscillator sound generator has been removed.
 
-The shotgun emits four physical pellets per shell in a fixed cone. It aims before firing, then each pellet travels straight, can hit any live alien crossing its path, and survives the original target's death. Swept collision picks the first physical impact and prevents tunneling at 2x speed. Other weapons retain their guided shots. Damage and shell capacity are unchanged; close positioning is rewarded because more pellets connect.
+The shotgun starts with three physical pellets per shell in a fixed cone; Buckshot increases this to four, five and six. It aims before firing, then each pellet travels straight, can hit any live alien crossing its path, and survives the original target's death. Swept collision picks the first physical impact and prevents tunneling at 2x speed. Other weapons retain their guided shots. Close positioning is rewarded because more pellets connect.
 
 `npm run test:audio` runs an isolated, OS-muted headless browser while testing real sample decoding/playback, variation, mute/pause behavior and a visible shotgun volley. It does not play through the user's speakers.
+
+The arsenal browser suite checks unlocks, socket caps, saved loadouts, six-slot Heavy selection, RPG area impacts, all power sounds/visuals, pause behavior and new enemy traits. Its enemy-only scenario explicitly supplies a controlled spawn schedule; the loadout, RPG and ability scenarios exercise the unchanged production campaign. All browser suites use isolated, headless browsers with OS audio muted.

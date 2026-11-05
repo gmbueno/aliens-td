@@ -9,7 +9,7 @@ import { invest } from './balance.mjs';
 const url=process.env.GAME_URL || 'http://127.0.0.1:4175';
 const out=process.env.GAME_OUTPUT || 'output/browser';
 await fs.mkdir(out,{recursive:true});
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,args:['--mute-audio'],...(process.env.GAME_BROWSER_EXECUTABLE?{executablePath:process.env.GAME_BROWSER_EXECUTABLE}:{})});
 const errors=[], failed=[];
 async function pageFor(profile,viewport={width:1440,height:1000}) {
  const context=await browser.newContext({viewport});
@@ -66,13 +66,13 @@ try {
  const skilled=await pageFor({level:6,xp:0,skillPoints:50,settings:{muted:true}});
  await skilled.locator('#menu-skills-button').click();await skilled.locator('[data-skill-key="damage"]').click();
  assert.equal((await read(skilled)).skills.damage,1);assert.equal((await read(skilled)).player.skillPoints,45);
- await skilled.locator('[data-equip-active-key="rocketLauncher"]').click();await skilled.locator('#skill-tree-close-button').click();await choose(skilled,levels[0]);
+ await skilled.locator('[data-equip-active-key="artillery"]').click();await skilled.locator('#skill-tree-close-button').click();await choose(skilled,levels[0]);
  await skilled.keyboard.press('1');await tileClick(skilled,3,7);assert.equal((await read(skilled)).towers[0].damage,432);
  await skilled.locator('#player-level-button').click();await skilled.locator('[data-equip-active-key="napalm"]').click();await skilled.locator('#reset-skills-button').click();
  await skilled.screenshot({path:`${out}/skills.png`,fullPage:true});await skilled.locator('#skill-tree-close-button').click();
- assert.equal((await read(skilled)).towers[0].damage,400);assert.equal((await read(skilled)).equippedActive,'rocketLauncher');
+ assert.equal((await read(skilled)).towers[0].damage,400);assert.equal((await read(skilled)).equippedActive,'artillery');
  await skilled.locator('#launch-wave-button').click();await advance(skilled,2000);await skilled.keyboard.press('q');
- assert.equal((await read(skilled)).selectedActive,'rocketLauncher');await tileClick(skilled,4,1);assert.ok((await read(skilled)).activeAbilities.rocketLauncher.cooldown>0);
+ assert.equal((await read(skilled)).selectedActive,'artillery');await tileClick(skilled,4,1);assert.ok((await read(skilled)).activeAbilities.artillery.cooldown>0);
  await skilled.locator('#gear-button').click();await skilled.locator('#restart-button').click();assert.equal((await read(skilled)).equippedActive,'napalm');
  await skilled.locator('#launch-wave-button').click();await advance(skilled,2000);await skilled.keyboard.press('q');assert.ok((await read(skilled)).enemies.some(e=>e.burnTimer>0));
  await skilled.locator('[data-info-weapon-key="sniper"]').click();assert.equal((await read(skilled)).paused,true);await skilled.locator('#weapon-info-close-button').click();assert.equal((await read(skilled)).paused,false);
