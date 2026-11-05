@@ -55,7 +55,7 @@ async function verifyCounters(page) {
 
 try {
   for (const viewport of [{width:320,height:844},{width:390,height:844},{width:768,height:1024},
-    {width:844,height:390},{width:960,height:720},{width:1024,height:768},{width:1280,height:720},{width:1920,height:1080}]) {
+    {width:667,height:375},{width:844,height:390},{width:960,height:720},{width:1024,height:768},{width:1280,height:720},{width:1920,height:1080}]) {
     const page = await pageFor(viewport);
     await verifyCounters(page);
     const sprites = await page.locator('.hud-top img').evaluateAll(images => images.map(img => {
@@ -71,6 +71,10 @@ try {
     assert.equal((await read(page)).gameSpeed,2);
     await page.getByRole('button',{name:'Pause',exact:true}).click();
     assert.equal((await read(page)).paused,true);
+    assert.deepEqual(await page.locator('#play-pause-button').evaluate(button => ({
+      visibleSymbols:[...button.querySelectorAll('svg')].filter(svg=>getComputedStyle(svg).display!=='none').length,
+      legacySymbol:getComputedStyle(button,'::before').content,
+    })), {visibleSymbols:1,legacySymbol:'none'}, 'Resume displays a single play symbol');
     await page.getByRole('button',{name:'Play',exact:true}).click();
     await page.getByRole('button',{name:/Open skill tree. Commander/}).click();
     assert.equal((await read(page)).skillTreeOpen,true);
@@ -121,5 +125,5 @@ try {
   await damaged.screenshot({path:`${out}/hud-critical.png`,fullPage:true});
   await damaged.context().close();
   assert.deepEqual(errors,[]);
-  console.log('PASS: HUD counters match gameplay, alpha sprites, 8 viewport sizes, no clipped labels, responsive armory, accessible controls, held clicks, kills/credits updates, wave segments and critical integrity.');
+  console.log('PASS: HUD counters match gameplay, alpha sprites, 9 viewport sizes, no clipped labels, responsive armory, accessible controls, held clicks, kills/credits updates, wave segments and critical integrity.');
 } finally {await browser.close();}

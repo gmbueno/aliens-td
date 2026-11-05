@@ -97,7 +97,7 @@ integrity has a warning marker and available SP has its own badge. The HUD adapt
 to phone, landscape and notebook layouts without replacing control buttons
 during updates. The notebook armory also keeps the special above the weapons.
 
-`test:hud` checks counter accuracy, transparent assets, eight viewport sizes,
+`test:hud` checks counter accuracy, transparent assets, nine viewport sizes,
 labels, held clicks, game controls, combat rewards, wave progress and low lives.
 It is required by the deployment workflow. Sprite prompts, provenance and the
 reported US$0.0394 generation cost are in `assets/hud/icons/`.
