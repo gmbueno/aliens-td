@@ -40,6 +40,7 @@ GAME_URL=http://localhost:4173 npm run test:controls
 GAME_URL=http://localhost:4173 npm run test:audio
 GAME_URL=http://localhost:4173 npm run test:arsenal
 GAME_URL=http://localhost:4173 npm run test:progression
+GAME_URL=http://localhost:4173 npm run test:hud
 ```
 
 The unit/campaign tests use Node 22 without dependencies. The browser suite uses Playwright and saves screenshots under ignored `output/`. The balance runner uses a repeatable placement policy, reinvests between waves, and deliberately does not use active abilities. It is a regression benchmark, not a promise that every strategy wins.
@@ -86,3 +87,17 @@ The commander graph is keyboard-accessible, uses selectable nodes and a persiste
 A cache is visible on every map and opens automatically after the midpoint wave. Its contents persist even after defeat. The first cache is one-time per mission; repeat clears still earn Salvage. New weapon licenses and attachment purchases persist across reload and commander respec. Existing 0.3 saves retain their previously available unlocks.
 
 The new browser suite covers graph prerequisites, research, purchases/refunds, locked fresh-profile specials, persistent Rare licenses/attachments, clear model identity, water deployment/raft charges, discounted clearance and automatic mines/UAV. All browser work uses isolated headless contexts and OS-muted audio. The source-based audio preparation recipe is in `scripts/prepare_doctrine_audio.py`; source hashes must match the provenance manifest.
+
+## Tactical HUD (0.4.1)
+
+The top console combines native-alpha 64px PixelForge sprites with the edges of
+the original metal plaques. Live text keeps lives, credits, mission and combat
+counts readable. Integrity, XP and segmented wave tracks show progress; low
+integrity has a warning marker and available SP has its own badge. The HUD adapts
+to phone, landscape and notebook layouts without replacing control buttons
+during updates. The notebook armory also keeps the special above the weapons.
+
+`test:hud` checks counter accuracy, transparent assets, eight viewport sizes,
+labels, held clicks, game controls, combat rewards, wave progress and low lives.
+It is required by the deployment workflow. Sprite prompts, provenance and the
+reported US$0.0394 generation cost are in `assets/hud/icons/`.

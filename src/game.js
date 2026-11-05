@@ -15,7 +15,7 @@ const TWO_PI = Math.PI * 2;
 const BOARD_PAD = 12;
 const NEXT_WAVE_DELAY = 8;
 
-const ASSET_CACHE_BUSTER = "doctrine-20261105";
+const ASSET_CACHE_BUSTER = "tactical-hud-20261105";
 
 function assetUrl(src) {
   return `${src}?v=${ASSET_CACHE_BUSTER}`;
@@ -66,7 +66,8 @@ function createAssetStore() {
 }
 
 function cssUrl(src) {
-  return `url('${assetUrl(src)}')`;
+  // CSS variables are consumed by stylesheets in src/ui as well as the root.
+  return `url('${new URL(assetUrl(src), document.baseURI).href}')`;
 }
 
 function applyAssetCssVariables(root) {
@@ -1299,19 +1300,39 @@ export function createGame({ ui, levels }) {
     if (!state) return;
     audio.sync(profile.settings.muted, state.isPaused || Boolean(state.result));
     ui.livesValue.textContent = Math.max(0, state.lives);
+    const integrity = ui.livesValue.closest(".lives-chip");
+    integrity.style.setProperty("--integrity", `${clamp(state.lives / state.level.lives, 0, 1) * 100}%`);
+    integrity.classList.toggle("critical", state.lives <= state.level.lives / 3);
+    integrity.title = `Base integrity: ${Math.max(0, state.lives)} of ${state.level.lives} lives remaining`;
     ui.goldValue.textContent = state.gold;
     ui.playerLevelValue.textContent = profile.level;
-    ui.playerLevelButton.querySelector(".readout-label").textContent = profile.skillPoints ? `COMMANDER / ${profile.skillPoints} SP` : "COMMANDER";
+    document.getElementById("hud-skill-points").textContent = `${profile.skillPoints} SP`;
     ui.playerXpBar.style.setProperty("--xp-progress", `${Math.round((profile.xp / xpNeeded(profile.level)) * 100)}%`);
     ui.missionValue.textContent = missionLabel(state.level);
-    ui.waveValue.textContent = `${Math.min(state.waveIndex + 1, state.level.waves.length)} / ${state.level.waves.length}`;
-    ui.killsValue.textContent = `${state.kills} / ${state.totalEnemies}`;
+    for (const [element, current, total, label] of [
+      [ui.waveValue, Math.min(state.waveIndex + 1, state.level.waves.length), state.level.waves.length, "Wave"],
+      [ui.killsValue, state.kills, state.totalEnemies, "Eliminated"],
+    ]) {
+      element.querySelector("[data-count-current]").textContent = current;
+      element.querySelector("[data-count-total]").textContent = total;
+      element.closest(".hud-chip").title = `${label}: ${current} of ${total}`;
+    }
+    const waveTrack = document.getElementById("hud-wave-track");
+    if (waveTrack.childElementCount !== state.level.waves.length) {
+      waveTrack.replaceChildren(...state.level.waves.map(() => document.createElement("i")));
+    }
+    [...waveTrack.children].forEach((segment, index) => {
+      segment.classList.toggle("complete", index < state.waveIndex || state.result === "victory");
+      segment.classList.toggle("current", index === state.waveIndex && state.phase === "combat" && !state.result);
+    });
     ui.playPauseButton.classList.toggle("play-icon", state.isPaused);
     ui.playPauseButton.classList.toggle("pause-icon", !state.isPaused);
     ui.playPauseButton.title = state.isPaused ? "Play" : "Pause";
     ui.playPauseButton.setAttribute("aria-label", state.isPaused ? "Play" : "Pause");
     ui.speedToggleButton.textContent = `${state.gameSpeed}x`;
     ui.speedToggleButton.className = `control-button speed-state ${state.gameSpeed === 2 ? "fast" : "normal"}`;
+    ui.speedToggleButton.setAttribute("aria-label", `Game speed ${state.gameSpeed}x. Switch to ${state.gameSpeed === 2 ? 1 : 2}x`);
+    ui.speedToggleButton.title = `Game speed: ${state.gameSpeed}x`;
     ui.battleTitle.textContent = `${missionLabel(state.level)} / ${state.level.name}`;
     ui.wavePreview.textContent = `${state.cache.opened?"CACHE CLAIMED":"CACHE / W"+state.cache.wave}${state.mines.length?" · MINES "+state.mines.filter(m=>!m.spent).length+"/"+state.mines.length:""}${state.drone?" · UAV":""} · ${state.phase === "prepare" ? "UP NEXT" : "INCOMING"} · ${wavePreview()}`;
     ui.launchWaveButton.disabled = state.phase !== "prepare" || state.isPaused || Boolean(state.result);
@@ -1320,7 +1341,8 @@ export function createGame({ ui, levels }) {
     ui.autoWaveToggle.checked = profile.settings.autoWave;
     ui.battleMessage.textContent = state.selectedWeaponKey ? `${effectiveWeaponByKey(state.selectedWeaponKey).blueprint} / ${effectiveWeaponByKey(state.selectedWeaponKey).fireMode} · choose a free tile. Water adds a 35-credit raft.` : state.messageTimer > 0 ? state.message : state.selectedActiveKey ? "Mark an area for a 5-second artillery barrage. Escape to cancel." : state.selectedWeaponKey ? "Choose a free tile. Blue pads extend range; amber pads boost damage." : state.phase === "prepare" ? "Prepare your defense. Click a tower to upgrade it or a crate to clear space." : "Click a tower to upgrade, change target, or sell.";
     ui.playerLevelButton.title = `Commander Lv ${profile.level} · ${profile.xp}/${xpNeeded(profile.level)} XP · ${profile.skillPoints} SP available`;
-    ui.playerLevelButton.classList.toggle("has-points", profile.skillPoints >= 5);
+    ui.playerLevelButton.setAttribute("aria-label", `Open skill tree. Commander level ${profile.level}, ${profile.skillPoints} skill points available`);
+    ui.playerLevelButton.classList.toggle("has-points", profile.skillPoints >= 4);
     ui.soundButton.textContent = profile.settings.muted ? "Sound off" : "Sound on";
     syncAbilityBar();
     ui.weaponBar.querySelectorAll(".weapon-card").forEach((card) => {

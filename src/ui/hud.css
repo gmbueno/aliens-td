@@ -1,0 +1,138 @@
+/* Tactical instrument panel. Original plaque edges, live text, native-alpha art. */
+.game-screen { --hud-height: 64px; grid-template-rows: var(--hud-height) 54px minmax(0,1fr) 24px 172px; }
+#game-canvas { width: min(100%, calc((100dvh - 302px - var(--hud-height)) * 16 / 9)); }
+.hud-top {
+  display: grid; grid-template-columns: 1fr 1.14fr 1.65fr 1fr 1.2fr 1.35fr auto;
+  align-items: stretch; gap: 7px; height: var(--hud-height); isolation: isolate;
+}
+.hud-top > .hud-group { display: contents; }
+.hud-top .hud-chip {
+  position: relative; display: flex; align-items: center; justify-content: flex-start; gap: 0;
+  width: auto; min-width: 0; height: 100%; padding: 4px 9px 6px 2px;
+  border: 4px solid #45565a; border-image: var(--hud-lives-plaque) 30 36 / 3px;
+  border-radius: 0; background: linear-gradient(155deg, #253039, #111b21 78%);
+  box-shadow: inset 0 1px #b6c6bc12, 0 3px 6px #0003; overflow: hidden;
+  clip-path: polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px);
+}
+.hud-top .hud-chip::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 0 50%, #e9ae4c0c, transparent 85%); pointer-events: none; }
+.hud-top .hud-symbol { flex: 0 0 48px; width: 48px; height: 48px; object-fit: contain; image-rendering: auto; filter: drop-shadow(0 2px 2px #0007); }
+.hud-top .hud-readout { display: grid; align-content: center; gap: 3px; min-width: 0; position: relative; }
+.hud-top .hud-chip .readout-label { display: block; color: #b8c6c8; font: bold 8px/1.1 "Courier New", monospace; letter-spacing: .11em; white-space: nowrap; }
+.hud-top .hud-chip strong { display: block; position: static; transform: none; color: #f1f0e4; font: bold 26px/1 "Trebuchet MS", sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -.04em; text-shadow: 0 2px 2px #0008; }
+.hud-top .hud-chip strong::before { content: none; }
+.hud-top .hud-chip strong b { font: inherit; }
+.hud-top .hud-chip strong small, .hud-top .hud-chip strong small span { display: inline; color: #9aafb5; font: normal 12px/1 "Courier New", monospace; letter-spacing: -.06em; text-transform: none; }
+.hud-top .lives-chip strong { color: #ffb5a4; }
+.hud-top .gold-chip { border-image-source: var(--hud-gold-plaque); }
+.hud-top .gold-chip strong { color: #ffdc8a; }
+.hud-top .player-chip { border-image-source: var(--hud-player-plaque); cursor: pointer; text-align: left; }
+.hud-top .player-chip .hud-symbol { flex-basis: 44px; width: 44px; height: 44px; }
+.hud-top .commander-level { display: flex; align-items: center; gap: 8px; }
+.hud-top .player-chip strong { font-size: 23px; }
+.hud-top .player-chip strong small { color: #d2d6c2; font-size: 10px; letter-spacing: .01em; }
+.hud-top .player-chip .hud-sp { display: block; padding: 3px 4px; color: #aebba6; border: 1px solid #89927855; background: #8e9b6320; font: bold 9px/1 "Courier New", monospace; letter-spacing: 0; white-space: nowrap; }
+.hud-top .player-chip.has-points .hud-sp { color: #e6f7b7; background: #67824545; border-color: #9aad6b; }
+.hud-top .player-chip.has-points::after { content: "+"; position: absolute; top: 2px; right: 3px; color: #dbf0a5; font: bold 10px monospace; }
+.hud-top .player-chip:hover { background: linear-gradient(155deg, #354435, #192723); }
+.hud-top .commander-xp-track, .hud-top .integrity-track { position: absolute; left: 13px; right: 13px; bottom: 3px; height: 3px; background: #071116; }
+.hud-top .player-chip #player-xp-bar { position: static; display: block; width: var(--xp-progress, 0%); height: 100%; max-width: 100%; transform: none; background: #c9df98; border-radius: 0; }
+.hud-top .integrity-track i { display: block; width: var(--integrity, 100%); height: 100%; background: #e39b84; transition: width 180ms ease-out; }
+.hud-top .lives-chip.critical { background: linear-gradient(130deg, #542e2c, #241c20); }
+.hud-top .lives-chip.critical .readout-label, .hud-top .lives-chip.critical strong { color: #ffb2a6; }
+.hud-top .lives-chip.critical .readout-label::before { content: "! "; }
+.hud-top .lives-chip.critical .integrity-track i { background: #ff695c; }
+.hud-top .wave-chip strong { color: #b8e2e5; }
+.hud-top .wave-track { display: flex; gap: 3px; position: absolute; bottom: 3px; left: 13px; right: 13px; height: 3px; }
+.hud-top .wave-track i { flex: 1; background: #42535a; }
+.hud-top .wave-track i.complete { background: #88b7ba; }
+.hud-top .wave-track i.current { background: #d7fcf9; box-shadow: 0 0 4px #9bdedf; }
+.hud-top > .hud-controls { display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+.hud-top .control-button { display: grid; place-items: center; flex: 0 0 42px; width: 42px; height: 46px; min-height: 44px; padding: 0; border: 1px solid #657276; border-radius: 3px; background: linear-gradient(#2c3b43, #17262e); color: #e4e4cb; box-shadow: inset 0 1px #d8e2cd15, 0 3px 5px #0003; }
+.hud-top .control-button:hover { border-color: #c9c49a; background: #32434b; }
+.hud-top .speed-state { font: bold 16px "Trebuchet MS", sans-serif; }
+.hud-top .speed-state.fast { color: #ffe09a; border-color: #ba955a; }
+.hud-top .control-button::before, .hud-top .control-button::after { content: none; }
+.hud-top .control-button svg { width: 24px; height: 24px; fill: #d8e6bd; }
+.hud-top .control-button .play-symbol { display: none; }
+.hud-top .control-button.play-icon .play-symbol { display: block; }
+.hud-top .control-button.play-icon .pause-symbol { display: none; }
+.hud-top .gear-button img { width: 34px; height: 34px; object-fit: contain; }
+.hud-top button:focus-visible { outline: 2px solid #ffe09a; outline-offset: 2px; }
+.hud-top .player-chip:focus-visible { box-shadow: inset 0 0 0 2px #ffe09a; }
+@media (min-width: 901px) and (max-height: 800px) {
+  .game-screen { --hud-height: 56px; }
+  .hud-top .hud-symbol { width: 42px; height: 42px; flex-basis: 42px; }
+  .hud-top .hud-chip strong { font-size: 23px; }
+  .hud-top .hud-chip .readout-label { font-size: 7px; }
+  .hud-top .player-chip .hud-symbol { width: 38px; height: 38px; flex-basis: 38px; }
+  .hud-top .control-button { height: 44px; }
+}
+@media (min-width: 821px) and (max-width: 1100px) and (min-height: 581px) {
+  .game-screen { grid-template-rows: var(--hud-height) 54px minmax(0,1fr) 24px 228px; }
+  #game-canvas { width: min(100%, calc((100dvh - 358px - var(--hud-height)) * 16 / 9)); }
+}
+@media (max-width: 1000px) and (min-width: 901px) {
+  .hud-top { gap: 5px; grid-template-columns: 1fr 1fr 1.55fr .95fr 1.15fr 1.35fr auto; }
+  .hud-top .hud-chip { padding-right: 4px; }
+  .hud-top .hud-symbol { width: 34px; height: 34px; flex-basis: 34px; }
+  .hud-top .player-chip .hud-symbol { width: 30px; height: 30px; flex-basis: 30px; }
+  .hud-top .hud-chip .readout-label { font-size: 6.5px; letter-spacing: .05em; }
+  .hud-top .hud-chip strong small, .hud-top .hud-chip strong small span { font-size: 10px; }
+  .hud-top .commander-level { gap: 4px; }
+  .hud-top .control-button { flex-basis: 36px; width: 36px; min-width: 0; }
+}
+@media (max-width: 900px) and (min-height: 581px) {
+  .game-screen { --hud-height: 108px; grid-template-rows: var(--hud-height) auto auto auto auto; position: static; height: auto; min-height: 100dvh; }
+  #game-canvas { width: 100%; }
+  .hud-top { grid-template-columns: repeat(12,minmax(0,1fr)); grid-template-rows: 52px 50px; gap: 6px; }
+  .hud-top .lives-chip { grid-area: 1/1/2/4; }
+  .hud-top .gold-chip { grid-area: 1/4/2/7; }
+  .hud-top .player-chip { grid-area: 1/7/2/10; }
+  .hud-top > .hud-controls { grid-area: 1/10/2/13; }
+  .hud-top .mission-chip { grid-area: 2/1/3/5; }
+  .hud-top .wave-chip { grid-area: 2/5/3/9; }
+  .hud-top .kills-chip { grid-area: 2/9/3/13; }
+  .hud-top .hud-chip strong { font-size: 23px; }
+  .hud-top .hud-symbol { width: 40px; height: 40px; flex-basis: 40px; }
+  .hud-top .player-chip .hud-symbol { width: 32px; height: 32px; flex-basis: 32px; }
+  .hud-top .commander-level { gap: 5px; }
+  .hud-top .hud-chip .readout-label { font-size: 7px; }
+}
+@media (max-width: 600px) and (min-height: 581px) {
+  .game-screen { --hud-height: 148px; }
+  .hud-top { grid-template-rows: 50px 44px 44px; gap: 5px; }
+  .hud-top .lives-chip { grid-area: 1/1/2/7; }
+  .hud-top .gold-chip { grid-area: 1/7/2/13; }
+  .hud-top .mission-chip { grid-area: 2/1/3/5; }
+  .hud-top .wave-chip { grid-area: 2/5/3/9; }
+  .hud-top .kills-chip { grid-area: 2/9/3/13; }
+  .hud-top .player-chip { grid-area: 3/1/4/8; }
+  .hud-top > .hud-controls { grid-area: 3/8/4/13; gap: 5px; }
+  .hud-top .hud-chip { padding: 3px 5px 5px 0; }
+  .hud-top .hud-chip strong { font-size: 21px; }
+  .hud-top .hud-chip .readout-label { font-size: 6.5px; letter-spacing: .04em; }
+  .hud-top .mission-chip .hud-symbol, .hud-top .wave-chip .hud-symbol, .hud-top .kills-chip .hud-symbol { width: 29px; height: 29px; flex-basis: 29px; }
+  .hud-top .mission-chip strong, .hud-top .wave-chip strong, .hud-top .kills-chip strong { font-size: 18px; }
+  .hud-top .hud-chip strong small, .hud-top .hud-chip strong small span { font-size: 9px; }
+  .hud-top .player-chip .hud-symbol { width: 34px; height: 34px; flex-basis: 34px; }
+  .hud-top .control-button { flex-basis: 36px; width: 36px; height: 44px; }
+  .hud-top .gear-button img { width: 34px; height: 34px; }
+}
+@media (max-height: 580px) and (min-width: 721px) {
+  .game-screen { --hud-height: 40px; grid-template-rows: var(--hud-height) 42px minmax(0,1fr) 20px; }
+  #game-canvas { width: min(100%, calc((100dvh - 92px - var(--hud-height)) * 16 / 9)); }
+  .hud-top { grid-template-columns: 1fr 1fr 1.55fr .9fr 1.1fr 1.35fr auto; gap: 4px; }
+  .hud-top .hud-chip { padding: 1px 3px 4px 0; border-width: 3px; border-image-width: 2px; }
+  .hud-top .hud-symbol, .hud-top .player-chip .hud-symbol { width: 28px; height: 28px; flex-basis: 28px; }
+  .hud-top .hud-chip .readout-label { font-size: 6px; letter-spacing: .02em; }
+  .hud-top .hud-chip strong { font-size: 17px; }
+  .hud-top .hud-chip strong small, .hud-top .hud-chip strong small span { font-size: 8px; }
+  .hud-top .hud-readout { gap: 2px; }
+  .hud-top .commander-level { gap: 3px; }
+  .hud-top .player-chip .hud-sp { padding: 2px; font-size: 7px; }
+  .hud-top > .hud-controls { gap: 4px; }
+  .hud-top .control-button { width: 32px; flex-basis: 32px; height: 36px; min-height: 36px; font-size: 13px; }
+  .hud-top .gear-button img { width: 30px; height: 30px; }
+  .hud-top .wave-track, .hud-top .integrity-track, .hud-top .commander-xp-track { height: 2px; left: 8px; right: 8px; bottom: 1px; }
+}
+@media (prefers-reduced-motion: reduce) { .hud-top .integrity-track i { transition: none; } }

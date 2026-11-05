@@ -1,0 +1,41 @@
+{
+  "tool": "PixelForge",
+  "url": "https://codevon-com.github.io/pixelforge/",
+  "date": "2026-11-05",
+  "license": "CC0-1.0",
+  "styleReference": "../lives-plaque.png",
+  "batches": [
+    {
+      "name": "status",
+      "model": "openai/gpt-image-2.5-flare",
+      "quality": "low",
+      "size": 64,
+      "backgroundMode": "native",
+      "sheetHash": "293090155b63f453b22c0e4a1d4af6fdd9170b2e74a8dfd56c298b01771a673c",
+      "prompt": "Four matching sci-fi tower-defense HUD status icons. Row 1 left: armored red heart representing base integrity. Row 1 right: stack of 3 warm-gold credit coins, no letters. Row 2 left: amber tactical navigation beacon or folded map pin for mission. Row 2 right: cyan radar arcs with three forward chevrons for incoming waves. Premium hard-surface game inventory art, beveled dark graphite metal edges, warm ivory highlights, restrained orange/cyan glow, front-facing orthographic emblem silhouettes. High contrast and legible when reduced to 32px, detailed sculpted shading without tiny pixel noise, compact centered single symbol per cell, consistent scale and top-left lighting. Nonrectangular objects with genuine alpha transparency around the silhouettes. NO badges, frames, plaques, UI panels or boxes. No text, letters, numerals, backgrounds or outer shadows. Style reference guides material and lighting only; do not copy its rectangular frame.",
+      "reportedCostUSD": 0.0197,
+      "filesInGridOrder": [
+        "integrity.png",
+        "credits.png",
+        "mission.png",
+        "wave.png"
+      ]
+    },
+    {
+      "name": "command",
+      "model": "openai/gpt-image-2.5-flare",
+      "quality": "low",
+      "size": 64,
+      "backgroundMode": "native",
+      "sheetHash": "94f87a5318098dc0b00ea52a1ec73905454408b5997ae8148a3ed064f2fec8bb",
+      "prompt": "Four matching sci-fi tower-defense HUD icons, same material family as armored heart and gold credits. Row 1 left: commander insignia, small ivory star centered on a dark graphite shield with short gold wings. Row 1 right: alien skull trophy, pale ivory elongated alien head with two dark eye sockets and a subtle cyan rim. Row 2 left: two forward chevrons made from warm amber metal, game speed symbol. Row 2 right: a graphite steel gear with ivory beveled edges and an amber center, command menu symbol. Professional game inventory art, compact centered silhouettes, top-left lighting, sculpted metallic shading, high contrast readable at 32px, restrained detail. Nonrectangular silhouettes, genuine alpha transparent backgrounds. No text, numerals, rectangular panels, UI frames, outer shadows or backgrounds. Style reference guides materials and lighting only; do not copy its frame.",
+      "reportedCostUSD": 0.0197,
+      "filesInGridOrder": [
+        "commander.png",
+        "eliminations.png",
+        null,
+        "command-menu.png"
+      ]
+    }
+  ]
+}
