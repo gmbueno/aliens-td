@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Aliens Tower Defense · Frontier Campaign</title>
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./src/ui/battle.css" />
   </head>
   <body>
     <main class="app-shell">
@@ -27,17 +28,17 @@
       <section class="game-screen hidden" id="game-screen">
         <header class="hud hud-top">
           <div class="hud-group">
-            <div class="hud-chip lives-chip" title="Lives"><span class="icon heart"></span><strong id="lives-value">0</strong></div>
-            <div class="hud-chip gold-chip" title="Gold"><span class="coin"></span><strong id="gold-value">0</strong></div>
+            <div class="hud-chip lives-chip" title="Lives"><span class="readout-label">BASE</span><strong id="lives-value">0</strong></div>
+            <div class="hud-chip gold-chip" title="Gold"><span class="readout-label">CREDITS</span><strong id="gold-value">0</strong></div>
             <button class="hud-chip player-chip" id="player-level-button" type="button" title="Skill Tree" aria-label="Open skill tree">
-              <strong id="player-level-value">1</strong>
+              <span class="readout-label">COMMANDER</span><strong>LV <b id="player-level-value">1</b></strong>
               <i id="player-xp-bar"></i>
             </button>
           </div>
           <div class="hud-group center">
             <div class="hud-chip mission-chip wide"><span>MISSION</span><strong id="mission-value">1-1</strong></div>
             <div class="hud-chip wave-chip"><span>WAVE</span><strong id="wave-value">0 / 0</strong></div>
-            <div class="hud-chip kills-chip"><span class="skull"></span><strong id="kills-value">0 / 0</strong></div>
+            <div class="hud-chip kills-chip"><span class="readout-label">ELIMINATED</span><strong id="kills-value">0 / 0</strong></div>
           </div>
           <div class="hud-group">
             <button class="control-button speed-state" id="speed-toggle-button" type="button" title="Game Speed">1x</button>
@@ -67,6 +68,7 @@
 
         <div class="battle-status"><span id="battle-message" role="status"></span><span class="keyboard-hint">1–6 build · Space wave/pause · Q ability · Esc cancel · F fullscreen</span></div>
         <footer class="hud hud-bottom">
+          <div class="armory-heading"><span>FIELD ARMORY <i>/ SELECT & DEPLOY</i></span><span>1–6 WEAPONS <i>·</i> Q ACTIVE</span></div>
           <div class="ability-bar" id="ability-bar"></div>
           <div class="weapon-bar" id="weapon-bar"></div>
         </footer>

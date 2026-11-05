@@ -11,7 +11,7 @@ const TWO_PI = Math.PI * 2;
 const BOARD_PAD = 12;
 const NEXT_WAVE_DELAY = 8;
 let audioContext = null;
-const ASSET_CACHE_BUSTER = "campaign-20261029";
+const ASSET_CACHE_BUSTER = "armory-20261105";
 
 function assetUrl(src) {
   return `${src}?v=${ASSET_CACHE_BUSTER}`;
@@ -328,12 +328,13 @@ export function createInitialState(level, profile, canvas) {
   };
 }
 
-function targetForTower(tower, enemies) {
+export function targetForTower(tower, enemies) {
   const candidates = enemies.filter((enemy) => enemy.life > 0 && distance(tower, enemy) <= tower.range);
   return candidates.sort((a, b) => {
     if (tower.targeting === "strongest") return (b.life + b.shield) - (a.life + a.shield);
     if (tower.targeting === "nearest") return distance(tower, a) - distance(tower, b);
-    return (b.segment * 1000 + b.progress) - (a.segment * 1000 + a.progress);
+    const progressDifference = (b.segment * 1000 + b.progress) - (a.segment * 1000 + a.progress);
+    return tower.targeting === "last" ? -progressDifference : progressDifference;
   })[0] || null;
 }
 
@@ -1026,7 +1027,25 @@ export function createGame({ ui, levels }) {
 
   const sectorNames = ["The Outpost", "Frozen Frontier", "Heart of the Hive"];
   const biomeColors = { outpost: "#e9ab64", frost: "#72d9ee", hive: "#c4e97a" };
-  const setMarkup = (element, markup) => { if (element.innerHTML !== markup) element.innerHTML = markup; };
+  // Compare the original template, not browser-normalized HTML (e.g. disabled="").
+  const renderedMarkup = new WeakMap();
+  const setMarkup = (element, markup) => {
+    if (renderedMarkup.get(element) === markup) return;
+    element.innerHTML = markup;
+    renderedMarkup.set(element, markup);
+  };
+  let actionsPanelKey = null;
+  function mountActions(key, markup) {
+    if (actionsPanelKey === key) return;
+    ui.towerActions.innerHTML = markup;
+    actionsPanelKey = key;
+  }
+  const targetModes = [
+    { key: "first", name: "First", icon: "↗", hint: "Closest to the exit" },
+    { key: "last", name: "Last", icon: "↙", hint: "Closest to the entrance" },
+    { key: "strongest", name: "Strongest", icon: "◆", hint: "Most health + shield" },
+    { key: "nearest", name: "Nearest", icon: "◎", hint: "Closest to this tower" },
+  ];
 
   function mapPreview(level) {
     const color = biomeColors[level.biome];
@@ -1075,6 +1094,7 @@ export function createGame({ ui, levels }) {
     ui.livesValue.textContent = Math.max(0, state.lives);
     ui.goldValue.textContent = state.gold;
     ui.playerLevelValue.textContent = profile.level;
+    ui.playerLevelButton.querySelector(".readout-label").textContent = profile.skillPoints ? `COMMANDER / ${profile.skillPoints} SP` : "COMMANDER";
     ui.playerXpBar.style.setProperty("--xp-progress", `${Math.round((profile.xp / xpNeeded(profile.level)) * 100)}%`);
     ui.missionValue.textContent = missionLabel(state.level);
     ui.waveValue.textContent = `${Math.min(state.waveIndex + 1, state.level.waves.length)} / ${state.level.waves.length}`;
@@ -1096,11 +1116,18 @@ export function createGame({ ui, levels }) {
     ui.playerLevelButton.classList.toggle("has-points", profile.skillPoints >= 5);
     ui.soundButton.textContent = profile.settings.muted ? "Sound off" : "Sound on";
     syncAbilityBar();
-    ui.weaponBar.querySelectorAll(".weapon-card").forEach((button) => {
-      const weapon = weapons.find((item) => item.key === button.dataset.weaponKey);
-      button.classList.toggle("selected", state.selectedWeaponKey === weapon.key);
-      button.classList.toggle("unaffordable", state.gold < weapon.price);
-      button.setAttribute("aria-disabled", state.gold < weapon.price ? "true" : "false");
+    ui.weaponBar.querySelectorAll(".weapon-card").forEach((card) => {
+      const weapon = weapons.find((item) => item.key === card.dataset.weaponKey);
+      const selected = state.selectedWeaponKey === weapon.key;
+      const missing = Math.max(0, weapon.price - state.gold);
+      card.classList.toggle("selected", selected);
+      card.classList.toggle("unaffordable", missing > 0);
+      card.setAttribute("aria-disabled", String(missing > 0));
+      const select = card.querySelector(".weapon-select");
+      select.setAttribute("aria-pressed", String(selected));
+      select.setAttribute("aria-disabled", String(missing > 0));
+      // Keep the info action usable even when the weapon is unaffordable.
+      card.querySelector(".weapon-state").textContent = selected ? "PLACE ON MAP" : missing > 0 ? `NEED ${missing}g` : "READY";
     });
     syncTowerSidebar();
   }
@@ -1133,26 +1160,74 @@ export function createGame({ ui, levels }) {
   function syncTowerSidebar() {
     const tower = state?.towers.find(item => item.id === state.selectedTowerId);
     ui.towerSidebar.classList.remove("hidden");
+    ui.towerSidebar.classList.toggle("inspecting-tower", Boolean(tower));
     ui.towerSidebarCloseButton.classList.toggle("hidden", !tower && !state.selectedObstacle);
     if (tower) {
       ui.towerSidebarTitle.textContent = tower.weapon.name;
-      setMarkup(ui.towerStatList, `<p class="tower-role">${tower.weapon.role}${tower.pad ? ` · ${tower.pad === "range" ? "+18% range pad" : "+15% damage pad"}` : ""}</p>${weaponStatsMarkup(tower.weapon)}<div class="weapon-stat-row"><span>${tower.reloadTimer > 0 ? "Reloading" : "Ammo"}</span><strong>${tower.ammo} / ${tower.weapon.capacity}</strong></div>`);
+      const overview = [
+        ["Damage", tower.weapon.directDamage.toLocaleString("en-US")],
+        ["Fire rate", `${tower.weapon.atkSpeed}/s`],
+        ["Range", tower.range],
+        [tower.reloadTimer > 0 ? "Reloading" : "Ammo", tower.reloadTimer > 0 ? `${tower.reloadTimer.toFixed(1)}s` : `${tower.ammo} / ${tower.weapon.capacity}`],
+      ];
+      setMarkup(ui.towerStatList, `<p class="tower-role">${tower.weapon.role}${tower.pad ? ` · ${tower.pad === "range" ? "+18% range pad" : "+15% damage pad"}` : ""}</p>${overview.map(([label, value]) => `<div class="weapon-stat-row"><span>${label}</span><strong>${value}</strong></div>`).join("")}`);
+      // Keep controls mounted for the selected tower, including when gold/ammo changes
+      // between pointerdown and pointerup. Only patch their text and availability.
+      mountActions(`tower:${tower.id}`, `
+        <div class="panel-section-label">TARGET PRIORITY <span>Firing order</span></div>
+        <div class="target-buttons" role="group" aria-label="Target priority">${targetModes.map(mode => `<button type="button" data-target="${mode.key}" title="${mode.hint}"><i aria-hidden="true">${mode.icon}</i><span>${mode.name}</span></button>`).join("")}</div>
+        <p class="target-description" data-target-description></p>
+        <div class="panel-section-label upgrade-heading">FIELD UPGRADES <span data-upgrade-budget></span></div>
+        ${towerUpgradePaths.map(path => `<button type="button" class="upgrade-button upgrade-${path.key}" data-upgrade="${path.key}">
+          <span class="upgrade-topline"><strong>${path.name}</strong><span class="upgrade-ranks" aria-hidden="true">${[0,1,2].map(rank => `<i data-rank="${rank}"></i>`).join("")}</span></span>
+          <span class="upgrade-preview" data-preview></span>
+          <span class="upgrade-purchase"><span data-upgrade-status></span><b data-cost></b></span>
+        </button>`).join("")}
+        <p class="upgrade-limit" data-upgrade-limit></p>
+        <button type="button" class="secondary-button sell-button" data-sell="true"><span>Sell tower</span><strong data-sell-value></strong></button>
+        <p class="upgrade-limit" data-refund-note></p>`);
       const total = tower.upgrades.power + tower.upgrades.tactical;
-      setMarkup(ui.towerActions, `<div class="target-buttons" aria-label="Target priority">${["first", "strongest", "nearest"].map(target => `<button type="button" data-target="${target}" aria-pressed="${tower.targeting === target}" class="${tower.targeting === target ? "selected" : ""}">${target}</button>`).join("")}</div>
-        <p class="upgrade-limit">${total}/4 upgrades · max 3 in one branch</p>
-        ${towerUpgradePaths.map(path => {
-          const cost = towerUpgradeCost(tower, path.key);
-          const maxed = tower.upgrades[path.key] >= 3 || total >= 4;
-          return `<button type="button" class="upgrade-button" data-upgrade="${path.key}" ${maxed || state.gold < cost || state.result ? "disabled" : ""}><strong>${path.name} ${tower.upgrades[path.key]}/3 <b>${maxed ? "MAX" : `${cost}g`}</b></strong><span>${path.detail}</span></button>`;
-        }).join("")}
-        <button type="button" class="secondary-button sell-button" data-sell="true">Sell · +${sellValue(state, tower)}g</button><p class="upgrade-limit">${state.waveIndex === 0 && state.phase === "prepare" ? "Full refund before the first wave." : "70% of tower + upgrade costs refunded."}</p>`);
+      ui.towerActions.querySelectorAll("[data-target]").forEach(button => {
+        const selected = tower.targeting === button.dataset.target;
+        button.classList.toggle("selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+        button.disabled = Boolean(state.result);
+      });
+      ui.towerActions.querySelector("[data-target-description]").textContent = targetModes.find(mode => mode.key === tower.targeting)?.hint || targetModes[0].hint;
+      ui.towerActions.querySelector("[data-upgrade-budget]").textContent = `${total} / 4 installed`;
+      towerUpgradePaths.forEach(path => {
+        const button = ui.towerActions.querySelector(`[data-upgrade="${path.key}"]`);
+        const rank = tower.upgrades[path.key];
+        const cost = towerUpgradeCost(tower, path.key);
+        const branchMaxed = rank >= 3;
+        const limitReached = total >= 4;
+        const unavailable = branchMaxed || limitReached || state.gold < cost || Boolean(state.result);
+        button.disabled = unavailable;
+        button.classList.toggle("complete", branchMaxed);
+        button.classList.toggle("needs-gold", !branchMaxed && !limitReached && state.gold < cost);
+        button.querySelectorAll("[data-rank]").forEach(pip => pip.classList.toggle("filled", Number(pip.dataset.rank) < rank));
+        const next = applyTowerUpgrades(effectiveWeaponByKey(tower.weapon.key), { ...tower, upgrades: { ...tower.upgrades, [path.key]: rank + 1 } });
+        const preview = branchMaxed || limitReached ? path.detail : path.key === "power"
+          ? `Damage ${tower.weapon.directDamage.toLocaleString("en-US")} → ${next.directDamage.toLocaleString("en-US")}`
+          : `Range ${tower.range} → ${next.range} · Rate ${tower.weapon.atkSpeed} → ${next.atkSpeed}/s`;
+        button.querySelector("[data-preview]").textContent = preview;
+        button.querySelector("[data-upgrade-status]").textContent = branchMaxed ? "Fully upgraded" : limitReached ? "Tower limit reached" : state.gold < cost ? `Need ${cost - state.gold}g more` : "Upgrade";
+        button.querySelector("[data-cost]").textContent = branchMaxed ? "3 / 3" : limitReached ? "4 / 4" : `${cost}g`;
+        button.setAttribute("aria-label", `${path.name}, rank ${rank} of 3. ${preview}. ${button.querySelector("[data-upgrade-status]").textContent}${branchMaxed || limitReached ? "" : `, ${cost} gold`}`);
+      });
+      ui.towerActions.querySelector("[data-upgrade-limit]").textContent = total >= 4 ? "All 4 upgrades installed on this tower." : "Choose 4 upgrades total · up to 3 in one branch.";
+      ui.towerActions.querySelector("[data-sell-value]").textContent = `+${sellValue(state, tower)}g`;
+      ui.towerActions.querySelector("[data-sell]").disabled = Boolean(state.result);
+      ui.towerActions.querySelector("[data-refund-note]").textContent = state.waveIndex === 0 && state.phase === "prepare" ? "Full refund before the first wave." : "Returns 70% of your total investment.";
       return;
     }
     const obstacle = state.selectedObstacle;
     if (obstacle) {
       ui.towerSidebarTitle.textContent = obstacle.cost ? "Clear this position" : "Solid rock";
       setMarkup(ui.towerStatList, `<p class="field-guide">${obstacle.cost ? "Spend gold to remove this obstacle and open a new tower position. It stays cleared for this mission." : "This obstacle cannot be removed. Place towers around it."}</p>`);
-      setMarkup(ui.towerActions, obstacle.cost ? `<button type="button" class="primary-button" data-clear="true" ${state.gold < obstacle.cost ? "disabled" : ""}>Clear obstacle · ${obstacle.cost}g</button>` : "");
+      mountActions(`obstacle:${obstacle.row}:${obstacle.col}`, obstacle.cost ? `<button type="button" class="primary-button" data-clear="true">Clear obstacle · ${obstacle.cost}g</button>` : "");
+      const clearButton = ui.towerActions.querySelector("[data-clear]");
+      if (clearButton) clearButton.disabled = state.gold < obstacle.cost;
       return;
     }
     ui.towerSidebarTitle.textContent = state.phase === "prepare" ? "Plan your defense" : "Hold the line";
@@ -1160,17 +1235,19 @@ export function createGame({ ui, levels }) {
     const types = [...new Set(wave?.spawns.map(spawn => spawn.enemy))];
     const tips = { alien_normal: "Scout · reliable fire wears it down.", alien_fast: "Skitter · fast and fragile. Cover the exit.", alien_tank: "Bulwark · 35% armor. Magnum or Sniper.", alien_shielded: "Shielded · extra shield absorbs hits first.", alien_boss: "Overseer · set heavy towers to Strongest.", alien_saucer: "Mothership · shields, armor, lethal breach." };
     setMarkup(ui.towerStatList, `<p class="field-guide">${state.level.description}</p><div class="enemy-intel">${types.map(key => `<div><img src="${assetUrl(enemies[key].asset)}" alt=""><span>${tips[key]}</span></div>`).join("")}</div>`);
-    setMarkup(ui.towerActions, `<div class="map-legend"><span><i class="range-dot"></i> Sensor pad: +18% range</span><span><i class="power-dot"></i> Power pad: +15% damage</span>${state.level.biome === "frost" ? "<span>❄ Frozen route: aliens 25% slower</span>" : ""}<span>▧ Crates: click to clear</span></div><p class="upgrade-limit">${profile.skillPoints >= 5 ? `${profile.skillPoints} SP available. Open the commander badge to upgrade.` : "3 stars = no leaks · 2 stars = 60% lives"}</p>`);
+    mountActions(`guide:${state.level.id}:${profile.skillPoints}`, `<div class="map-legend"><span><i class="range-dot"></i> Sensor pad: +18% range</span><span><i class="power-dot"></i> Power pad: +15% damage</span>${state.level.biome === "frost" ? "<span>❄ Frozen route: aliens 25% slower</span>" : ""}<span>▧ Crates: click to clear</span></div><p class="upgrade-limit">${profile.skillPoints >= 5 ? `${profile.skillPoints} SP available. Open the commander badge to upgrade.` : "3 stars = no leaks · 2 stars = 60% lives"}</p>`);
   }
 
   function renderWeaponBar() {
     ui.weaponBar.innerHTML = weapons.map((weapon, index) => `
-      <article class="weapon-card" role="button" tabindex="0" aria-label="Build ${weapon.name}, ${weapon.price} gold" data-weapon-key="${weapon.key}" style="--slot-card-image: ${cssUrl(weapon.slotCardAsset)}">
-        <strong class="weapon-nickname">${weapon.nickname}</strong>
+      <article class="weapon-card" data-weapon-key="${weapon.key}" style="--weapon-accent: ${weapon.accent}">
+        <button class="weapon-select" type="button" aria-label="Build ${weapon.name}, ${weapon.price} gold" aria-pressed="false">
+          <span class="weapon-topline"><kbd>${index + 1}</kbd><span class="weapon-state">READY</span></span>
+          <span class="weapon-art-stage"><img class="weapon-art" src="${assetUrl(weapon.hudAsset)}" alt="" draggable="false"></span>
+          <span class="weapon-caption"><strong class="weapon-nickname">${weapon.nickname}</strong><span class="weapon-price">${weapon.price}<small>g</small></span></span>
+          <span class="weapon-role">${weapon.role}</span>
+        </button>
         <button class="weapon-info-button" data-info-weapon-key="${weapon.key}" type="button" aria-label="View ${weapon.name} attributes">i</button>
-        <span class="slot-label">${index + 1} / ${weapon.role}</span>
-        <img class="weapon-art" src="${assetUrl(weapon.hudAsset)}" alt="" draggable="false">
-        <small>${weapon.price}g</small>
       </article>
     `).join("");
   }
@@ -1188,9 +1265,10 @@ export function createGame({ ui, levels }) {
     ui.abilityBar.innerHTML = [equippedAbility].filter(Boolean).map((ability) => {
       const stats = abilityStats(profile, ability.key);
       return `
-        <button class="ability-card active-${ability.key}" data-active-key="${ability.key}" type="button" title="${ability.name}" style="--ability-card-image: ${cssUrl(assetPaths.slots.activeCards[ability.key])}">
-          <strong>${ability.shortName}</strong>
-          <span>Lv ${stats.rank}</span>
+        <button class="ability-card active-${ability.key}" data-active-key="${ability.key}" type="button" title="${ability.name}">
+          <span class="ability-topline"><kbd>Q</kbd><span>ACTIVE / ${stats.rank}</span></span>
+          <span class="ability-art-stage"><img src="${assetUrl(assetPaths.slots.activeCards[ability.key])}" alt="" draggable="false"></span>
+          <strong>${ability.name}</strong>
           <small>Ready</small>
         </button>
       `;
@@ -1266,6 +1344,7 @@ export function createGame({ ui, levels }) {
     ui.weaponInfoModal.classList.add("hidden");
     ui.skillTreeModal.classList.add("hidden");
     state = createInitialState(level, profile, ui.canvas);
+    actionsPanelKey = null;
     ui.mainMenu.classList.add("hidden");
     ui.gameScreen.classList.remove("hidden");
     ui.pauseModal.classList.add("hidden");
@@ -1329,6 +1408,7 @@ export function createGame({ ui, levels }) {
     const card = event.target.closest("[data-weapon-key]");
     if (!card || card.getAttribute("aria-disabled") === "true") return;
     state.selectedWeaponKey = state.selectedWeaponKey === card.dataset.weaponKey ? null : card.dataset.weaponKey;
+    state.selectedObstacle = null;
     state.selectedTowerId = null;
     state.selectedActiveKey = null;
     syncHud();
@@ -1508,13 +1588,18 @@ export function createGame({ ui, levels }) {
     if (!button || button.disabled) return;
     const tower = state.towers.find(item => item.id === state.selectedTowerId);
     if (button.dataset.upgrade && upgradeTower(state, tower, button.dataset.upgrade)) notify(state, `${tower.weapon.name} upgraded.`);
-    if (button.dataset.target && tower) tower.targeting = button.dataset.target;
+    if (button.dataset.target && tower && targetModes.some(mode => mode.key === button.dataset.target)) {
+      tower.targeting = button.dataset.target;
+    }
     if (button.dataset.sell && tower) sellTower(state, tower);
     if (button.dataset.clear) clearObstacle(state, state.selectedObstacle);
     syncHud();
   });
   ui.weaponBar.addEventListener("keydown", event => {
-    if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-weapon-key]")) { event.preventDefault(); event.stopPropagation(); event.target.click(); }
+    if ((event.key === "Enter" || event.key === " ") && event.target.matches("button")) event.stopPropagation();
+  });
+  ui.towerActions.addEventListener("keydown", event => {
+    if ((event.key === "Enter" || event.key === " ") && event.target.matches("button")) event.stopPropagation();
   });
   document.addEventListener("keydown", event => {
     const modal = [...document.querySelectorAll(".modal-backdrop:not(.hidden)")].at(-1);

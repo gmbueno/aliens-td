@@ -8,7 +8,7 @@ A static HTML/CSS/JavaScript tower-defense game. Play at **https://gmbueno.githu
 - Five to nine waves per mission, visible incoming enemy compositions, and manual preparation or optional auto waves.
 - Clearable cargo/ice/growth obstacles, permanent rocks, sensor pads (+18% range), power pads (+15% damage), and frost tiles (25% enemy slowdown).
 - Six complementary weapons: budget defense, sustained fire, suppression, armor penetration, crowd damage, and long-range armor-piercing shots.
-- Two tower upgrade branches: Firepower and Control. Four upgrades total per tower, with at most three in a branch. First/Strongest/Nearest targeting.
+- Two tower upgrade branches: Firepower and Control. Four upgrades total per tower, with at most three in a branch. First/Last/Strongest/Nearest targeting.
 - Sell towers for a full refund before the first wave, or 70% of the total investment afterward.
 - Three active abilities with an equipped loadout: Chrono Break, Rocket Launcher, Napalm.
 - Persistent XP, 10 skill points per commander level, free skill refunds, mission records, and first-clear/new-star bonuses. Existing profiles migrate automatically.
@@ -31,6 +31,7 @@ npm run test:balance
 npm ci
 npx playwright install chromium
 GAME_URL=http://localhost:4173 npm run test:browser
+GAME_URL=http://localhost:4173 npm run test:controls
 ```
 
 The unit/campaign tests use Node 22 without dependencies. The browser suite uses Playwright and saves screenshots under ignored `output/`. The balance runner uses a repeatable placement policy, reinvests between waves, and deliberately does not use active abilities. It is a regression benchmark, not a promise that every strategy wins.
@@ -55,3 +56,7 @@ Abilities and cooldowns advance with combat time and game speed, stop while paus
 - `docs/design-notes.md`: research rationale and balance methodology.
 
 Pushing `main` runs `.github/workflows/deploy-pages.yml`: campaign tests must pass, then only runtime files are packaged and deployed to GitHub Pages. Tests, documentation, and development dependencies are excluded from the public bundle.
+
+## Interaction update (November 2026)
+
+Target and upgrade controls keep their DOM identity while gold/ammo updates. The controls regression suite holds the pointer down across several HUD refreshes and live kills, checks all four priorities, purchases upgrades, and distinguishes insufficient funds from branch/tower upgrade caps. Weapon selection uses native keyboard-accessible buttons with separate info actions.

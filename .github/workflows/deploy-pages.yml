@@ -33,6 +33,26 @@ jobs:
       - name: Validate campaign and game rules
         run: npm test
 
+      - name: Install browser test dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Validate target and upgrade controls in a browser
+        env:
+          GAME_URL: http://127.0.0.1:4173
+        run: |
+          python3 -m http.server 4173 > /tmp/aliens-browser-server.log 2>&1 &
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$GAME_URL" > /dev/null
+          npm run test:controls
+
+      - name: Save interaction test screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interaction-test-screenshots
+          path: output/ui-refresh/controls
+
       - name: Prepare production files
         run: |
           mkdir _site

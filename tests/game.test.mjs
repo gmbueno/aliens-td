@@ -160,3 +160,21 @@ test('all 18 missions are beatable with the campaign training curve, without act
     assert.equal(simulate(level,ranks).result,'victory',`${level.name} at passive rank ${ranks}`);
   }
 });
+
+test('First, Last, Strongest and Nearest choose their actual in-range target', async()=>{
+  const {targetForTower}=await import('../src/game.js');
+  const tower={x:0,y:0,range:100,targeting:'first'};
+  const aliens=[
+    {id:'front',x:80,y:0,life:100,shield:0,segment:4,progress:1},
+    {id:'back',x:40,y:0,life:100,shield:0,segment:1,progress:2},
+    {id:'heavy',x:70,y:0,life:300,shield:400,segment:2,progress:1},
+    {id:'near',x:10,y:0,life:200,shield:0,segment:2,progress:10},
+    {id:'out-of-range',x:120,y:0,life:10000,shield:0,segment:0,progress:0},
+    {id:'dead',x:0,y:0,life:0,shield:0,segment:0,progress:0},
+  ];
+  for(const [mode,id] of [['first','front'],['last','back'],['strongest','heavy'],['nearest','near']]){
+    tower.targeting=mode;assert.equal(targetForTower(tower,aliens).id,id);
+  }
+  assert.equal(targetForTower(tower,[]),null);
+  assert.equal(aliens[0].id,'front','targeting must not reorder the live enemy array');
+});

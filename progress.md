@@ -155,3 +155,16 @@ TODO
 - Production complete: runtime commit 1e4c17e deployed successfully to https://gmbueno.github.io/aliens-td/ via Actions run 40932058262 (2026-10-29).
 - Re-ran the entire Playwright suite against the public production URL: passed, with zero browser errors or failed runtime assets. Production title/campaign markup verified; production screenshots saved under output/production/.
 - No blocking TODOs remain for this release. Future optional tuning should use player feedback on short-route maps, specialization diversity, and boss pressure; do not assume the automated policy represents every human strategy.
+
+## Interaction fixes and UI review — November 5, 2026
+- User reports missed target-priority and Firepower/Control clicks, requests Last targeting and several UI improvement/self-critique rounds.
+- Use isolated headless Playwright only; do not open or interact with the user's browser/desktop.
+- Suspected root cause: comparing DOM-serialized innerHTML with raw template HTML causes controls to be replaced on the 100ms HUD refresh, interrupting held clicks. Will reproduce before fixing and add timed-pointer regression coverage.
+- Visual direction: a cohesive field-command console, a purpose-built weapon rack with larger artwork and clear selected/affordable states, and a clearer tower upgrade/targeting panel.
+- Reproduced the issue: the original held click detached its button. After the fix, a 350ms held click keeps the same node connected and correctly changes targeting / purchases an upgrade.
+- Round 1: replaced plain weapon boxes with an illustrated, accented weapon rack; added full-cost/missing-gold/selected states, native build buttons, a matching active-ability strip and consistent field readouts. Tower controls now include exact next-stat previews and distinct branch/total-limit messages.
+- Round 1 self-review: notebook screenshots still hid upgrades below the sidebar fold. Round 2 reserves a full-height right command column, reduces redundant tower stats, and condenses targeting for short desktop screens. Portrait keeps touch-sized controls; landscape retains a scrollable drawer.
+- Round 2 screenshots confirm Firepower and Control are visible without sidebar scrolling at 1280×720 and 1024×768. Both cost previews and four-way targeting remain accessible during combat.
+- Round 3: constrained intrinsic artwork sizing, fixed the 320px HUD overflow, added visible available SP to the commander badge, and checked insufficient-funds / selected / maximum-upgrade states. Added CI coverage for held-pointer interactions and responsive control visibility before deployment.
+- Final local validation: 16 game tests pass; full browser flow passes; new controls suite passes at 320, 390, 844, 1024, 1280 and 1920px, including live-gold changes during a 350ms hold, both upgrade branches, branch/total caps with money remaining, and keyboard/touch selection. Final skill-client screenshot/text reviewed with no browser errors.
+- Reviewed screenshots after each of three visual iterations. Notebook upgrades now remain visible; mobile arsenal has larger illustrations, stronger selection/price hierarchy, and no 320px horizontal overflow. All browser work used isolated headless contexts; the user's browser and desktop were not controlled or opened.
