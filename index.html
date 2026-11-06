@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="./src/ui/battle.css" />
     <link rel="stylesheet" href="./src/ui/arsenal.css" />
     <link rel="stylesheet" href="./src/ui/skillTree.css" />
-    <link rel="stylesheet" href="./src/ui/hud.css" /><link rel="stylesheet" href="./src/ui/frontier.css" />
+    <link rel="stylesheet" href="./src/ui/hud.css" /><link rel="stylesheet" href="./src/ui/frontier.css" /><link rel="stylesheet" href="./src/ui/command.css" />
   </head>
   <body>
     <main class="app-shell">
@@ -18,16 +18,18 @@
             <div><p class="eyebrow">ALIENS / FRONTIER COMMAND</p><h1>HOLD THE LINE<span>.</span></h1><p class="menu-subtitle">Build. Adapt. Push back the invasion.</p></div>
             <button class="commander-button" id="menu-skills-button" type="button"></button>
           </div>
-          <div class="menu-loadout"><div><strong>YOUR ARSENAL / UNLOCK AS YOU PLAY</strong><p id="arsenal-next-unlock"></p></div><button class="secondary-button" id="menu-arsenal-button" type="button">Customize weapons →</button></div>
+          <div class="menu-loadout"><div><strong>YOUR ARSENAL / UNLOCK AS YOU PLAY</strong><p id="arsenal-next-unlock"></p></div><button class="secondary-button" id="menu-arsenal-button" type="button">Choose categories →</button><button class="secondary-button" id="menu-stats-button" type="button">Combat records ↗</button></div>
           <div class="campaign-topline"><span id="campaign-progress"></span><span>18 missions · 3 sectors</span></div>
           <nav class="sector-tabs" id="sector-tabs" aria-label="Campaign sector"></nav>
           <div class="campaign-body">
             <div class="level-grid" id="level-grid"></div>
             <aside class="mission-briefing"><div id="mission-briefing"></div><button class="primary-button" id="menu-play-button" type="button">Deploy squad →</button></aside>
           </div>
-          <div class="menu-foot"><span>Permanent skills. New tactics. One more try.</span><a class="jam-link" href="https://vibejam.com/" target="_blank" rel="noopener noreferrer">Vibe Jam 2026 ↗</a><span>FRONTIER UPDATE / 05</span></div>
+          <div class="menu-foot"><span>Permanent skills. New tactics. One more try.</span><a class="jam-link" href="https://vibejam.com/" target="_blank" rel="noopener noreferrer">Vibe Jam 2026 ↗</a><span>COMMAND UPDATE / 06</span></div>
         </div>
       </section>
+
+      <section id="stats-screen" class="stats-screen hidden" aria-labelledby="stats-title"><div class="stats-head"><div><p class="eyebrow">FRONTIER / COMBAT RECORDS</p><h1 id="stats-title">Every shot counts.</h1><p>Lifetime kills by category. Records start with this update and survive mission restarts.</p></div><button id="stats-back-button" class="secondary-button" type="button">← Mission select</button></div><div class="stats-total"><strong id="stats-total">0</strong><span>CONFIRMED ELIMINATIONS</span></div><div id="stats-grid" class="stats-grid"></div><div id="stats-support" class="stats-support"></div></section>
 
       <section class="game-screen hidden" id="game-screen">
         <header class="hud hud-top" aria-label="Mission status and controls">
@@ -114,7 +116,7 @@
           <span id="result-copy"></span>
           <div id="result-rewards" class="result-rewards"></div>
           <button class="primary-button" id="result-next-button" type="button">Next mission →</button>
-          <button class="secondary-button" id="result-arsenal-button" type="button">Customize weapons</button>
+          <button class="secondary-button" id="result-arsenal-button" type="button">Choose categories</button>
           <button class="secondary-button" id="result-skills-button" type="button">Spend skill points</button>
           <button class="secondary-button" id="result-restart-button" type="button">Try again</button>
           <button class="secondary-button" id="result-levels-button" type="button">Change Level</button>
@@ -136,14 +138,14 @@
               <div class="weapon-stat-list" id="weapon-stat-list"></div>
               <div class="weapon-info-actions">
                 <button class="primary-button" id="weapon-equip-button" type="button" disabled>Equip</button>
-                <button class="secondary-button" id="weapon-customize-button" type="button">Change model / attachments →</button><button class="secondary-button" id="weapon-destroy-button" type="button" disabled>Destroy</button>
+                <button class="secondary-button" id="weapon-customize-button" type="button">Change loadout →</button><button class="secondary-button" id="weapon-destroy-button" type="button" disabled>Destroy</button>
               </div>
             </section>
           </div>
         </div>
       </section>
 
-      <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="arsenal-modal" aria-labelledby="arsenal-title"><div class="arsenal-card"><div class="arsenal-head"><div><p>FRONTIER / WEAPONS LAB</p><h2 id="arsenal-title">Make it yours.</h2></div><button class="icon-button" id="arsenal-close-button" type="button" aria-label="Close arsenal">×</button></div><p class="arsenal-intro">Start with two weapon types. Clear different missions to discover more. Caches unlock attachments; alternate models are optional. Change your loadout here, then deploy — or restart the current mission to apply it.</p><div class="arsenal-goal" id="arsenal-goal"></div><div id="arsenal-content"></div><div id="arsenal-restart-panel" class="arsenal-restart-panel hidden"><p>Apply changes by restarting this mission. Deployed towers and wave progress will reset; permanent rewards stay saved.</p><button id="arsenal-restart-button" class="primary-button" type="button">Apply loadout & restart mission</button></div></div></section>
+      <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="arsenal-modal" aria-labelledby="arsenal-title"><div class="arsenal-card"><div class="arsenal-head"><div><p>FRONTIER / CATEGORY LOADOUT</p><h2 id="arsenal-title">Choose your squad.</h2></div><button class="icon-button" id="arsenal-close-button" type="button" aria-label="Close arsenal">×</button></div><p class="arsenal-intro">Start with two weapon types. Clear different missions to discover more. Start with three category slots. Find more slots in the command graph and mission caches, up to six total. Change your loadout here, then deploy — or restart the current mission to apply it.</p><div class="arsenal-goal" id="arsenal-goal"></div><div id="arsenal-content"></div><div id="arsenal-restart-panel" class="arsenal-restart-panel hidden"><p>Apply changes by restarting this mission. Deployed towers and wave progress will reset; permanent rewards stay saved.</p><button id="arsenal-restart-button" class="primary-button" type="button">Apply loadout & restart mission</button></div></div></section>
 
       <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="skill-tree-modal" aria-label="Commander skills">
         <div class="skill-tree-card">
@@ -152,7 +154,7 @@
               <p>FRONTIER / COMMAND DOCTRINE</p>
               <h2>Command upgrades.</h2>
             </div>
-            <div class="doctrine-head-actions"><button class="secondary-button" id="reset-skills-button" type="button" title="Refund commander nodes for free. Weapon licenses remain owned.">Refund nodes</button><button class="icon-button" id="skill-tree-close-button" type="button" aria-label="Close skill tree">×</button></div>
+            <div class="doctrine-head-actions"><button class="secondary-button" id="reset-skills-button" type="button" title="Refund commander nodes for free. Combat records stay saved.">Refund nodes</button><button class="icon-button" id="skill-tree-close-button" type="button" aria-label="Close skill tree">×</button></div>
           </div>
           <div class="skill-tree-summary">
             <div><span>Commander LV</span><strong id="skill-tree-level">1</strong></div>

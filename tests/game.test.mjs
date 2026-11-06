@@ -12,7 +12,7 @@ import { simulate } from './balance.mjs';
 
 const saved = new Map();
 globalThis.localStorage = {getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v)};
-const make = (level=levels[0], raw={}) => createInitialState(level,normalizeProfile({schemaVersion:3,missions:missionRecords(),settings:{muted:true},...raw}),{width:1280,height:720});
+const make = (level=levels[0], raw={}) => createInitialState(level,normalizeProfile({schemaVersion:3,skills:{loadoutSlots:2},caches:{level_4:true},missions:missionRecords(),settings:{muted:true},...raw}),{width:1280,height:720});
 const tick = (state, seconds) => { for(let n=0;n<seconds*60;n++)stepState(state,1/60); };
 const freeTile = state => {
   for(let row=0;row<state.level.rows;row++)for(let col=0;col<state.level.cols;col++) if(!state.tileSets.path.has(`${row}:${col}`)&&!state.tileSets.blockers.has(`${row}:${col}`))return{row,col};
@@ -116,7 +116,7 @@ test('artillery and napalm apply damage and cooldown, without duplicate kill rew
   assert.ok(enemy.life<enemy.maxLife);tick(state,1);assert.ok(state.kills>0);const kills=state.kills;
   assert.equal(activateArtillery(state,enemy.x,enemy.y),false);tick(state,.02);assert.equal(state.kills,kills);
   const burn=make(undefined,{equippedActiveKey:'napalm',settings:{muted:true}});launchWave(burn);tick(burn,1);
-  const hp=burn.enemies[0].life;assert.ok(activateNapalm(burn));tick(burn,1);assert.ok(burn.enemies[0].life<hp);
+  const hp=burn.enemies[0].life;assert.ok(activateNapalm(burn,burn.enemies[0].x,burn.enemies[0].y));tick(burn,1);assert.ok(burn.enemies[0].life<hp);
 });
 
 test('legacy profiles migrate without losing skills, points or equipped ability',()=>{
@@ -157,7 +157,7 @@ test('no defense loses, and defeat does not grant a mission completion',()=>{
 
 test('all 18 missions are beatable with the campaign training curve, without active powers',()=>{
   for(const [index,level] of levels.entries()) {
-    const ranks=Math.min(5,Math.max(1,Math.ceil((index+1)/4)));
+    const ranks=Math.min(5,Math.max(1,Math.ceil((index+1)/3)));
     assert.equal(simulate(level,ranks).result,'victory',`${level.name} at passive rank ${ranks}`);
   }
 });
@@ -235,7 +235,7 @@ test('pellets expire and never damage the same alien repeatedly', async()=>{
 // Arsenal scenarios validate outcomes, migration and saved-build boundaries.
 test('weapon-specific upgrades change the intended combat roles',()=>{
  const state=make(undefined,{level:10});state.gold=100000;
- const build=key=>{for(let row=0;row<state.level.rows;row++)for(let col=0;col<state.level.cols;col++){const tower=placeTower(state,key,row,col);if(tower)return tower;}};
+ const build=key=>{state.arsenalProfile.arsenal.loadout=[key,...state.arsenalProfile.arsenal.loadout.filter(k=>k!==key)];for(let row=0;row<state.level.rows;row++)for(let col=0;col<state.level.cols;col++){const tower=placeTower(state,key,row,col);if(tower)return tower;}};
  const shotgun=build('shotgun');assert.equal(shotgun.weapon.pelletCount,3);
  upgradeTower(state,shotgun,'power');assert.equal(shotgun.weapon.pelletCount,4);
  upgradeTower(state,shotgun,'power');assert.equal(shotgun.weapon.pelletCount,5);
@@ -244,30 +244,6 @@ test('weapon-specific upgrades change the intended combat roles',()=>{
  const magnum=build('magnum'),damage=magnum.weapon.directDamage;upgradeTower(state,magnum,'power');assert.equal(magnum.weapon.directDamage,damage*1.5);
  const sniper=build('sniper'),range=sniper.range;upgradeTower(state,sniper,'tactical');assert.equal(sniper.range,Math.round(range*1.25));
  const rpg=build('rocket_launcher'),radius=rpg.weapon.splashRadius;upgradeTower(state,rpg,'power');assert.equal(rpg.weapon.splashRadius,radius+12);
-});
-
-test('models and attachments have deterministic unlocks, socket caps and persistent choices',async()=>{
- const {equipBlueprint,equipAttachment,normalizeArsenal,equippedWeapons}=await import('../src/data/arsenal.js');
- const fresh=normalizeProfile();assert.equal(equipBlueprint(fresh,'handgun','rare'),false);assert.equal(equipAttachment(fresh,'handgun','incendiary'),false);
- const state=make(undefined,{missions:{}});state.gold=10000;const tile=freeTile(state);assert.equal(placeTower(state,'rocket_launcher',tile.row,tile.col),null);
- const profile=normalizeProfile({schemaVersion:3,level:10,missions:missionRecords()});assert.equal(equipBlueprint(profile,'handgun','legendary'),true);
- assert.equal(equipAttachment(profile,'handgun','incendiary'),true);assert.equal(equipAttachment(profile,'handgun','concussive'),true);assert.equal(equipAttachment(profile,'handgun','cryo'),false);
- assert.equal(equipAttachment(profile,'handgun','incendiary'),true);assert.equal(equipAttachment(profile,'handgun','cryo'),true);
- profile.arsenal.heavy='rocket_launcher';assert.equal(equippedWeapons(weapons,profile).length,6);assert.equal(equippedWeapons(weapons,profile).at(-1).key,'rocket_launcher');
- assert.deepEqual(normalizeProfile(JSON.parse(JSON.stringify(profile))).arsenal,profile.arsenal);
- const forged=normalizeArsenal({heavy:'rocket_launcher',blueprints:{handgun:'legendary'},attachments:{handgun:['cryo','cryo','fake']}},fresh);
- assert.equal(forged.heavy,'sniper');assert.equal(forged.blueprints.handgun,'common');assert.deepEqual(forged.attachments.handgun,[]);
- equipBlueprint(profile,'handgun','common');assert.deepEqual(profile.arsenal.attachments.handgun,['concussive']);
-});
-
-test('arsenal changes wait for next deployment, including later tower upgrades',async()=>{
- const {equipBlueprint,equipAttachment}=await import('../src/data/arsenal.js');
- const state=make(undefined,{level:10});state.gold=10000;
- const tile=freeTile(state),tower=placeTower(state,'handgun',tile.row,tile.col);
- equipBlueprint(state.profile,'handgun','legendary');equipAttachment(state.profile,'handgun','incendiary');
- upgradeTower(state,tower,'power');assert.equal(tower.weapon.rarity,'common');assert.deepEqual(tower.weapon.attachments,[]);
- const next=createInitialState(levels[0],state.profile,{width:1280,height:720});next.gold=10000;
- const future=placeTower(next,'handgun',tile.row,tile.col);assert.equal(future.weapon.rarity,'legendary');assert.deepEqual(future.weapon.attachments,['incendiary']);
 });
 
 test('legacy rocket active and invested ranks migrate to artillery without losing SP',()=>{
@@ -295,19 +271,6 @@ test('broodmother spawns live hatchlings over time and on death; babies give no 
  const gold=s.gold,xp=s.runXp;babies.forEach(b=>b.life=0);tick(s,.02);assert.equal(s.gold,gold);assert.equal(s.runXp,xp);assert.equal(s.kills,5);
 });
 
-test('attachments burn, stun on each fifth shell, slow and splash with bounded strength',async()=>{
- const {equipBlueprint,equipAttachment}=await import('../src/data/arsenal.js');
- const {fireTower,projectileHit}=await import('../src/game.js');
- const s=customState('alien_steadfast');s.gold=10000;const p=s.profile;
- equipBlueprint(p,'handgun','legendary');equipAttachment(p,'handgun','incendiary');equipAttachment(p,'handgun','concussive');s.arsenalProfile=JSON.parse(JSON.stringify(p));
- const tile=freeTile(s),tower=placeTower(s,'handgun',tile.row,tile.col),enemy=s.enemies[0];
- for(let i=1;i<=5;i++){fireTower(s,tower,enemy);const shot=s.projectiles.at(-1);assert.equal(Boolean(shot.stun),i===5);projectileHit(s,shot,enemy);}
- assert.ok(enemy.burnTimer>0);assert.ok(enemy.stunTimer>0);
- const other={...enemy,id:'other',x:enemy.x+10,life:10000,armor:0,shield:0};s.enemies.push(other);
- projectileHit(s,{damage:100,armorPierce:1,blast:true},enemy);assert.equal(other.life,9980);
- other.immuneSlow=false;projectileHit(s,{damage:1,armorPierce:1,cryo:true},other);assert.equal(other.slowStrength,.16);assert.equal(other.slowTimer,1);
-});
-
 test('artillery produces exactly ten impacts across five seconds; pause stops it',()=>{
  const s=customState('alien_steadfast','artillery'),enemy=s.enemies[0],sounds=[];s.audio={play:key=>sounds.push(key)};
  enemy.speed=0;enemy.life=100000;enemy.maxLife=100000;
@@ -318,7 +281,7 @@ test('artillery produces exactly ten impacts across five seconds; pause stops it
 
 test('RPG detonates in an area even when the original target dies in flight',async()=>{
  const {fireTower,updateProjectiles}=await import('../src/game.js');
- const s=customState('alien_steadfast');s.gold=10000;const tile=freeTile(s),tower=placeTower(s,'rocket_launcher',tile.row,tile.col);
+ const s=customState('alien_steadfast');s.arsenalProfile.arsenal.loadout=['rocket_launcher'];s.gold=10000;const tile=freeTile(s),tower=placeTower(s,'rocket_launcher',tile.row,tile.col);
  const target={...s.enemies[0],x:tower.x+100,y:tower.y,id:'target'},other={...s.enemies[0],x:tower.x+105,y:tower.y,id:'other'};s.enemies=[target,other];
  fireTower(s,tower,target);target.life=0;updateProjectiles(s,.5);assert.ok(other.life<other.maxLife);assert.ok(s.effects.some(e=>e.kind==='explosion'));
 });

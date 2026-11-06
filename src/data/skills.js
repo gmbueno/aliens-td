@@ -1,176 +1,52 @@
-export const SP_PER_LEVEL = 10;
-export const DEFAULT_EQUIPPED_ACTIVE_KEY = null;
-
-const ACTIVE_MAX_RANK = 10;
-const PASSIVE_MAX_RANK = 5;
-
-export const activeSkillTree = [
-  {
-    key: "chronoBreak",
-    type: "active",
-    name: "Chrono Break",
-    description: "Stops alien movement. Cooldown 50s to 30s, duration 3s to 5s.",
-    maxRank: ACTIVE_MAX_RANK,
-    cost: 5,
-    active: "chronoBreak",
-  },
-  {
-    key: "artillery",
-    type: "active",
-    name: "Artillery Strike",
-    description: "Bombards a marked area for 5 seconds. Ten shells; each deals 1.8k to 3.6k damage.",
-    maxRank: ACTIVE_MAX_RANK,
-    cost: 5,
-    active: "artillery",
-  },
-  {
-    key: "napalm",
-    type: "active",
-    name: "Napalm",
-    description: "Burns all visible aliens. Cooldown 50s to 30s, duration 6s to 10s, damage 1000 to 1500/s.",
-    maxRank: ACTIVE_MAX_RANK,
-    cost: 5,
-    active: "napalm",
-  },
+export const SP_PER_LEVEL=10;
+export const DEFAULT_EQUIPPED_ACTIVE_KEY=null;
+const node=(key,name,description,maxRank,cost,branch,x,y,parent=null,extra={})=>({key,name,description,maxRank,cost,branch,x,y,type:'utility',requires:parent?{key:parent,rank:1}:null,...extra});
+export const skillTree=[
+ node('damage','Weapons Training','+8% tower damage per rank.',5,5,'armament',110,145,null,{type:'passive',weaponEffect:{stat:'directDamage',perRank:.08}}),
+ node('reload','Rapid Reload','-6% reload time per rank.',5,5,'armament',310,145,null,{type:'passive',weaponEffect:{stat:'reloadSpeed',perRank:-.06,decimals:2,min:.35}}),
+ node('fireRate','Trigger Discipline','+5% attack speed per rank.',5,5,'armament',110,295,'damage',{type:'passive',weaponEffect:{stat:'atkSpeed',perRank:.05,decimals:2}}),
+ node('range','Sensor Sweep','+6% tower range per rank.',5,5,'armament',310,295,'reload',{type:'passive',weaponEffect:{stat:'range',perRank:.06}}),
+ node('weakest','Finish the Weak','Unlock Weakest targeting for every weapon and drone. Focus the alien with the least health + shield.',1,7,'armament',210,445,'fireRate'),
+ node('loadoutSlots','Extra Loadout Slot','+1 category slot per rank. Start with 3; maximum 6 total including mission caches. Excess training is refunded when a cache replaces it.',2,8,'logistics',110,145),
+ node('duplicates','Twin Emplacements','Raise the limit from 1 to 2 deployed towers of each category.',1,10,'logistics',110,295,'loadoutSlots'),
+ node('salvage','Clearance Crew','Clearing obstacles costs 15% less per rank.',3,4,'logistics',310,145),
+ node('supplies','Supply Lines','Start each mission with $25 extra per rank.',3,5,'logistics',310,295,'salvage'),
+ node('pontoons','Pontoon Engineering','Build weapons on water. A raft costs $35 extra.',1,6,'logistics',310,445,'supplies'),
+ node('mines','Last Line','Deploy 2 exit mines per rank: 0 → 2 → 4 → 6 → 8 → 10. Each deals 5,500 area damage. One stock per mission.',5,6,'support',110,145),
+ node('drone','Patrol Drone','Unlock one UAV. Further ranks improve its base damage and range. Click its landing pad to upgrade it and choose targets during a mission.',3,8,'support',310,145),
+ node('extraDrone','Wingman','Deploy a second patrol drone. Each has independent field upgrades, targeting and kills.',1,12,'support',310,295,'drone'),
+ node('chronoBreak','Chrono Break','Unlock stasis. Each rank extends the freeze by 0.2s and reduces cooldown by 2s.',10,5,'support',110,295,null,{type:'active',active:'chronoBreak'}),
+ node('artillery','Artillery Strike','Unlock a 5-second, 10-shell barrage. Each rank adds 180 damage per shell.',10,5,'artillery',310,145,null,{type:'active',active:'artillery'}),
+ node('artilleryCooldown','Rapid Artillery','Reduce Artillery cooldown by 4s per rank, from 45s to 25s.',5,4,'artillery',110,325,'artillery'),
+ node('artilleryArea','Wide Barrage','Increase Artillery blast radius by 15% per rank.',5,4,'artillery',310,325,'artillery'),
+ node('artilleryDuration','Sustained Barrage','Add 1 second and 2 shells per rank. Up to 10 seconds and 20 shells.',5,5,'artillery',510,325,'artillery'),
+ node('napalm','Napalm','Ignite a marked area for 6 seconds. Each rank adds 50 burn damage per second. Aliens crossing the field catch fire.',10,5,'napalm',310,145,null,{type:'active',active:'napalm'}),
+ node('napalmCooldown','Rapid Napalm','Reduce Napalm cooldown by 4s per rank, from 50s to 30s.',5,4,'napalm',110,325,'napalm'),
+ node('napalmArea','Firestorm','Increase the Napalm field radius by 18% per rank.',5,4,'napalm',310,325,'napalm'),
+ node('napalmDuration','Lingering Napalm','Add 1 second of burn per rank, up to 11 seconds.',5,5,'napalm',510,325,'napalm'),
 ];
-
-export const passiveSkillTree = [
-  {
-    key: "damage",
-    type: "passive",
-    name: "Weapons Training",
-    description: "+8% tower damage per rank.",
-    maxRank: PASSIVE_MAX_RANK,
-    cost: 5,
-    weaponEffect: { stat: "directDamage", perRank: 0.08 },
-  },
-  {
-    key: "range",
-    type: "passive",
-    name: "Sensor Sweep",
-    description: "+6% tower range per rank.",
-    maxRank: PASSIVE_MAX_RANK,
-    cost: 5,
-    weaponEffect: { stat: "range", perRank: 0.06 },
-  },
-  {
-    key: "fireRate",
-    type: "passive",
-    name: "Trigger Discipline",
-    description: "+5% attack speed per rank.",
-    maxRank: PASSIVE_MAX_RANK,
-    cost: 5,
-    weaponEffect: { stat: "atkSpeed", perRank: 0.05, decimals: 2 },
-  },
-  {
-    key: "reload",
-    type: "passive",
-    name: "Rapid Reload",
-    description: "-6% reload time per rank.",
-    maxRank: PASSIVE_MAX_RANK,
-    cost: 5,
-    weaponEffect: { stat: "reloadSpeed", perRank: -0.06, decimals: 2, min: 0.35 },
-  },
+export const activeSkillTree=skillTree.filter(s=>s.type==='active');
+export const passiveSkillTree=skillTree.filter(s=>s.type==='passive');
+export const utilitySkillTree=skillTree.filter(s=>s.type==='utility');
+export const activeAbilities=[
+ {key:'chronoBreak',skillKey:'chronoBreak',name:'Chrono Break',shortName:'Chrono',targeting:'instant'},
+ {key:'artillery',skillKey:'artillery',name:'Artillery Strike',shortName:'Artillery',targeting:'map'},
+ {key:'napalm',skillKey:'napalm',name:'Napalm',shortName:'Napalm',targeting:'map'},
 ];
-
-export const utilitySkillTree = [
-  {key:'salvage',type:'utility',name:'Clearance Crew',description:'Clearing obstacles costs 15% less per rank (up to 45%).',maxRank:3,cost:4},
-  {key:'supplies',type:'utility',name:'Supply Lines',description:'Start every deployment with $25 extra per rank.',maxRank:3,cost:5},
-  {key:'pontoons',type:'utility',name:'Pontoon Engineering',description:'Build any weapon on water. A raft costs $35 extra.',maxRank:1,cost:6},
-  {key:'mines',type:'utility',name:'Last Line',description:'Automatically deploy 5 / 10 mines near the exit. Each deals 1,100 area damage. One stock per mission.',maxRank:2,cost:6},
-  {key:'drone',type:'utility',name:'Patrol Drone',description:'An automatic UAV patrols the route. Ranks improve its damage and coverage. No extra controls.',maxRank:3,cost:8},
-];
-const layout = {
- damage:['armament',85,145,null],reload:['armament',240,145,null],
- fireRate:['armament',85,285,'damage'],range:['armament',240,285,'reload'],
- chronoBreak:['armament',240,425,'range'],artillery:['armament',85,425,'fireRate'],
- salvage:['logistics',450,145,null],supplies:['logistics',450,285,'salvage'],pontoons:['logistics',450,425,'supplies'],
- mines:['support',730,145,null],drone:['support',650,285,'mines'],napalm:['support',810,285,'mines'],
-};
-export const skillTree = [...activeSkillTree, ...passiveSkillTree, ...utilitySkillTree].map(skill=>{
- const [branch,x,y,parent]=layout[skill.key];
- return {...skill,branch,x,y,requires:parent?{key:parent,rank:1}:null};
-});
-export function prerequisiteMet(profile,skill) {
- return !skill.requires || skillRank(profile,skill.requires.key)>=skill.requires.rank;
+export const isActiveAbilityKey=key=>activeAbilities.some(a=>a.key===key);
+export const createDefaultSkills=()=>Object.fromEntries(skillTree.map(s=>[s.key,0]));
+export const skillRank=(profile,key)=>Number(profile.skills?.[key])||0;
+export const prerequisiteMet=(profile,skill)=>!skill.requires||skillRank(profile,skill.requires.key)>=skill.requires.rank;
+export const activeUnlocked=(profile,key)=>Boolean(key&&(skillRank(profile,key)>0||profile.legacyActives?.includes(key)));
+export const spentSkillPoints=profile=>skillTree.reduce((n,s)=>n+skillRank(profile,s.key)*s.cost,0);
+export function canBuySkill(profile,skill){
+ if(skill.key==='loadoutSlots'&&3+skillRank(profile,'loadoutSlots')+['level_4','level_10'].filter(k=>profile.caches?.[k]).length>=6)return false;
+ return skillRank(profile,skill.key)<skill.maxRank&&profile.skillPoints>=skill.cost&&(skillRank(profile,skill.key)>0||prerequisiteMet(profile,skill));
 }
-export function activeUnlocked(profile,key) {
- return Boolean(key && (skillRank(profile,key)>0 || profile.legacyActives?.includes(key)));
-}
-
-export const activeAbilities = [
-  {
-    key: "chronoBreak",
-    skillKey: "chronoBreak",
-    name: "Chrono Break",
-    shortName: "Chrono",
-    targeting: "instant",
-    cooldown: { base: 50, perRank: -2 },
-    duration: { base: 3, perRank: 0.2 },
-  },
-  {
-    key: "artillery",
-    skillKey: "artillery",
-    name: "Artillery Strike",
-    shortName: "Artillery",
-    targeting: "map",
-    cooldown: { base: 45, perRank: -1.5 },
-    duration: { base: 5, perRank: 0 },
-    damage: { base: 1800, perRank: 180 },
-    area: { base: 130, perRank: 4 },
-  },
-  {
-    key: "napalm",
-    skillKey: "napalm",
-    name: "Napalm",
-    shortName: "Napalm",
-    targeting: "instant",
-    cooldown: { base: 50, perRank: -2 },
-    duration: { base: 6, perRank: 0.4 },
-    damage: { base: 1000, perRank: 50 },
-  },
-];
-
-export function isActiveAbilityKey(key) {
-  return activeAbilities.some((ability) => ability.key === key);
-}
-
-export function createDefaultSkills() {
-  return Object.fromEntries(skillTree.map((skill) => [skill.key, 0]));
-}
-
-export function skillRank(profile, skillKey) {
-  return Number(profile.skills?.[skillKey]) || 0;
-}
-
-export function spentSkillPoints(profile) {
-  return skillTree.reduce((total, skill) => total + skillRank(profile, skill.key) * skill.cost, 0);
-}
-
-export function canBuySkill(profile, skill) {
-  return skillRank(profile, skill.key) < skill.maxRank && profile.skillPoints >= skill.cost && (skillRank(profile,skill.key)>0 || prerequisiteMet(profile,skill));
-}
-
-export function buySkill(profile, skillKey) {
-  const skill = skillTree.find((item) => item.key === skillKey);
-  if (!skill || !canBuySkill(profile, skill)) return false;
-  profile.skills[skill.key] = skillRank(profile, skill.key) + 1;
-  profile.skillPoints -= skill.cost;
-  if(skill.active && !profile.equippedActiveKey)profile.equippedActiveKey=skill.active;
-  return true;
-}
-
-function scaleRankedValue(config, rank) {
-  return Number((config.base + config.perRank * rank).toFixed(2));
-}
-
-export function activeAbilityStats(ability, profile) {
-  const rank = skillRank(profile, ability.skillKey);
-  return {
-    rank,
-    cooldown: scaleRankedValue(ability.cooldown, rank),
-    duration: ability.duration ? scaleRankedValue(ability.duration, rank) : 0,
-    damage: ability.damage ? Math.round(scaleRankedValue(ability.damage, rank)) : 0,
-    area: ability.area ? Math.round(scaleRankedValue(ability.area, rank)) : 0,
-  };
+export function buySkill(profile,key){const s=skillTree.find(s=>s.key===key);if(!s||!canBuySkill(profile,s))return false;profile.skills[key]=skillRank(profile,key)+1;profile.skillPoints-=s.cost;if(s.active&&!profile.equippedActiveKey)profile.equippedActiveKey=s.active;return true;}
+export function activeAbilityStats(ability,profile){
+ const key=ability.key,rank=skillRank(profile,key),r=k=>skillRank(profile,k);
+ if(key==='chronoBreak')return {rank,cooldown:50-2*rank,duration:3+.2*rank,damage:0,area:0};
+ if(key==='artillery')return {rank,cooldown:45-4*r('artilleryCooldown'),duration:5+r('artilleryDuration'),shots:10+2*r('artilleryDuration'),damage:1800+180*rank,area:130*(1+.15*r('artilleryArea'))};
+ return {rank,cooldown:50-4*r('napalmCooldown'),duration:6+r('napalmDuration'),damage:1000+50*rank,area:180*(1+.18*r('napalmArea'))};
 }

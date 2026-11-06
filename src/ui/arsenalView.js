@@ -1,28 +1,19 @@
-import { attachments, blueprintsFor, blueprintOwned, arsenalChoice, applyArsenal, classUnlocked, classRequirement, nextClassUnlock, campaignClears } from '../data/arsenal.js';
-import { towerUpgradePathsFor } from '../systems/weaponStats.js';
+import { classUnlocked, classRequirement, nextClassUnlock, campaignClears, weaponArt, loadoutKeys, loadoutCapacity, cacheSlots, placementLimit } from '../data/arsenal.js';
 export function nextArsenalUnlock(profile){
- if(typeof profile==='number')return 'Two starter types · discover more by clearing missions';
  const next=nextClassUnlock(profile);
- return `${campaignClears(profile)} missions cleared · ${next?`${next[0].replaceAll('_',' ').replace(/\b[a-z]/g,c=>c.toUpperCase())} at ${next[1]} ${next[1]===1?'clear':'clears'}`:'All types discovered'} · ${profile.salvage||0} Salvage`;
+ return `${loadoutCapacity(profile)} / 6 loadout slots · ${next?`${next[0].replaceAll('_',' ')} at ${next[1]} mission clears`:'All categories discovered'}`;
 }
 export function renderArsenal(container,profile,weapons,key){
- const expanded=container.querySelector('.model-options')?.open||false;
- const weapon=weapons.find(w=>w.key===key)||weapons[0],choice=arsenalChoice(profile,weapon.key),effective=applyArsenal(weapon,profile);
- const unlocked=classUnlocked(profile,key),heavy=['sniper','rocket_launcher','laser'].includes(key),support=['machine_pistol','flamethrower'].includes(key),selected=heavy?profile.arsenal.heavy===key:profile.arsenal.support===key;
- container.innerHTML=`<div class="arsenal-wallet"><span><b>${profile.skillPoints}</b> SP <small>Permanent research</small></span><span><b>${profile.salvage}</b> SALVAGE <small>Persistent · buys attachments</small></span><p>${campaignClears(profile)} DIFFERENT MISSIONS CLEARED<br>Start with Handgun + AR. Other types unlock as you clear new missions.</p></div>
- <nav class="arsenal-classes" aria-label="Weapon class">${weapons.map((w,i)=>`<button type="button" data-arsenal-class="${w.key}" class="${key===w.key?'selected':''} ${classUnlocked(profile,w.key)?'':'undiscovered'}" aria-pressed="${key===w.key}"><span>${i>4?'HEAVY':`0${i+1}`}</span><img src="${arsenalChoice(profile,w.key).blueprint.art}" alt=""><strong>${w.nickname}</strong><small>${classUnlocked(profile,w.key)?'DISCOVERED':classRequirement(w.key)}</small></button>`).join('')}</nav><p class="arsenal-browse-hint">Swipe to browse weapon classes →</p>
- <section class="arsenal-detail"><div class="loadout-hero"><img src="${choice.blueprint.art}" alt="${choice.blueprint.name}"><div><p class="eyebrow">${unlocked?'DISCOVERED':'LOCKED / '+classRequirement(key).toUpperCase()}</p><h3>${choice.blueprint.name}</h3><p>${effective.modelDescription}</p><span>${weapon.role} · ${effective.fireMode}</span></div></div><div class="arsenal-title"><div><p>${heavy?'SLOT 06 / HEAVY':'FIELD LOADOUT'}</p><h3>${weapon.name}</h3><span>${weapon.role} · ${choice.blueprint.sockets} attachment slots</span></div>${heavy||support?`<button type="button" class="${selected?'secondary':'primary'}-button" ${heavy?`data-equip-heavy="${key}"`:`data-equip-support="${key}"`} ${!unlocked||selected?'disabled':''}>${!unlocked?classRequirement(key):selected?`Equipped in slot ${heavy?6:3}`:`Use in slot ${heavy?6:3}`}</button>`:''}</div>
- <p class="arsenal-guide">All towers aim and fire automatically. Keep the starter model or explore alternate firing styles below.</p>
- <details class="model-options" ${expanded?'open':''}><summary>Change model <span>Optional · four firing styles</span></summary><div class="blueprint-grid">${blueprintsFor(key).map(t=>{
- const owned=blueprintOwned(profile,key,t.key),active=choice.blueprint.key===t.key,buy=!owned&&t.key==='rare';
- const action=owned?`data-blueprint="${t.key}"`:buy?`data-buy-blueprint="${t.key}"`:'';
- const disabled=!unlocked||(!owned&&(!buy||profile.skillPoints<8));
- return `<button class="blueprint ${active?'selected':''}" style="--rarity:${t.color}" type="button" ${action} aria-pressed="${active}" ${disabled?'disabled':''}><img src="${t.art}" alt=""><span>${t.name}</span><strong>${t.key.toUpperCase()} / ${t.mode.toUpperCase()}</strong><p>${t.description}</p><small>${!unlocked?classRequirement(key):active?'Equipped ✓':owned?'Equip model':buy?'Buy license · 8 SP':t.key==='epic'?'Find in a midpoint cache':'Elite drop / sector cache'}</small></button>`;
- }).join('')}</div></details>
- <div class="arsenal-statline"><span>Model <b>${effective.blueprint}</b></span><span>Mode <b>${effective.fireMode}</b></span><span>Damage <b>${effective.directDamage.toLocaleString('en-US')}${effective.pelletCount?' × '+effective.pelletCount+' pellets':''}</b></span><span>Rate <b>${effective.atkSpeed}/s${effective.burstCount?' × '+effective.burstCount:''}</b></span><span>Range <b>${effective.range}</b></span><span>Reload <b>${effective.reloadSpeed}s</b></span></div>
- <div class="attachment-heading"><h4>Attachments <span>${choice.attachments.length} / ${choice.blueprint.sockets}</span></h4><p>Discover in midpoint caches or buy with Salvage. Starter models support one attachment.</p></div>
- <div class="attachment-grid">${attachments.map(a=>{
- const owned=profile.arsenal.unlockedAttachments.includes(a.key),active=choice.attachments.includes(a.key),full=!active&&choice.attachments.length>=choice.blueprint.sockets;
- return `<button class="attachment ${active?'selected':''}" type="button" ${owned?`data-attachment="${a.key}"`:`data-buy-attachment="${a.key}"`} aria-pressed="${active}" ${!unlocked||(owned?full||!choice.blueprint.sockets:profile.salvage<a.cost)?'disabled':''}><i>${a.icon}</i><strong>${a.name}</strong><p>${a.description}</p><small>${!owned?`Buy · ${a.cost} Salvage`:!choice.blueprint.sockets?'No attachment slot':active?'Equipped · remove':full?'Slots full':'Add attachment'}</small></button>`;
- }).join('')}</div><p class="arsenal-paths">Battlefield upgrades: ${towerUpgradePathsFor(key).map(p=>`<strong>${p.name}</strong> — ${p.detail}`).join(' · ')}</p></section>`;
+ const keys=loadoutKeys(profile),capacity=loadoutCapacity(profile),slot=Math.min(Number(container.dataset.slot)||0,capacity-1);
+ container.dataset.slot=slot;
+ container.innerHTML=`<div class="loadout-summary"><span><b>${capacity}</b> / 6 SLOTS</span><p>3 starting · ${profile.skills.loadoutSlots||0} from research · ${cacheSlots(profile)} from caches<br>Deploy up to <strong>${placementLimit(profile)} of each category</strong>. Each category has one weapon.</p></div>
+ <div class="loadout-slots" role="group" aria-label="Loadout slots">${Array.from({length:6},(_,i)=>{
+ const w=weapons.find(w=>w.key===keys[i]),open=i<capacity;
+ return `<button type="button" data-loadout-slot="${i}" class="${i===slot?'selected':''} ${open?'':'slot-locked'}" ${open?'':'disabled'} aria-pressed="${i===slot}"><small>SLOT 0${i+1}</small>${w?`<img src="${weaponArt(w.key)}" alt=""><strong>${w.name}</strong>`:`<span>${open?'+':'▣'}</span><strong>${open?'Discover a category':'Unlock a slot'}</strong>`}</button>`;
+ }).join('')}</div>
+ <div class="category-pick-heading"><p class="eyebrow">CHOOSE CATEGORY / SLOT 0${slot+1}</p><p>Unlocked by different mission clears. Select a category to equip it.</p></div>
+ <div class="category-grid">${weapons.map(w=>{
+ const unlocked=classUnlocked(profile,w.key),index=keys.indexOf(w.key),active=index===slot;
+ return `<button type="button" data-equip-category="${w.key}" class="category-card ${active?'selected':''} ${unlocked?'':'locked'}" ${!unlocked||active||(index>=0&&!keys[slot])?'disabled':''} aria-pressed="${active}"><img src="${weaponArt(w.key)}" alt=""><div><h3>${w.name}</h3><p>${w.role}</p><small>${active?'✓ EQUIPPED':index>=0?`${keys[slot]?'SWAP WITH':'IN'} SLOT ${index+1}`:unlocked?'EQUIP CATEGORY':classRequirement(w.key)}</small></div></button>`;
+ }).join('')}</div><p class="loadout-note">Extra slots: Commander → Deployment, or midpoint caches in missions <strong>1-4 and 2-4</strong>. Maximum six. Weapon damage, reload and other upgrades are bought during the mission.</p>`;
 }

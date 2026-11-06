@@ -17,7 +17,7 @@ try {
  for(const key of ['handgun','assault_rifle','machine_pistol','magnum','shotgun','sniper']) {
    const context=await browser.newContext({viewport:{width:1440,height:1000}});
    await context.addInitScript(()=>{
-     localStorage.setItem('aliens-tower-defense-profile',JSON.stringify({level:1,missions:Object.fromEntries(Array.from({length:6},(_,i)=>[`level_${i+2}`,{clears:1,stars:3,bestLives:18}])),settings:{muted:false}}));
+     localStorage.setItem('aliens-tower-defense-profile',JSON.stringify({schemaVersion:5,level:1,skills:{loadoutSlots:2},caches:{level_4:true},missions:Object.fromEntries(Array.from({length:6},(_,i)=>[`level_${i+2}`,{clears:1,stars:3,bestLives:18}])),settings:{muted:false}}));
      const native=window.AudioContext||window.webkitAudioContext;
      if(native)native.prototype.createOscillator=()=>{throw new Error('Synthetic oscillator used instead of a recorded sample');};
    });
@@ -36,7 +36,7 @@ try {
    for(let n=0;n<5;n++) {
      const previous=(await read(page)).audio.played;
      const current=await tickUntil(page,state=>state.audio.played>previous);
-     assert.equal(current.audio.lastShot.weapon,key);assert.equal(current.audio.lastShot.model,current.towers[0].blueprint);assert.ok(current.audio.activeVoices<=24);
+     assert.equal(current.audio.lastShot.weapon,key);assert.ok(current.audio.activeVoices<=24);
      events.push(current.audio.lastShot);
    }
    assert.ok(new Set(events.map(e=>e.variant)).size>=2,`${key} must vary recorded samples`);

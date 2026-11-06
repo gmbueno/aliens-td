@@ -8,7 +8,7 @@ import {classUnlocked,classMilestones,cacheReward,applyArsenal} from '../src/dat
 import {createInitialState,placeTower,stepState,launchWave,fireTower,upgradeTower} from '../src/game.js';
 import {missionRecords} from './fixtures.mjs';
 globalThis.localStorage={getItem(){return null;},setItem(){}};
-const profile=()=>normalizeProfile({schemaVersion:4,level:8,missions:missionRecords(),settings:{muted:true}});
+const profile=()=>normalizeProfile({schemaVersion:5,level:8,skills:{loadoutSlots:2},caches:{level_4:true},arsenal:{loadout:['laser','flamethrower','handgun','magnum']},missions:missionRecords(),settings:{muted:true}});
 const make=()=>{const s=createInitialState({...levels[0],waves:[{name:'Energy endurance',spawns:[{enemy:'alien_normal',at:1000}],healthScale:1,reward:0}]},profile(),{width:1280,height:720});s.gold=10000;return s;};
 const tick=(s,time)=>{for(let n=0;n<time*60;n++)stepState(s,1/60);};
 function dummy(tower,id,x=100,y=0){return {...enemies.alien_normal,id,x:tower.x+x,y:tower.y+y,life:1e7,maxLife:1e7,shield:0,armor:0,speed:0,radius:15,segment:0,progress:0,burnTimer:0,slowTimer:0,stunTimer:0,angle:0};}
@@ -62,9 +62,9 @@ test('amber overdrive is on the route, separate from ice, and increases real mov
  for(const s of [normal,fast]){launchWave(s);const dummyTower={x:s.path[0].x-100,y:s.path[0].y};s.enemies=[dummy(dummyTower,'runner')];s.enemies[0].speed=10;}
  tick(normal,.5);tick(fast,.5);assert.ok(Math.abs(fast.enemies[0].progress/normal.enemies[0].progress-1.35)<.001);
 });
-test('new trait aliens have distinct dedicated images, and the first cache gives a usable starter attachment',()=>{
+test('trait aliens retain distinct artwork and ordinary caches now supply only field credits',()=>{
  const keys=['alien_medic','alien_steadfast','alien_rager','alien_broodmother'];assert.equal(new Set(keys.map(k=>enemies[k].asset)).size,4);
  assert.ok(keys.every(k=>enemies[k].asset.startsWith('assets/frontier/aliens/')));
- const p=normalizeProfile(),reward=cacheReward(p,levels[0]);assert.equal(reward.attachment,'incendiary');assert.equal(applyArsenal(weapons[0],p).rarity,'common');
- assert.equal(cacheReward(p,levels[0]),null);assert.equal(p.arsenal.unlockedAttachments.length,1);
+ const p=normalizeProfile(),reward=cacheReward(p,levels[0]);assert.equal(reward.credits,60);assert.equal(reward.slot,false);
+ assert.equal(cacheReward(p,levels[0]),null);assert.equal(applyArsenal(weapons[0],p).attachments,undefined);
 });

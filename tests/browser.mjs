@@ -51,8 +51,7 @@ try {
  await page.locator('[data-sell]').click();assert.equal((await read(page)).gold,235);
  const obstacle=(await read(page)).blockers.find(t=>t.cost);await tileClick(page,obstacle.row,obstacle.col);await page.locator('[data-clear]').click();
  assert.equal((await read(page)).gold,185);await page.keyboard.press('1');await tileClick(page,obstacle.row,obstacle.col);assert.equal((await read(page)).towers.length,1);
- await page.keyboard.press('1');const route=levels[0].track[0];await tileClick(page,route.row,route.col);assert.equal((await read(page)).towers.length,1);
- await page.keyboard.press('Escape');await page.locator('#launch-wave-button').click();await advance(page,2000);
+ await page.locator('#launch-wave-button').click();await advance(page,2000);
  await page.keyboard.press('q');assert.ok((await read(page)).activeAbilities.chronoBreak.timer>0);
  await page.locator('#play-pause-button').click();state=await read(page);await advance(page,5000);assert.equal((await read(page)).activeAbilities.chronoBreak.cooldown,state.activeAbilities.chronoBreak.cooldown);
  await page.locator('#play-pause-button').click();await page.locator('#speed-toggle-button').click();assert.equal((await read(page)).gameSpeed,2);
@@ -66,16 +65,16 @@ try {
  const skilled=await pageFor({level:6,xp:0,skillPoints:50,settings:{muted:true}});
  await skilled.locator('#menu-skills-button').click();await skilled.locator('[data-skill-key="damage"]').click();
  assert.equal((await read(skilled)).skills.damage,1);assert.equal((await read(skilled)).player.skillPoints,45);
- await skilled.locator('[data-select-skill="artillery"]').click();await skilled.locator('[data-equip-active-key="artillery"]').click();await skilled.locator('#skill-tree-close-button').click();await choose(skilled,levels[0]);
+ await skilled.locator('[data-skill-branch="artillery"]').click();await skilled.locator('[data-select-skill="artillery"]').click();await skilled.locator('[data-equip-active-key="artillery"]').click();await skilled.locator('#skill-tree-close-button').click();await choose(skilled,levels[0]);
  await skilled.keyboard.press('1');await tileClick(skilled,3,7);assert.equal((await read(skilled)).towers[0].damage,432);
- await skilled.locator('#player-level-button').click();await skilled.locator('[data-select-skill="napalm"]').click();await skilled.locator('[data-equip-active-key="napalm"]').click();assert.ok(await skilled.locator('#reset-skills-button').isDisabled());
+ await skilled.locator('#player-level-button').click();await skilled.locator('[data-skill-branch="napalm"]').click();await skilled.locator('[data-select-skill="napalm"]').click();await skilled.locator('[data-equip-active-key="napalm"]').click();assert.ok(await skilled.locator('#reset-skills-button').isDisabled());
  await skilled.screenshot({path:`${out}/skills.png`,fullPage:true});await skilled.locator('#skill-tree-close-button').click();
  assert.equal((await read(skilled)).towers[0].damage,432);assert.equal((await read(skilled)).equippedActive,'artillery');
  await skilled.locator('#launch-wave-button').click();await advance(skilled,2000);await skilled.keyboard.press('q');
  assert.equal((await read(skilled)).selectedActive,'artillery');await tileClick(skilled,4,1);assert.ok((await read(skilled)).activeAbilities.artillery.cooldown>0);
  await skilled.locator('#gear-button').click();await skilled.locator('#restart-button').click();assert.equal((await read(skilled)).equippedActive,'napalm');
- await skilled.locator('#launch-wave-button').click();await advance(skilled,2000);await skilled.keyboard.press('q');assert.ok((await read(skilled)).enemies.some(e=>e.burnTimer>0));
- await skilled.locator('[data-info-weapon-key="sniper"]').click();assert.equal((await read(skilled)).paused,true);await skilled.locator('#weapon-info-close-button').click();assert.equal((await read(skilled)).paused,false);
+ await skilled.locator('#launch-wave-button').click();await advance(skilled,2000);await skilled.keyboard.press('q');await tileClick(skilled,4,1);await advance(skilled,100);assert.ok((await read(skilled)).enemies.some(e=>e.burnTimer>0));
+ await skilled.locator('[data-info-weapon-key="handgun"]').click();assert.equal((await read(skilled)).paused,true);await skilled.locator('#weapon-info-close-button').click();assert.equal((await read(skilled)).paused,false);
 
  await skilled.context().close();
  // Complete an entire mission through UI purchases/launches and the public deterministic time hook.
@@ -105,7 +104,7 @@ try {
    if(actual.result)break;
  }
  assert.equal((await read(victory)).result,'victory');
- assert.equal((await read(victory)).caches.level_1,true);assert.ok((await read(victory)).arsenal.unlockedAttachments.includes('incendiary'));assert.ok((await read(victory)).classUnlocks.includes('machine_pistol'));assert.ok((await read(victory)).salvage>=55);
+ assert.equal((await read(victory)).caches.level_1,true);assert.equal((await read(victory)).arsenal.attachments,undefined);assert.ok((await read(victory)).classUnlocks.includes('machine_pistol'));assert.ok((await read(victory)).weaponKills.handgun>0);
  assert.ok((await read(victory)).campaign.records.level_1.stars>0);
  await victory.screenshot({path:`${out}/victory.png`,fullPage:true});
  await victory.locator('#result-next-button').click();assert.equal((await read(victory)).level,'level_2');

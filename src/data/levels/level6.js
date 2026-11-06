@@ -13,7 +13,7 @@ const level6 = {
   "tileSize": 48,
   "startGold": 260,
   "lives": 18,
-  "threat": 1.7,
+  "threat": 1.445,
   "clearXp": 45,
   "firstClearXp": 75,
   "blockers": [

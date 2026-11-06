@@ -9,7 +9,7 @@ const errors=[];
 const state=p=>p.evaluate(()=>JSON.parse(window.render_game_to_text()));
 async function create(viewport={width:1440,height:1000},touch=false) {
  const context=await browser.newContext({viewport,hasTouch:touch});
- await context.addInitScript(()=>localStorage.setItem('aliens-tower-defense-profile',JSON.stringify({level:1,missions:Object.fromEntries(Array.from({length:6},(_,i)=>[`level_${i+2}`,{clears:1,stars:3,bestLives:18}])),settings:{muted:true}})));
+ await context.addInitScript(()=>localStorage.setItem('aliens-tower-defense-profile',JSON.stringify({schemaVersion:5,level:1,skills:{loadoutSlots:2},caches:{level_4:true},missions:Object.fromEntries(Array.from({length:6},(_,i)=>[`level_${i+2}`,{clears:1,stars:3,bestLives:18}])),settings:{muted:true}})));
  const page=await context.newPage();page.on('pageerror',e=>errors.push(String(e)));
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.goto(url);return page;
@@ -89,7 +89,7 @@ try {
      }
    }
    await p.screenshot({path:`${out}/tower-${viewport.width}.png`,fullPage:true});
-   await p.click('#tower-sidebar-close-button');await p.click('[data-weapon-key="handgun"] .weapon-select');
+   await p.click('#tower-sidebar-close-button');await p.click('[data-weapon-key="assault_rifle"] .weapon-select');
    await p.screenshot({path:`${out}/armory-${viewport.width}.png`,fullPage:true});
    await p.context().close();
  }

@@ -1,4 +1,4 @@
-import { normalizeArsenal, classMilestones, classUnlocked } from "../data/arsenal.js";
+import { normalizeArsenal, classMilestones, classUnlocked, refundExcessSlots } from "../data/arsenal.js";
 import { PLAYER_PROFILE_KEY, createDefaultProfile, xpNeeded } from "../data/player.js";
 import { DEFAULT_EQUIPPED_ACTIVE_KEY, SP_PER_LEVEL, createDefaultSkills, isActiveAbilityKey, skillTree, spentSkillPoints, activeUnlocked } from "../data/skills.js";
 
@@ -30,17 +30,33 @@ export function normalizeProfile(rawProfile = {}) {
       ? rawProfile.equippedActiveKey
       : DEFAULT_EQUIPPED_ACTIVE_KEY,
   };
-  profile.schemaVersion = rawProfile.schemaVersion ?? (rawProfile.skills && Object.keys(rawProfile.skills).length || rawProfile.equippedActiveKey ? 3 : 4);
+  profile.schemaVersion = rawProfile.schemaVersion ?? (rawProfile.skills && Object.keys(rawProfile.skills).length || rawProfile.equippedActiveKey ? 3 : 5);
   profile.legacyActives = profile.schemaVersion<4 ? ['chronoBreak','artillery','napalm'] : (Array.isArray(rawProfile.legacyActives)?rawProfile.legacyActives.filter(isActiveAbilityKey):[]);
   if(profile.schemaVersion<4 && !profile.equippedActiveKey)profile.equippedActiveKey='chronoBreak';
-  profile.salvage=integer(rawProfile.salvage);profile.lootRolls=integer(rawProfile.lootRolls);profile.lootMisses=Math.min(19,integer(rawProfile.lootMisses));
+  delete profile.salvage;delete profile.lootRolls;delete profile.lootMisses;
   profile.caches=Object.fromEntries(Object.entries(rawProfile.caches||{}).filter(([key,value])=>/^level_\d+$/.test(key)&&value).map(([key])=>[key,true]));
   profile.arsenal = normalizeArsenal(rawProfile.arsenal, profile);
-  profile.schemaVersion=4;
+  const previousSchema=profile.schemaVersion;
+  profile.schemaVersion=5;
+  profile.weaponKills=Object.fromEntries(Object.entries(rawProfile.weaponKills||{}).filter(([key])=>key in classMilestones || ['drone','mines','artillery','napalm'].includes(key)).map(([key,value])=>[key,integer(value)]));
   if(!activeUnlocked(profile,profile.equippedActiveKey))profile.equippedActiveKey=null;
   const earned = Math.max(0, profile.level - 1) * SP_PER_LEVEL;
-  const available = Math.max(integer(rawProfile.skillPoints), earned - spentSkillPoints(profile) - profile.arsenal.spSpent);
+  const available = Math.max(integer(rawProfile.skillPoints), earned - spentSkillPoints(profile));
   profile.skillPoints = Math.max(0, available);
+  if(previousSchema<5){
+    // Removed model licenses return their paid research; old active ranks keep damage,
+    // and their previous cooldown/duration benefits migrate into separate nodes.
+    let refund=integer(rawProfile.arsenal?.spSpent);
+    for(const [key,cool,perRank,duration,durationPerRank] of [['artillery','artilleryCooldown',1.5,null,0],['napalm','napalmCooldown',2,'napalmDuration',.4]]){
+      const rank=skills[key]||0;skills[cool]=Math.min(5,Math.floor(rank*perRank/4));
+      if(duration)skills[duration]=Math.min(5,Math.floor(rank*durationPerRank));
+    }
+    // Recalculate from the old point balance so migration grants neither debt nor
+    // a second refund on subsequent loads.
+    const oldSpent=Object.entries(rawProfile.skills||{}).reduce((n,[key,r])=>n+(skillTree.find(s=>s.key===key)?.cost||0)*integer(r),0);
+    profile.skillPoints=Math.max(integer(rawProfile.skillPoints)+refund+Math.max(0,oldSpent-spentSkillPoints(profile)),earned-spentSkillPoints(profile));
+  }
+  refundExcessSlots(profile);
   return profile;
 }
 
@@ -73,10 +89,9 @@ export function recordVictory(profile, level, lives) {
   const newStars = Math.max(0, stars - previous.stars);
   const xp = level.clearXp + (firstClear ? level.firstClearXp : 0) + newStars * 15;
   profile.missions[level.id] = { stars: Math.max(previous.stars, stars), clears: previous.clears + 1, bestLives: Math.max(previous.bestLives, lives) };
-  const salvage=firstClear?25:8;profile.salvage+=salvage;
   addXp(profile, xp);
   const unlockedClasses=Object.keys(classMilestones).filter(key=>!known.has(key)&&classUnlocked(profile,key));
-  return { stars, firstClear, newStars, xp, salvage, unlockedClasses };
+  return { stars, firstClear, newStars, xp, unlockedClasses };
 }
 
 export function resetSkills(profile) {

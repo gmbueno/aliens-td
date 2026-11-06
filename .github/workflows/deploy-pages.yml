@@ -60,7 +60,7 @@ jobs:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:audio
 
-      - name: Validate arsenal, powers and new enemy behaviors
+      - name: Validate category loadouts and powers
         env:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:arsenal
@@ -75,7 +75,7 @@ jobs:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:hud
 
-      - name: Validate progression, energy weapons and frontier art
+      - name: Validate energy weapons and frontier art
         env:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:frontier
@@ -84,6 +84,11 @@ jobs:
         env:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:placement
+
+      - name: Validate a complete campaign mission through the UI
+        env:
+          GAME_URL: http://127.0.0.1:4173
+        run: npm run test:browser
 
       - name: Prepare production files
         run: npm run build
@@ -109,6 +114,7 @@ jobs:
             output/hud
             output/frontier
             output/placement
+            output/browser
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

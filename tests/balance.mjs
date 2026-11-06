@@ -1,15 +1,15 @@
 import { pathToFileURL } from 'node:url';
 import { createInitialState, stepState, placeTower, launchWave, upgradeTower } from '../src/game.js';
 import { levels } from '../src/data/levels/index.js';
-import { equippedWeapons, classUnlocked } from '../src/data/arsenal.js';
+import { equippedWeapons, classUnlocked, placementLimit } from '../src/data/arsenal.js';
 import { weapons } from '../src/data/weapons.js';
 import { normalizeProfile } from '../src/systems/profile.js';
-import { applySkillBonuses, towerUpgradeCost } from '../src/systems/weaponStats.js';
+import { applySkillBonuses, towerUpgradeCost, applyTowerUpgrades, towerUpgradePathsFor } from '../src/systems/weaponStats.js';
 
 globalThis.localStorage = { setItem() {}, getItem() { return null; } };
 
 export function makeProfile(ranks = 0) {
-  return normalizeProfile({ level: 1 + ranks * 2, skills: { damage: ranks, range: ranks, fireRate: ranks, reload: ranks }, settings: { muted: true } });
+  return normalizeProfile({ schemaVersion:5, level: 1 + ranks * 4, skills: { damage: ranks, range: ranks, fireRate: ranks, reload: ranks, loadoutSlots:Math.min(2,ranks), duplicates:ranks>=2?1:0 }, settings: { muted: true } });
 }
 
 // A repeatable, modest strategy: build at covered bends; reinvest between waves.
@@ -22,7 +22,7 @@ export function invest(state) {
     const coverage = point => state.towers.reduce((sum, t) => sum + (Math.hypot(t.x-point.x,t.y-point.y) <= t.range ? t.weapon.directDamage * t.weapon.atkSpeed * (t.weapon.pelletCount || 1) / (1+t.weapon.atkSpeed*t.weapon.reloadSpeed/t.weapon.capacity) : 0), 0);
     const importance = path.map(point => 1 / (1 + coverage(point) / 1600));
     for (const weapon of equippedWeapons(weapons,state.arsenalProfile)) {
-      if (!classUnlocked(state.arsenalProfile,weapon.key) || weapon.price > state.gold) continue;
+      if (state.towers.filter(t=>t.weapon.key===weapon.key).length>=placementLimit(state.profile) || !classUnlocked(state.arsenalProfile,weapon.key) || weapon.price > state.gold) continue;
       const effective = applySkillBonuses(weapon, state.profile);
       for(let row=0;row<state.level.rows;row++) for(let col=0;col<state.level.cols;col++) {
         const key=`${row}:${col}`;
@@ -38,11 +38,13 @@ export function invest(state) {
     }
     for(const tower of state.towers) for(const key of ['power','tactical']) {
       const cost=towerUpgradeCost(tower,key);
-      if(cost>state.gold||tower.upgrades[key]>=3||tower.upgrades.power+tower.upgrades.tactical>=4)continue;
+      if(cost>state.gold||tower.upgrades[key]>=(towerUpgradePathsFor(tower.weapon.key).find(p=>p.key===key)?.maxRank||3)||tower.upgrades.power+tower.upgrades.tactical>=4)continue;
       const covered=path.reduce((sum,p,i)=>sum+(Math.hypot(tower.x-p.x,tower.y-p.y)<tower.range?importance[i]:0),0);
-      const dps=tower.weapon.directDamage*tower.weapon.atkSpeed*(tower.weapon.pelletCount||1)/(1+tower.weapon.atkSpeed*tower.weapon.reloadSpeed/tower.weapon.capacity);
-      const gain=key==='power'?.4/(1+tower.upgrades.power*.4):.24;
-      const score=covered*dps*gain/cost;
+      const baseline=applySkillBonuses(weapons.find(w=>w.key===tower.weapon.key),state.profile);
+      const next=applyTowerUpgrades(baseline,{...tower,upgrades:{...tower.upgrades,[key]:tower.upgrades[key]+1}});
+      const output=w=>w.directDamage*w.atkSpeed*(w.pelletCount||1)*(1+(w.pierce||0)*.2)/(1+w.atkSpeed*w.reloadSpeed/w.capacity);
+      const newCovered=path.reduce((sum,p,i)=>sum+(Math.hypot(tower.x-p.x,tower.y-p.y)<next.range?importance[i]:0),0);
+      const score=Math.max(0,newCovered*output(next)-covered*output(tower.weapon))/cost;
       if(!best||score>best.score) best={score,tower,key};
     }
     if(!best)break;
@@ -54,6 +56,8 @@ export function invest(state) {
 export function simulate(level, ranks, investDuringCombat = false) {
   const profile=makeProfile(ranks);
   profile.missions=Object.fromEntries(levels.slice(0,levels.indexOf(level)).map(l=>[l.id,{clears:1,stars:3,bestLives:l.lives}]));
+  profile.caches=Object.fromEntries(levels.slice(0,levels.indexOf(level)).filter(l=>['level_4','level_10'].includes(l.id)).map(l=>[l.id,true]));
+  if(ranks)profile.arsenal.loadout=['assault_rifle','machine_pistol','shotgun','magnum','sniper','rocket_launcher','laser','flamethrower','handgun'].filter(key=>classUnlocked(profile,key));
   const state=createInitialState(level,profile,{width:1280,height:720});
   let frames=0;
   while(!state.result && frames<60*1200) {

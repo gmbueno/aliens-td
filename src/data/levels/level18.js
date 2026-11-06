@@ -13,7 +13,7 @@ const level18 = {
   "tileSize": 48,
   "startGold": 630,
   "lives": 18,
-  "threat": 3.7,
+  "threat": 3.145,
   "clearXp": 65,
   "firstClearXp": 135,
   "blockers": [

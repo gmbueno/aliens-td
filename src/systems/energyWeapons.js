@@ -17,12 +17,10 @@ export function energyHit(state,tower,target,hit) {
   });
   for(const enemy of targets){
     hit(state,{damage:damage*(enemy.shield>0?(weapon.shieldBonus||1):1),armorPierce:weapon.armorPierce||0,
-      incendiary:weapon.attachments.includes('incendiary'),cryo:weapon.attachments.includes('cryo'),
-      stun:weapon.attachments.includes('concussive')&&tower.shotsFired%5===0,
-      blast:weapon.attachments.includes('blast')},enemy);
+      weaponKey:weapon.key,ownerId:tower.id},enemy);
     if(weapon.continuous==='flame'){
       enemy.burnTimer=Math.max(enemy.burnTimer||0,1.8);
-      enemy.burnDamage=Math.max(enemy.burnDamage||0,weapon.burnDamage);
+      if((enemy.burnDamage||0)<=weapon.burnDamage){enemy.burnDamage=weapon.burnDamage;enemy.burnSource={weaponKey:weapon.key,ownerId:tower.id};}
     }
     if(critical)enemy.criticalFlash=.16;
   }

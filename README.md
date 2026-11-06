@@ -1,36 +1,55 @@
-# Aliens Tower Defense — Frontier Campaign
+# Aliens Tower Defense — Command Update
 
-A static HTML/CSS/JavaScript tower-defense game. Play at **https://gmbueno.github.io/aliens-td/**.
+A static HTML/CSS/JavaScript tower-defense game. [Play the production game](https://gmbueno.github.io/aliens-td/).
 
-## Campaign
+## Campaign and progression
 
-- 18 individually authored missions across the Outpost, Frozen Frontier, and Hive.
-- Five to nine waves per mission, visible incoming enemy compositions, and manual preparation or optional auto waves.
-- Clearable cargo/ice/growth obstacles, permanent rocks, sensor pads (+18% range), power pads (+15% damage), and frost tiles (25% enemy slowdown).
-- Six deployment slots and nine discoverable types. Handgun/AR are the starters; distinct mission clears unlock the rest. MP/Flamethrower share slot 3; Sniper/RPG/Laser share slot 6.
-- Two distinct upgrade branches per weapon: Buckshot / Choke & pump, Suppression, Devastator, Long-range optics and more. Four upgrades total per tower, at most three per branch. First/Last/Strongest/Nearest targeting stays freely accessible.
-- Sell towers for a full refund before the first wave, or 70% of the total investment afterward.
-- Commander graph: Armament, Logistics and Support, with visible prerequisites, before/after previews and free node refunds between missions. Research clearance discounts, starting supplies, pontoon construction, automatic exit mines and an automatic patrol UAV.
-- Water appears on five missions. Pontoon Engineering lets a weapon deploy on a raft for 35 extra credits; no extra battle slot.
-- Three active abilities with an equipped loadout: Chrono Break, Artillery Strike (ten impacts across five seconds), Napalm.
-- Four distinct models per class: semi-auto, automatic, burst, pump, double-barrel and heavy variants, with different damage/range/magazines and individual silhouettes. Common models are free; Rare licenses cost 8 SP, Epic plans come from midpoint caches, and Legendary plans come from elite drops or sector caches. Models give 1/1/2/2 attachment slots. Model choices are optional.
-- Persistent Salvage buys four attachments (40/60/80/100). First midpoint cache per mission gives 30 Salvage and discovers an attachment, then optional advanced plans once all attachments are known; first clears give 25 Salvage, replays 8. Elite drops: Juggernaut/Broodmother 4%, bosses 18%, guaranteed within 20 eligible kills. Duplicate plans become extra Salvage.
-- Ravagers accelerate after a hit, Juggernauts resist slow, and Broodmothers release small aliens over time and on death. Their traits appear in wave intel. Menders from mission 12 heal nearby allies.
-- Persistent XP, 10 skill points per commander level, free commander-node refunds between missions, mission records, and first-clear/new-star bonuses. Existing profiles migrate automatically.
+- 18 authored missions, three biomes, five to nine waves. Prepare manually or enable auto waves.
+- Start with **three category slots**, Handgun and Assault Rifle. Discover MP after 1 different mission clear, Shotgun after 2, Magnum 3, Sniper 4, RPG 6, Flamethrower 8 and Laser Array 10. Replays and commander level do not unlock more categories.
+- Choose any discovered categories for your loadout. Two research ranks each add a slot. Midpoint chests in **1-4 and 2-4** each grant a permanent slot. **Six slots maximum**: redundant slot research refunds 8 SP if a chest replaces it. Other chests contain $60 field supplies once per mission discovery.
+- Deploy **one tower per category** initially. Twin Emplacements allows two. Selling frees its placement allowance: full refund before the first wave, 70% afterward.
+- No weapon models, rarity, attachments, license shops or Salvage currency. Old model-license SP refunds once on migration; XP, research, discovered categories and mission records survive.
+- Kills and completed waves earn permanent XP; each commander level grants 10 SP. First clears and improved star records give extra XP once. Defeat keeps earned XP and combat records. Credits belong to the current mission.
+- Three stars for no lost lives; two for at least 60% remaining; one for surviving. All missions remain selectable.
 
-Mission difficulty is fixed. Investing in permanent skills makes earlier maps easier; later maps add stronger enemies and more demanding wave compositions. All missions are selectable so players can experiment without replay gates. Credits are local to each run; SP, Salvage, plans, attachments and records persist in this browser. New profiles start with locked specials; existing unlocked abilities and models are preserved.
+## Weapons, support and research
 
-Stars: 3 for no lost lives, 2 for at least 60% remaining, 1 for surviving. First-clear and newly earned star bonuses only pay once; kills, completed waves, and the ordinary clear reward remain repeatable. Defeat keeps earned XP.
+Each tower has two weapon-specific upgrade branches and a four-upgrade budget, up to three per branch (Magnum Penetrator has two ranks). Shotgun upgrades add pellets; MP upgrades strengthen/extend slow; Sniper optics increase range; Laser upgrades improve heat/cooling; Flamethrower improves burns/fuel. Critical chance/damage upgrades depend on category.
 
-## Run and test
+- **Magnum:** straight ballistic rounds pierce 1/2/3 aliens, hitting at most 2/3/4. Earlier hits deal full damage; the last allowed hit deals 50%. Swept collision preserves physical hit order and prevents repeat hits/tunneling.
+- **Shotgun:** fires its entire three-pellet fan even at one target. Pellets stay straight and can hit a different alien crossing their path. Buckshot adds pellets.
+- **Flamethrower:** hits every alien in the short flame cone, including aliens behind others. Lingering burn retains the firing tower's kill credit.
+- **Laser:** continuous damage ticks, a five-second heat window and cooling before resuming.
+- **Last Line:** five research ranks deploy 2/4/6/8/10 finite exit mines. Each deals 5,500 area damage.
+- **Patrol UAV:** unlock one drone, then Wingman for a second. Click a drone or its shared landing pad, choose UAV 1/2, upgrade damage or range/fire rate with mission credits and choose targeting independently.
+- **Targeting:** First, Last, Strongest and Nearest are free; **Finish the Weak** unlocks Weakest for all weapons and drones. Strength uses current health plus shields.
+- **Combat Records:** per-tower kills appear in combat; armory cards show this run's category totals. The mission-select records page stores lifetime category/support kills, including splash, burns, mines and artillery. Counts begin with 0.6.0; earlier history cannot be reconstructed.
+
+The commander graph has five focused tabs: Training, Deployment, Support, Artillery and Napalm. Prerequisite connections, ranks, previews and purchase states remain explicit. Nodes can be refunded for free between missions. Purchases missing SP or credits are moderately desaturated.
+
+Artillery marks an area and launches ten shells over five seconds. Separate research adds damage, radius, lower cooldown, or duration/shells (up to twenty over ten seconds). Napalm marks a persistent fire field, igniting aliens entering later; damage, radius, cooldown and field duration have independent research. Chrono Break stops movement. Only one special is equipped per deployment; fresh commanders must research it first.
+
+Loadout/category changes and special/support research apply on the next deployment. The battle's **Change loadout → Apply loadout & restart** action explicitly starts a new run with saved choices. Weapon training, duplicate placement, Weakest, clearance and pontoon research apply immediately. Starting supplies and mines cannot be replenished during a run; refunds are blocked until results or mission select.
+
+## Maps and presentation
+
+Maps include removable cargo/ice/growth, permanent rocks, water, range pads (+18%), damage pads (+15%), frost slowdown (−25%) and amber overdrive (+35% alien speed). Pontoon research allows water placement for $35 extra. Ravagers accelerate after damage; Juggernauts resist slow; Broodmothers spawn hatchlings; Menders heal allies. Briefings show each mission's actual enemy roster.
+
+The HUD uses native-alpha PixelForge icons and original metal plaques. Original detailed firearm artwork and full illustrated power cards are retained. Dedicated alien, obstacle, chest, water and energy-weapon art lives under `assets/frontier/`, with provenance and generation costs. Pointer placement previews show the actual weapon, range and destination tile.
+
+Firearms use self-hosted CC0 recordings with alternate samples, subtle pitch/gain variation, short reflections, the approved artillery layer and a bounded mixer. Energy weapons use bounded hum/hiss voices. Pause/mute/menu stop audio. Audio sources, licenses, hashes and preparation scripts are in `assets/audio/` and `scripts/`.
+
+## Controls
+
+- Click/tap a category then a free tile. Click a placed tower to inspect/upgrade/target/sell, a UAV/base to manage drones, or an obstacle to clear it.
+- **1–6** select equipped weapons; **Space** launches or pauses/resumes; **Q** uses the equipped power (then click the map for Artillery/Napalm).
+- **Escape** cancels/closes menus; **F** toggles fullscreen. Hidden tabs pause automatically.
+- Cooldowns and power duration use combat time and game speed, freeze on pause and do not recover during preparation.
+
+## Development and verification
 
 ```bash
 npm run serve
-```
-
-Open http://localhost:4173. Alternatively, `python3 -m http.server 4175`.
-
-```bash
 npm test
 npm run test:balance
 npm ci
@@ -43,109 +62,11 @@ GAME_URL=http://localhost:4173 npm run test:progression
 GAME_URL=http://localhost:4173 npm run test:hud
 GAME_URL=http://localhost:4173 npm run test:frontier
 GAME_URL=http://localhost:4173 npm run test:placement
+npm run build
 ```
 
-The unit/campaign tests use Node 22 without dependencies. The browser suite uses Playwright and saves screenshots under ignored `output/`. The balance runner uses a repeatable placement policy, reinvests between waves, and deliberately does not use active abilities. It is a regression benchmark, not a promise that every strategy wins.
+Use Node 22. Browser suites use isolated headless contexts with OS-muted audio and save screenshots under ignored `output/`. Unit tests cover physics, rewards, saves, research and the full campaign; balance uses legal loadouts/duplicates and a modest repeatable placement/upgrade policy, without powers or support. It is a regression benchmark rather than a guarantee for every strategy. The first mission remains winnable with a new profile; later untrained missions remain difficult.
 
-## Controls
+`src/game.js` coordinates simulation/rendering/UI; `src/data/levels/` contains explicit authored schedules; `src/data/weapons.js`, `enemies.js`, `skills.js` hold tuning. `src/systems/` holds persistence, targeting, composed stats, support and audio. `docs/design-notes.md` records earlier design research.
 
-- Click/tap a weapon, then a free tile to build. Click a placed tower to inspect, upgrade, change targeting, or sell.
-- Click a clearable obstacle to buy the position.
-- **1–6** select weapons; **Space** launches the next wave or pauses/resumes; **Q** uses the equipped ability.
-- **Escape** cancels selection, closes a popup, or opens the command menu; **F** toggles fullscreen.
-- Auto waves, speed, sound, and the skill tree are available in the interface. Hidden browser tabs pause the mission.
-
-Abilities and cooldowns advance with combat time and game speed, stop while paused, and do not recharge during preparation. Changing models, attachments, the Heavy slot, active ranks or automatic support applies on the next deployment. Tower training and clearance/pontoon research affect current purchases immediately. Starting supplies and finite mines cannot be replenished mid-run; commander refunds are available from mission select/results. Rare licenses stay owned and their SP cost is not refunded by the commander-node reset.
-
-## Structure and deployment
-
-- `src/game.js`: simulation, rendering, and UI coordination.
-- `src/data/levels/level1.js` … `level18.js`: explicit mission tracks, obstacles, pads, and spawn schedules. No runtime random wave generation.
-- `src/data/weapons.js`, `enemies.js`, `skills.js`: tuning data.
-- `src/systems/profile.js`, `weaponStats.js`: persistence/rewards and composed skill/tower bonuses.
-- `src/data/assets.js`: centralized art paths.
-- `docs/design-notes.md`: research rationale and balance methodology.
-
-Pushing `main` runs `.github/workflows/deploy-pages.yml`: campaign and browser gates must pass, then `npm run build` packages runtime files into a content-versioned release. A browser smoke test checks that package before deployment to GitHub Pages. The entry page keeps the same origin and saved profile, while its versioned base prevents mixing cached modules or art from different releases. Tests, documentation, and development dependencies are excluded from the public bundle.
-
-## Interaction update (November 2026)
-
-Target and upgrade controls keep their DOM identity while gold/ammo updates. The controls regression suite holds the pointer down across several HUD refreshes and live kills, checks all four priorities, purchases upgrades, and distinguishes insufficient funds from branch/tower upgrade caps. Weapon selection uses native keyboard-accessible buttons with separate info actions.
-
-## Recorded sound and shotgun ballistics
-
-Weapon audio uses 14 self-hosted gun recordings from The Free Firearm Sound Library (CC0), plus five launch/power/impact clips. Sources, editing notes, license and output hashes are under `assets/audio/`. Two or three recorded shots per weapon alternate without immediate repeats, with small pitch/gain variation, restrained stereo positioning, a short layer from the approved artillery report, full-band recorded crack, short room reflections, model-specific pitch/gain and transient-preserving compression and a 24-voice ceiling. Audio unlocks after player interaction, stops on pause/mute/menu, and is never queued to play later. The approved power mix is kept on its own audio bus. The drone reuses a quieter firearm sample (20 decoded sources, 19 unique clips). No oscillator sound generator is used.
-
-The shotgun starts with three physical pellets per shell in a fixed cone; Buckshot increases this to four, five and six. It aims before firing, then each pellet travels straight, can hit any live alien crossing its path, and survives the original target's death. Swept collision picks the first physical impact and prevents tunneling at 2x speed. Other weapons retain their guided shots. Close positioning is rewarded because more pellets connect.
-
-`npm run test:audio` runs an isolated, OS-muted headless browser while testing real sample decoding/playback, variation, mute/pause behavior and a visible shotgun volley. It does not play through the user's speakers.
-
-The arsenal browser suite checks unlocks, socket caps, saved loadouts, six-slot Heavy selection, RPG area impacts, all power sounds/visuals, pause behavior and new enemy traits. Its enemy-only scenario explicitly supplies a controlled spawn schedule; the loadout, RPG and ability scenarios exercise the unchanged production campaign. All browser suites use isolated, headless browsers with OS audio muted.
-
-## Command update (0.4.0)
-
-The commander graph is keyboard-accessible, uses selectable nodes and a persistent inspector, and keeps close/refund controls reachable on small screens. Four firing archetypes per weapon are described before purchase; battle cards show class, model, mode, rarity and cost. Bursts consume individual rounds, retarget between rounds, and respect reload/ammo boundaries.
-
-A cache is visible on every map and opens automatically after the midpoint wave. Its contents persist even after defeat. The first cache is one-time per mission; repeat clears still earn Salvage. New weapon licenses and attachment purchases persist across reload and commander respec. Existing 0.3 saves retain their previously available unlocks.
-
-The new browser suite covers graph prerequisites, research, purchases/refunds, locked fresh-profile specials, persistent Rare licenses/attachments, clear model identity, water deployment/raft charges, discounted clearance and automatic mines/UAV. All browser work uses isolated headless contexts and OS-muted audio. The source-based audio preparation recipe is in `scripts/prepare_doctrine_audio.py`; source hashes must match the provenance manifest.
-
-## Tactical HUD (0.4.1)
-
-The top console combines native-alpha 64px PixelForge sprites with the edges of
-the original metal plaques. Live text keeps lives, credits, mission and combat
-counts readable. Integrity, XP and segmented wave tracks show progress; low
-integrity has a warning marker and available SP has its own badge. The HUD adapts
-to phone, landscape and notebook layouts without replacing control buttons
-during updates. The notebook armory also keeps the special above the weapons.
-
-`test:hud` checks counter accuracy, transparent assets, nine viewport sizes,
-labels, held clicks, game controls, combat rewards, wave progress and low lives.
-It is required by the deployment workflow. Sprite prompts, provenance and the
-reported US$0.0394 generation cost are in `assets/hud/icons/`.
-
-## Frontier update (0.5.0)
-
-New players can deploy **Handgun and Assault Rifle**. Clear different missions
-to discover MP (1), Shotgun (2), Magnum (3), Sniper (4), RPG (6), Flamethrower
-(8) and Laser Array (10). Replaying one map does not advance this count, and
-commander level alone does not unlock types. Existing XP, research, owned plans,
-attachments and mission records are preserved. Mission completion announces
-new discoveries; the menu and locked cards show the next requirement.
-
-The six-slot rack stays compact: Flamethrower replaces MP in slot 3; Sniper,
-RPG and Laser share slot 6. Alternate models are behind **Change model** in
-the arsenal. All starter models support one attachment; midpoint caches
-discover attachments before awarding optional advanced plans. Open the arsenal
-from a battle card or **Change loadout** during a mission. Purchases and swaps
-are saved; **Apply loadout & restart mission** explicitly replaces the active
-deployment, while closing the arsenal leaves that run unchanged.
-
-Laser Array uses a continuous beam and a five-second heat window followed by
-cooling. Flamethrower burns every alien in a short cone, leaves lingering fire,
-and refills its fuel tank. Weapon upgrades improve cooling, fuel, burn damage,
-critical chance or critical damage according to weapon role. Firearm samples
-are unchanged; energy weapons use bounded procedural hum/hiss voices that stop
-on pause/mute. Critical rolls are deterministic for repeatable simulation.
-
-The original detailed starter-weapon PNGs and illustrated card backgrounds are
-restored. Whole special cards use contained artwork. PixelForge supplies new
-model/energy weapon sprites, dedicated trait-alien sprites, obstacles, cache
-states and a connected water texture. Mission previews show the actual alien
-roster. Six maps add amber arrows that accelerate aliens by 35%, separate from
-blue ice. The research graph uses labeled trained/ready/unfunded/locked states,
-clear branch colors and readable prerequisite connections. Run money uses `$`.
-
-`test:frontier` validates the entire unlock/swap/restart flow, energy damage,
-heat, fuel, pause/audio, card art, map previews and responsive research states.
-Core tests also cover the two-type opening, milestone progression, flame cone,
-critical upgrades and overdrive terrain. PixelForge provenance and its reported
-US$0.0604 cost are documented in `assets/frontier/`.
-
-### Placement hotfix (0.5.1)
-
-Fixed a hover-rendering exception on overdrive maps that froze the canvas before
-placement. The preview shows the equipped weapon, its range and destination tile.
-`test:placement` physically moves the mouse before building on all 18 missions,
-checks rejected road tiles and purchase accounting, then verifies that the native
-animation loop continues spawning enemies. This is a deployment gate.
+Pushing `main` runs `.github/workflows/deploy-pages.yml`: rules/campaign, controls, audio, category loadouts, research/UAV/records, HUD, energy/art, all18 pointer-placement cases and a complete UI mission must pass. `npm run build` packages a versioned runtime and a packaged browser smoke test gates GitHub Pages deployment. The entry origin/profile key stay fixed while a fingerprinted base prevents stale mixed releases. Tests/docs/development dependencies are excluded from the public bundle.
