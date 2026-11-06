@@ -1,12 +1,12 @@
-# Aliens Tower Defense — Command Update
+# Aliens Tower Defense — Field Guide Update
 
 A static HTML/CSS/JavaScript tower-defense game. [Play the production game](https://gmbueno.github.io/aliens-td/).
 
 ## Campaign and progression
 
-- 18 authored missions, three biomes, five to nine waves. Prepare manually or enable auto waves.
-- Start with **three category slots**, Handgun and Assault Rifle. Discover MP after 1 different mission clear, Shotgun after 2, Magnum 3, Sniper 4, RPG 6, Flamethrower 8 and Laser Array 10. Replays and commander level do not unlock more categories.
-- Choose any discovered categories for your loadout. Two research ranks each add a slot. Midpoint chests in **1-4 and 2-4** each grant a permanent slot. **Six slots maximum**: redundant slot research refunds 8 SP if a chest replaces it. Other chests contain $60 field supplies once per mission discovery.
+- 18 authored missions, three biomes, four to nine waves. Waves start automatically after 18 seconds of initial preparation and 6-second intermissions. There is no early-launch bonus; Pause stops the timer.
+- Start with **three category slots**, Handgun, Assault Rifle and Machine Pistol. Discover Shotgun after 1 different mission clear, Magnum 3, Sniper 4, RPG 6, Flamethrower 8 and Laser Array 10. Replays and commander level do not unlock more categories.
+- Choose any discovered categories for your loadout. Two research ranks each add a slot. Victories in **1-4 and 2-4** each grant a permanent slot automatically. **Six slots maximum**: redundant slot research refunds 8 SP if a mission reward replaces it. Map chests have been removed; saved chest slots are preserved. New slots automatically fill with discovered weapons.
 - Deploy **one tower per category** initially. Twin Emplacements allows two. Selling frees its placement allowance: full refund before the first wave, 70% afterward.
 - No weapon models, rarity, attachments, license shops or Salvage currency. Old model-license SP refunds once on migration; XP, research, discovered categories and mission records survive.
 - Kills and completed waves earn permanent XP; each commander level grants 10 SP. First clears and improved star records give extra XP once. Defeat keeps earned XP and combat records. Credits belong to the current mission.
@@ -23,26 +23,30 @@ Each tower has two weapon-specific upgrade branches and a four-upgrade budget, u
 - **Last Line:** five research ranks deploy 2/4/6/8/10 finite exit mines. Each deals 5,500 area damage.
 - **Patrol UAV:** unlock one drone, then Wingman for a second. Click a drone or its shared landing pad, choose UAV 1/2, upgrade damage or range/fire rate with mission credits and choose targeting independently.
 - **Targeting:** First, Last, Strongest and Nearest are free; **Finish the Weak** unlocks Weakest for all weapons and drones. Strength uses current health plus shields.
-- **Combat Records:** per-tower kills appear in combat; armory cards show this run's category totals. The mission-select records page stores lifetime category/support kills, including splash, burns, mines and artillery. Counts begin with 0.6.0; earlier history cannot be reconstructed.
+- **Combat Records:** per-tower kills appear in combat; the weapon inspector shows each selected tower's count. The mission-select records page stores lifetime category/support kills, including splash, burns, mines and artillery. Counts begin with 0.6.0; earlier history cannot be reconstructed.
+
+The shared sidebar shows equipment until a tower/drone/obstacle is selected, then switches to its controls. No bottom rack or manual-wave toolbar. First-use cues remember completed upgrades, power use and research; Commander starts highlighting only after a victory. New weapon discoveries highlight Change loadout until it is opened. Reduced-motion preferences use static highlights. Pause/speed controls and the favicon have matching SVG artwork.
 
 The commander graph has five focused tabs: Training, Deployment, Support, Artillery and Napalm. Prerequisite connections, ranks, previews and purchase states remain explicit. Nodes can be refunded for free between missions. Purchases missing SP or credits are moderately desaturated.
 
-Artillery marks an area and launches ten shells over five seconds. Separate research adds damage, radius, lower cooldown, or duration/shells (up to twenty over ten seconds). Napalm marks a persistent fire field, igniting aliens entering later; damage, radius, cooldown and field duration have independent research. Chrono Break stops movement. Only one special is equipped per deployment; fresh commanders must research it first.
+Artillery marks an area and launches ten shells over five seconds. Separate research adds damage, radius, lower cooldown, or duration/shells (up to twenty over ten seconds). Napalm marks a persistent fire field, igniting aliens entering later; damage, radius, cooldown and field duration have independent research. Chrono Break stops movement. Only one special is equipped per deployment; all three are available from the start, with Chrono Break (Stasis) equipped by default. Choose a power in Change loadout, and use research only to improve it.
 
-Loadout/category changes and special/support research apply on the next deployment. The battle's **Change loadout → Apply loadout & restart** action explicitly starts a new run with saved choices. Weapon training, duplicate placement, Weakest, clearance and pontoon research apply immediately. Starting supplies and mines cannot be replenished during a run; refunds are blocked until results or mission select.
+Loadout/category changes and special/support research apply on the next deployment. The battle's **Change loadout → Apply loadout & restart** action explicitly starts a new run with saved choices. Weapon training, extra slots (with automatic weapon selection), duplicate placement, Weakest, clearance and pontoon research apply immediately. Starting supplies and mines cannot be replenished during a run; refunds are blocked until results or mission select.
 
 ## Maps and presentation
 
-Maps include removable cargo/ice/growth, permanent rocks, water, range pads (+18%), damage pads (+15%), frost slowdown (−25%) and amber overdrive (+35% alien speed). Pontoon research allows water placement for $35 extra. Ravagers accelerate after damage; Juggernauts resist slow; Broodmothers spawn hatchlings; Menders heal allies. Briefings show each mission's actual enemy roster.
+The first three missions teach the basics with $360/$350/$350, no paid crates or speed tiles, and a gradual two-species → armored-alien introduction. Fixed wave rewards after mission 3 compensate part of the removed launch income.
 
-The HUD uses native-alpha PixelForge icons and original metal plaques. Original detailed firearm artwork and full illustrated power cards are retained. Dedicated alien, obstacle, chest, water and energy-weapon art lives under `assets/frontier/`, with provenance and generation costs. Pointer placement previews show the actual weapon, range and destination tile.
+Later maps include removable cargo/ice/growth, permanent rocks, water, range pads (+18%), damage pads (+15%), frost slowdown (−25%) and amber overdrive (+35% alien speed). Pontoon research allows water placement for $35 extra. Ravagers accelerate after damage; Juggernauts resist slow; Broodmothers spawn hatchlings; Menders heal allies. Briefings show each mission's actual enemy roster.
+
+The HUD uses native-alpha PixelForge icons and original metal plaques. Original detailed firearm artwork and full illustrated power cards are retained. Dedicated alien, obstacle, water and energy-weapon art lives under `assets/frontier/`, with provenance and generation costs. Pointer placement previews show the actual weapon, range and destination tile.
 
 Firearms use self-hosted CC0 recordings with alternate samples, subtle pitch/gain variation, short reflections, the approved artillery layer and a bounded mixer. Energy weapons use bounded hum/hiss voices. Pause/mute/menu stop audio. Audio sources, licenses, hashes and preparation scripts are in `assets/audio/` and `scripts/`.
 
 ## Controls
 
 - Click/tap a category then a free tile. Click a placed tower to inspect/upgrade/target/sell, a UAV/base to manage drones, or an obstacle to clear it.
-- **1–6** select equipped weapons; **Space** launches or pauses/resumes; **Q** uses the equipped power (then click the map for Artillery/Napalm).
+- **1–6** select equipped weapons; **Space** pauses/resumes; **Q** uses the equipped power (then click the map for Artillery/Napalm).
 - **Escape** cancels/closes menus; **F** toggles fullscreen. Hidden tabs pause automatically.
 - Cooldowns and power duration use combat time and game speed, freeze on pause and do not recover during preparation.
 
@@ -69,4 +73,4 @@ Use Node 22. Browser suites use isolated headless contexts with OS-muted audio a
 
 `src/game.js` coordinates simulation/rendering/UI; `src/data/levels/` contains explicit authored schedules; `src/data/weapons.js`, `enemies.js`, `skills.js` hold tuning. `src/systems/` holds persistence, targeting, composed stats, support and audio. `docs/design-notes.md` records earlier design research.
 
-Pushing `main` runs `.github/workflows/deploy-pages.yml`: rules/campaign, controls, audio, category loadouts, research/UAV/records, HUD, energy/art, all18 pointer-placement cases and a complete UI mission must pass. `npm run build` packages a versioned runtime and a packaged browser smoke test gates GitHub Pages deployment. The entry origin/profile key stay fixed while a fingerprinted base prevents stale mixed releases. Tests/docs/development dependencies are excluded from the public bundle.
+Pushing `main` runs `.github/workflows/deploy-pages.yml`: rules/campaign, controls, audio, category loadouts, research/UAV/records, HUD, energy/art, all18 pointer-placement cases and three complete introductory UI missions and their learning flow must pass. `npm run build` packages a versioned runtime and a packaged browser smoke test gates GitHub Pages deployment. The entry origin/profile key stay fixed while a fingerprinted base prevents stale mixed releases. Tests/docs/development dependencies are excluded from the public bundle.

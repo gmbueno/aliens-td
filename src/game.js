@@ -4,7 +4,7 @@ import {criticalShot,energyHit,drawEnergy} from './systems/energyWeapons.js';
 import { PONTOON_COST, initializeSupport, updateDrone, triggerMines, drawSupport, droneStats, droneUpgradeCost, upgradeDrone } from './systems/fieldSupport.js';
 import { createWeaponAudio } from "./systems/weaponAudio.js";
 import { enemies, getEnemy } from "./data/enemies.js";
-import { equippedWeapons, classUnlocked, classRequirement, nextClassUnlock, campaignClears, equipCategory, weaponArt, loadoutCapacity, loadoutKeys, placementLimit, cacheReward, SLOT_CACHE_LEVELS } from "./data/arsenal.js";
+import { equippedWeapons, classUnlocked, classRequirement, nextClassUnlock, campaignClears, equipCategory, weaponArt, loadoutCapacity, loadoutKeys, placementLimit, SLOT_REWARD_LEVELS } from "./data/arsenal.js";
 import { renderArsenal, nextArsenalUnlock } from "./ui/arsenalView.js";
 import { weapons } from "./data/weapons.js";
 import { xpNeeded } from "./data/player.js";
@@ -16,7 +16,7 @@ import { equipActiveKeyFromEvent, renderSkillTree, skillKeyFromEvent } from "./u
 
 const TWO_PI = Math.PI * 2;
 const BOARD_PAD = 12;
-const NEXT_WAVE_DELAY = 8;
+const NEXT_WAVE_DELAY = 6;
 
 const ASSET_CACHE_BUSTER = "frontier-20261105";
 
@@ -45,7 +45,7 @@ function createAssetStore() {
     loaded: false,
   };
   Promise.all([
-    ...['rock','ice','growth','cargo','barrels','chest-closed','chest-open','water'].map(key=>loadImage(`assets/frontier/world/${key}.png`).then(image=>store.world[key]=image)),
+    ...['rock','ice','growth','cargo','barrels','water'].map(key=>loadImage(`assets/frontier/world/${key}.png`).then(image=>store.world[key]=image)),
     loadImage(assetPaths.board.tile).then((image) => {
       store.tile = image;
     }),
@@ -104,7 +104,7 @@ function awardRunXp(state, amount) {
   addXp(state.profile, amount);
   state.runXp += amount;
   if (state.profile.level > before) {
-    state.message = `LEVEL ${state.profile.level} · +${(state.profile.level - before) * 10} SP! Open your skill tree.`;
+    state.message = `LEVEL ${state.profile.level} · +${(state.profile.level - before) * 10} SP.`;
     state.messageTimer = 7;
   }
 }
@@ -222,6 +222,8 @@ export function activateChronoBreak(state) {
   addEffect(state, "stasis", state.board.x+state.board.w/2, state.board.y+state.board.h/2, 500, 1);
   state.audio?.play('chrono');
   state.selectedActiveKey = null;
+  if(state.profile.onboarding)state.profile.onboarding.powerUsed=true;
+  saveProfile(state.profile);
   return true;
 }
 
@@ -231,7 +233,7 @@ export function activateNapalm(state,x=state.board.x+state.board.w/2,y=state.boa
   status.timer=stats.duration;status.cooldown=stats.cooldown;status.damage=stats.damage;
   state.napalm={x,y,radius:stats.area,damage:stats.damage,timer:stats.duration};
   state.audio?.play('napalm');addEffect(state,'napalm',x,y,stats.area,1.2);
-  state.selectedActiveKey=null;return true;
+  state.selectedActiveKey=null;if(state.profile.onboarding)state.profile.onboarding.powerUsed=true;saveProfile(state.profile);return true;
 }
 function updateNapalm(state,dt){
   if(!state.napalm)return;
@@ -252,6 +254,8 @@ export function activateArtillery(state, x, y) {
   addEffect(state, 'target', x, y, stats.area, stats.duration);
   state.audio?.play('artillery');
   state.selectedActiveKey = null;
+  if(state.profile.onboarding)state.profile.onboarding.powerUsed=true;
+  saveProfile(state.profile);
   return true;
 }
 
@@ -291,7 +295,6 @@ export function createInitialState(level, profile, canvas) {
     artillery: null, napalm: null, runWeaponKills: {},
     visualTime: 0,
     gold: level.startGold+skillRank(profile,'supplies')*25,
-    loot:[],
     lives: level.lives,
     selectedWeaponKey: null,
     selectedTowerId: null, selectedDroneId:null,
@@ -313,7 +316,7 @@ export function createInitialState(level, profile, canvas) {
     clearedBlockers: new Set(),
     waveIndex: 0,
     waveTime: 0,
-    waveDelay: 0,
+    waveDelay: 18,
     spawnedInWave: new Set(),
     kills: 0,
     totalEnemies: waveTotal(level),
@@ -329,8 +332,8 @@ export function createInitialState(level, profile, canvas) {
       area: 0,
     }])),
     result: null,
-    message: "Choose a tower, place it beside the route, then launch the wave.",
-    messageTimer: 8,
+    message: "",
+    messageTimer: 0,
   };
   initializeSupport(state);
   return state;
@@ -597,12 +600,10 @@ function updateBurningEnemies(state, dt) {
 
 export function launchWave(state) {
   if (state.phase !== "prepare" || state.result || state.isPaused) return false;
-  const bonus = state.waveIndex > 0 ? Math.ceil(state.waveDelay) * 2 : 0;
-  state.gold += bonus;
   state.phase = "combat";
   state.waveDelay = 0;
   state.waveLeaks = 0;
-  notify(state, `Wave ${state.waveIndex + 1} · ${state.level.waves[state.waveIndex].name}${bonus ? ` · +$${bonus} early launch` : ""}`);
+  notify(state, `Wave ${state.waveIndex + 1} · ${state.level.waves[state.waveIndex].name}`);
   return true;
 }
 
@@ -610,7 +611,7 @@ function updateWaves(state, dt) {
   if (state.waveIndex >= state.level.waves.length) return;
   if (state.phase === "prepare") {
     state.waveDelay = Math.max(0, state.waveDelay - dt);
-    if (state.waveIndex > 0 && state.profile.settings.autoWave && state.waveDelay <= 0) launchWave(state);
+    if (state.waveDelay <= 0) launchWave(state);
     return;
   }
   const wave = state.level.waves[state.waveIndex];
@@ -628,11 +629,6 @@ function updateWaves(state, dt) {
     saveProfile(state.profile);
     notify(state, `Wave cleared · +$${wave.reward} supplies${cleanBonus ? " · +$15 flawless defense" : ""}`);
     state.waveIndex += 1;
-    if(!state.cache.opened && state.waveIndex>=state.cache.wave){
-      state.cache.opened=true;const reward=cacheReward(state.profile,state.level);
-      if(reward){state.gold+=reward.credits;state.loot.push(reward);notify(state,reward.slot?`CACHE OPENED · Permanent loadout slot · ${loadoutCapacity(state.profile)}/6 slots${reward.refund?` · +${reward.refund} SP refunded`:''} · change loadout between missions`:`CACHE OPENED · +$${reward.credits} field supplies`);saveProfile(state.profile);}
-
-    }
     state.waveTime = 0;
     state.spawnedInWave = new Set();
     state.waveDelay = NEXT_WAVE_DELAY;
@@ -665,7 +661,6 @@ export function placeTower(state, weaponKey, row, col) {
   const water=state.tileSets.water.has(key),platform=water?PONTOON_COST:0;
   if(water&&!skillRank(state.profile,'pontoons'))return null;
   if(state.drone?.base.row===row&&state.drone.base.col===col)return null;
-  if(!state.cache.opened&&state.cache.row===row&&state.cache.col===col)return null;
   if (!weapon || state.gold < weapon.price+platform || state.tileSets.path.has(key) || state.tileSets.blockers.has(key) || state.towers.some(t => t.row === row && t.col === col)) return null;
   const tower = {
     id: `tower-${state.nextTowerId++}`, weapon, row, col,
@@ -689,6 +684,8 @@ export function upgradeTower(state, tower, key) {
   state.gold -= cost;
   tower.invested += cost;
   tower.upgrades[key] += 1;
+  if(state.profile.onboarding)state.profile.onboarding.towerUpgraded=true;
+  saveProfile(state.profile);
   refreshTowersWithSkills(state.towers, weapons, { ...state.profile, arsenal: state.arsenalProfile.arsenal });
   return true;
 }
@@ -1129,7 +1126,7 @@ function drawGame(ctx, state, assets) {
     if (state.hoverTile) {
       const key = tileKey(state.hoverTile.row, state.hoverTile.col);
       const occupied = state.towers.some((tower) => tower.row === state.hoverTile.row && tower.col === state.hoverTile.col);
-      const canPlace = state.towers.filter(t=>t.weapon.key===selected.key).length<placementLimit(state.profile) && !(state.drone?.base.row===state.hoverTile.row&&state.drone.base.col===state.hoverTile.col) && !(!state.cache.opened&&state.cache.row===state.hoverTile.row&&state.cache.col===state.hoverTile.col) && state.gold >= selected.price+(tileSets.water.has(key)?PONTOON_COST:0) && (!tileSets.water.has(key)||skillRank(state.profile,'pontoons')) && !tileSets.path.has(key) && !tileSets.blockers.has(key) && !occupied;
+      const canPlace = state.towers.filter(t=>t.weapon.key===selected.key).length<placementLimit(state.profile) && !(state.drone?.base.row===state.hoverTile.row&&state.drone.base.col===state.hoverTile.col) && state.gold >= selected.price+(tileSets.water.has(key)?PONTOON_COST:0) && (!tileSets.water.has(key)||skillRank(state.profile,'pontoons')) && !tileSets.path.has(key) && !tileSets.blockers.has(key) && !occupied;
       const x = board.x + state.hoverTile.col * board.tile + board.tile / 2;
       const y = board.y + state.hoverTile.row * board.tile + board.tile / 2;
       const pad = level.pads?.find(tile => tile.row === state.hoverTile.row && tile.col === state.hoverTile.col);
@@ -1157,6 +1154,11 @@ function drawGame(ctx, state, assets) {
     const target = targetForTower(tower, state.enemies);
     if (target && !(tower.muzzleFlash > 0)) tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
     if(tower.platform){ctx.save();ctx.translate(tower.x,tower.y);ctx.fillStyle='#b4955b';ctx.strokeStyle='#edcf8c';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(-32,-29,64,58,10);ctx.fill();ctx.stroke();ctx.fillStyle='#536b62';ctx.fillRect(-34,-23,8,46);ctx.fillRect(26,-23,8,46);ctx.restore();}
+    if(!state.profile.onboarding?.towerUpgraded && tower===state.towers.find(t=>state.gold>=Math.min(towerUpgradeCost(t,'power'),towerUpgradeCost(t,'tactical')))){
+      const reduced=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+      ctx.save();ctx.strokeStyle=`rgba(255,220,132,${reduced ? .85 : .55+Math.sin(state.visualTime*3)*.3})`;ctx.lineWidth=3;ctx.beginPath();ctx.arc(tower.x,tower.y,36,0,TWO_PI);ctx.stroke();
+      ctx.fillStyle='#18282f';ctx.strokeStyle='#ffe099';ctx.beginPath();ctx.roundRect(tower.x-17,tower.y-52,34,20,6);ctx.fill();ctx.stroke();ctx.fillStyle='#ffe099';ctx.font='bold 16px sans-serif';ctx.textAlign='center';ctx.fillText('↑',tower.x,tower.y-37);ctx.restore();
+    }
     drawTower(ctx, tower, assets);
     drawEnergy(ctx,tower,state.visualTime);
     if (tower.muzzleFlash > 0) {
@@ -1336,11 +1338,12 @@ export function createGame({ ui, levels }) {
     ui.missionBriefing.innerHTML = `<p class="eyebrow">MISSION ${missionLabel(level)} / BRIEFING</p><h2>${level.name}</h2><p>${level.description}</p>
       <p class="eyebrow">ALIEN INTEL / THIS MISSION</p>${enemyRoster(level)}<div class="brief-stats"><div><span>Starting funds</span><strong>$${level.startGold+skillRank(profile,'supplies')*25}</strong></div><div><span>Base integrity</span><strong>${level.lives} lives</strong></div><div><span>Recommended</span><strong>Lv ${level.recommendedLevel}+</strong></div><div><span>${cleared ? "Clear reward" : "First clear"}</span><strong>+${level.clearXp + (cleared ? 0 : level.firstClearXp)} XP</strong></div></div>
       <div class="brief-tip">${cleared ? "Improve your record: 3 stars for no leaks, 2 for 60%+ lives, 1 for surviving." : "Kills and completed waves earn permanent XP, even if you lose. Each level grants 10 skill points."}</div>`;
-    if(SLOT_CACHE_LEVELS.includes(level.id))ui.missionBriefing.insertAdjacentHTML('beforeend',`<div class="next-discovery">MIDPOINT CACHE / <strong>${profile.caches[level.id]?'CATEGORY SLOT CLAIMED':'+1 PERMANENT CATEGORY SLOT'}</strong><br>Opens after wave ${Math.ceil(level.waves.length/2)} · maximum six slots.</div>`);
+    if(SLOT_REWARD_LEVELS.includes(level.id))ui.missionBriefing.insertAdjacentHTML('beforeend',`<div class="next-discovery">MISSION REWARD / <strong>${profile.slotRewards[level.id]?'CATEGORY SLOT CLAIMED':'+1 PERMANENT CATEGORY SLOT'}</strong><br>Awarded on victory · maximum six slots.</div>`);
     const next=nextClassUnlock(profile),nextWeapon=weapons.find(w=>w.key===next?.[0]);
     if(nextWeapon)ui.missionBriefing.insertAdjacentHTML('beforeend',`<div class="next-discovery">NEXT WEAPON / <strong>${nextWeapon.name}</strong><br>${campaignClears(profile)} / ${next[1]} different missions cleared.</div>`);
     ui.menuPlayButton.disabled = false;
     ui.menuPlayButton.textContent = `Deploy to ${missionLabel(level)} →`;
+    syncHints();
   }
 
   const statsScreen=document.getElementById('stats-screen');
@@ -1353,6 +1356,18 @@ export function createGame({ ui, levels }) {
     document.getElementById('stats-back-button').focus();
   });
   document.getElementById('stats-back-button').addEventListener('click',()=>{statsScreen.classList.add('hidden');ui.mainMenu.classList.remove('hidden');syncMenu();document.getElementById('menu-stats-button').focus();});
+
+  function selectTitle(card,weapon,full,missing){card.querySelector('.weapon-select').title=full?'Category limit reached':missing?`Need $${missing} more`:`Build ${weapon.name}`;}
+  function syncHints(){
+    const hints=profile.onboarding;
+    const research=campaignClears(profile)>0&&!hints.researchSpent&&profile.skillPoints>=4;
+    for(const button of [ui.playerLevelButton,ui.menuSkillsButton,ui.resultSkillsButton])button.classList.toggle('learn-pulse',research);
+    const discovery=weapons.some(w=>classUnlocked(profile,w.key)&&!hints.seenWeapons.includes(w.key));
+    for(const button of [document.getElementById('field-loadout-button'),ui.menuArsenalButton,ui.resultArsenalButton])button.classList.toggle('learn-pulse',discovery);
+    const upgrade=state&&!hints.towerUpgraded&&state.towers.length>0;
+    ui.towerActions.querySelectorAll('[data-upgrade]').forEach(b=>b.classList.toggle('learn-pulse',Boolean(upgrade&&!b.disabled)));
+    ui.abilityBar.querySelectorAll('[data-active-key]').forEach(b=>b.classList.toggle('learn-pulse',Boolean(state&&!hints.powerUsed&&!b.disabled&&state.enemies.length)));
+  }
 
   function wavePreview() {
     const wave = state.level.waves[state.waveIndex];
@@ -1395,17 +1410,13 @@ export function createGame({ ui, levels }) {
     ui.playPauseButton.classList.toggle("pause-icon", !state.isPaused);
     ui.playPauseButton.title = state.isPaused ? "Play" : "Pause";
     ui.playPauseButton.setAttribute("aria-label", state.isPaused ? "Play" : "Pause");
-    ui.speedToggleButton.textContent = `${state.gameSpeed}x`;
+    const speedSprite=`assets/hud/icons/speed-${state.gameSpeed}.svg`;
+    if(ui.speedToggleButton.querySelector("img").getAttribute("src")!==speedSprite)ui.speedToggleButton.querySelector("img").src=speedSprite;
+    ui.speedToggleButton.querySelector("img").alt = `${state.gameSpeed}x`;
     ui.speedToggleButton.className = `control-button speed-state ${state.gameSpeed === 2 ? "fast" : "normal"}`;
     ui.speedToggleButton.setAttribute("aria-label", `Game speed ${state.gameSpeed}x. Switch to ${state.gameSpeed === 2 ? 1 : 2}x`);
     ui.speedToggleButton.title = `Game speed: ${state.gameSpeed}x`;
-    ui.battleTitle.textContent = `${missionLabel(state.level)} / ${state.level.name}`;
-    ui.wavePreview.textContent = `${state.cache.opened?"CACHE CLAIMED":"CACHE / W"+state.cache.wave}${state.mines.length?" · MINES "+state.mines.filter(m=>!m.spent).length+"/"+state.mines.length:""}${state.drones.length?" · UAV ×"+state.drones.length:""} · ${state.phase === "prepare" ? "UP NEXT" : "INCOMING"} · ${wavePreview()}`;
-    ui.launchWaveButton.disabled = state.phase !== "prepare" || state.isPaused || Boolean(state.result);
-    const bonus = state.waveIndex > 0 && state.waveDelay > 0 ? ` (+$${Math.ceil(state.waveDelay) * 2})` : "";
-    ui.launchWaveButton.textContent = state.phase === "combat" ? "Wave in progress" : `Launch wave ${state.waveIndex + 1}${bonus}`;
-    ui.autoWaveToggle.checked = profile.settings.autoWave;
-    ui.battleMessage.textContent = state.selectedWeaponKey ? `${effectiveWeaponByKey(state.selectedWeaponKey).name} / ${effectiveWeaponByKey(state.selectedWeaponKey).fireMode} · choose a free tile. Water adds a $35 raft.` : state.messageTimer > 0 ? state.message : state.selectedActiveKey ? `Mark an area for ${state.selectedActiveKey==='napalm'?'Napalm':'Artillery'}. Escape to cancel.` : state.selectedWeaponKey ? "Choose a free tile. Blue pads extend range; amber pads boost damage." : state.phase === "prepare" ? "Prepare your defense. Click a tower to upgrade it or a crate to clear space." : "Click a tower to upgrade, change target, or sell.";
+    ui.battleMessage.textContent = state.selectedActiveKey ? `Choose an area for ${state.selectedActiveKey==='napalm'?'Napalm':'Artillery'}` : state.messageTimer > 0 ? state.message : '';
     ui.playerLevelButton.title = `Commander Lv ${profile.level} · ${profile.xp}/${xpNeeded(profile.level)} XP · ${profile.skillPoints} SP available`;
     ui.playerLevelButton.setAttribute("aria-label", `Open skill tree. Commander level ${profile.level}, ${profile.skillPoints} skill points available`);
     ui.playerLevelButton.classList.toggle("has-points", profile.skillPoints >= 4);
@@ -1420,16 +1431,17 @@ export function createGame({ ui, levels }) {
       card.classList.toggle("selected", selected);
       card.classList.toggle("unaffordable", missing > 0);
       card.classList.toggle("placement-full",full);
-      card.querySelector(".weapon-kills").textContent=`${state.runWeaponKills[weapon.key]||0} kills · ${count}/${limit} placed`;
+      selectTitle(card,weapon,full,missing);
       card.removeAttribute("aria-disabled");
       const select = card.querySelector(".weapon-select");
       select.disabled=locked||full;
       select.setAttribute("aria-pressed", String(selected));
       select.setAttribute("aria-disabled", String(locked || full || missing > 0));
       // Keep the info action usable even when the weapon is unaffordable.
-      card.querySelector(".weapon-state").textContent = locked ? "LOCKED" : full ? `${count}/${limit} PLACED` : selected ? "SELECTED" : missing > 0 ? `NEED $${missing}` : "READY";
+      card.querySelector(".weapon-state").textContent = full ? "✓" : selected ? "+" : "";
     });
     syncTowerSidebar();
+    syncHints();
   }
 
   function weaponStatsMarkup(weapon) {
@@ -1476,6 +1488,10 @@ export function createGame({ ui, levels }) {
   }
 
   function syncTowerSidebar() {
+    const inspecting=Boolean(state.selectedTowerId||state.selectedDroneId||state.selectedObstacle);
+    document.getElementById('tower-inspector').classList.toggle('hidden',!inspecting);
+    document.getElementById('deployment-panel').classList.toggle('hidden',inspecting);
+
     if(state.selectedDroneId){syncDroneSidebar();return;}
     const tower = state?.towers.find(item => item.id === state.selectedTowerId);
     ui.towerSidebar.classList.remove("hidden");
@@ -1550,12 +1566,8 @@ export function createGame({ ui, levels }) {
       if (clearButton) clearButton.disabled = state.gold < obstacleCost(state,obstacle);
       return;
     }
-    ui.towerSidebarTitle.textContent = state.phase === "prepare" ? "Plan your defense" : "Hold the line";
-    const wave = state.level.waves[state.waveIndex];
-    const types = [...new Set(wave?.spawns.map(spawn => spawn.enemy))];
-    const tips = { alien_normal: "Scout · reliable fire wears it down.", alien_fast: "Skitter · fast and fragile. Cover the exit.", alien_tank: "Bulwark · 35% armor. Magnum or Sniper.", alien_shielded: "Shielded · extra shield absorbs hits first.", alien_boss: "Overseer · set heavy towers to Strongest.", alien_saucer: "Mothership · shields, armor, lethal breach.", alien_steadfast: "Juggernaut × · immune to slow. Use raw damage or stun.", alien_rager: "Ravager ! · speeds up after its first hit. Finish it quickly.", alien_broodmother: "Broodmother … · releases hatchlings. Cover its spawn with splash.", alien_hatchling: "Hatchling · fast offspring, no gold or XP bounty.", alien_medic: "Mender + · heals nearby wounded aliens. Prioritize it before tanks." };
-    setMarkup(ui.towerStatList, `<p class="field-guide">${state.level.description}</p><div class="enemy-intel">${types.map(key => `<div><img src="${assetUrl(enemies[key].asset)}" alt=""><span>${tips[key]}</span></div>`).join("")}</div>`);
-    mountActions(`guide:${state.level.id}:${profile.skillPoints}`, `<div class="map-legend">${state.level.speedTiles?.length?'<span class="haste-legend">» Amber overdrive: aliens +35% speed</span>':''}<span><i class="range-dot"></i> Sensor pad: +18% range</span><span><i class="power-dot"></i> Power pad: +15% damage</span>${state.level.biome === "frost" ? "<span>❄ Frozen route: aliens 25% slower</span>" : ""}<span>▧ Crates: click to clear</span></div><p class="upgrade-limit">${profile.skillPoints >= 4 ? `${profile.skillPoints} SP available. Open the command graph.` : "3 stars = no leaks · 2 stars = 60% lives"}</p>`);
+    setMarkup(ui.towerStatList, '');
+    mountActions('idle','');
   }
 
   function renderWeaponBar() {
@@ -1566,8 +1578,8 @@ export function createGame({ ui, levels }) {
       <button class="weapon-select" type="button" aria-label="Build ${weapon.name}, ${weapon.price} credits" aria-pressed="false">
       <span class="weapon-topline"><kbd>${index+1}</kbd><span class="weapon-state">READY</span><span class="weapon-price">$${weapon.price}</span></span>
       <span class="weapon-art-stage"><img class="weapon-art" src="${assetUrl(effective.hudAsset)}" alt="" draggable="false"></span>
-      <span class="weapon-caption"><strong class="weapon-nickname">${weapon.name}</strong></span>
-      <span class="weapon-role">${weapon.role}</span><span class="weapon-kills">0 kills</span></button>
+      <span class="weapon-caption"><strong class="weapon-nickname">${weapon.key==='flamethrower'?weapon.nickname:weapon.name}</strong></span>
+      </button>
       <button class="weapon-info-button" data-info-weapon-key="${weapon.key}" type="button" aria-label="Inspect ${weapon.name}">i</button></article>`;
     }).join('')+Array.from({length:Math.max(0,loadoutCapacity(state.arsenalProfile)-equippedWeapons(weapons,state.arsenalProfile).length)},()=>`<button class="empty-loadout-card" type="button" data-open-loadout><span>+</span><strong>Open category slot</strong><small>Discover more weapons →</small></button>`).join('');
   }
@@ -1587,7 +1599,7 @@ export function createGame({ ui, levels }) {
       const stats = abilityStats(state.arsenalProfile, ability.key);
       return `
         <button class="ability-card ability-illustrated active-${ability.key}" data-active-key="${ability.key}" type="button" title="${ability.name}">
-          <span class="ability-topline"><kbd>Q</kbd><span>ACTIVE / ${stats.rank}</span></span>
+          <span class="ability-topline"><kbd>Q</kbd><span>POWER</span></span>
           <img class="ability-full-art" src="${assetUrl(assetPaths.slots.activeCards[ability.key])}" alt="${ability.name}" draggable="false">
           <strong class="ability-caption">${ability.name}</strong>
           <small>Ready</small>
@@ -1643,6 +1655,8 @@ export function createGame({ ui, levels }) {
   let arsenalClass = 'handgun';
   function syncArsenal() {
     renderArsenal(ui.arsenalContent,profile,weapons,arsenalClass);
+    document.getElementById('power-picker').innerHTML=`<div class="power-picker-head"><h3>One power. Your choice.</h3><span>All three available</span></div><div class="power-options">${activeAbilities.map(a=>`<button type="button" data-choose-power="${a.key}" class="${profile.equippedActiveKey===a.key?'selected':''}" aria-pressed="${profile.equippedActiveKey===a.key}"><img src="${assetPaths.slots.activeCards[a.key]}" alt=""><strong>${a.name}</strong><span>${a.key==='chronoBreak'?'Freeze every alien':a.key==='artillery'?'Bombard a marked area':'Burn an area over time'}</span><small>${profile.equippedActiveKey===a.key?'✓ EQUIPPED':'SELECT'}</small></button>`).join('')}</div>`;
+
     document.getElementById('arsenal-restart-panel').classList.toggle('hidden',!state||Boolean(state.result));
     const deploymentConfig=p=>JSON.stringify({keys:loadoutKeys(p),slots:loadoutCapacity(p),skills:p.skills,active:p.equippedActiveKey});
     document.getElementById('arsenal-restart-button').disabled=Boolean(state&&deploymentConfig(state.arsenalProfile)===deploymentConfig(profile));
@@ -1650,6 +1664,7 @@ export function createGame({ ui, levels }) {
   }
   function openArsenal() {
     if(state) { state.wasPausedBeforeArsenal=state.isPaused; state.isPaused=true; }
+    profile.onboarding.seenWeapons=weapons.filter(w=>classUnlocked(profile,w.key)).map(w=>w.key);saveProfile(profile);
     syncArsenal(); ui.arsenalModal.classList.remove('hidden'); ui.arsenalCloseButton.focus(); syncHud();
   }
   function closeArsenal() {
@@ -1657,6 +1672,8 @@ export function createGame({ ui, levels }) {
     if(state) {state.isPaused=state.wasPausedBeforeArsenal; syncHud();} else syncMenu();
     (state?(state.result?ui.resultArsenalButton:document.getElementById("field-loadout-button")):ui.menuArsenalButton).focus();
   }
+  document.getElementById('field-power-button').addEventListener('click',()=>{openArsenal();document.getElementById('power-picker').scrollIntoView({block:'center'});});
+  document.getElementById('power-picker').addEventListener('click',event=>{const key=event.target.closest('[data-choose-power]')?.dataset.choosePower;if(!isActiveAbilityKey(key))return;profile.equippedActiveKey=key;saveProfile(profile);syncArsenal();});
   document.getElementById('field-loadout-button').addEventListener('click',openArsenal);
   document.getElementById('weapon-customize-button').addEventListener('click',event=>{arsenalClass=event.currentTarget.dataset.customizeWeapon;ui.arsenalContent.dataset.slot=Math.max(0,loadoutKeys(profile).indexOf(arsenalClass));closeWeaponInfo();openArsenal();});
   document.getElementById('arsenal-restart-button').addEventListener('click',()=>{if(state&&!state.result)startLevel(state.level);});
@@ -1731,7 +1748,7 @@ export function createGame({ ui, levels }) {
     if (!tower) {notify(state,state.tileSets.water.has(tileKey(row,col))?skillRank(profile,'pontoons')?'Water deployment adds a  $35 raft. Check your credits.':'Unlock Pontoon Engineering in the command graph to build on water.':'Cannot build here. Choose a free tile and check your credits.');return;}
     state.selectedTowerId = null;
     state.selectedWeaponKey = null;
-    notify(state, `${tower.weapon.name} ready${tower.pad ? " · platform bonus active" : ""}. Click it to upgrade.`);
+    state.message="";state.messageTimer=0;
   }
 
   function showResult() {
@@ -1741,7 +1758,7 @@ export function createGame({ ui, levels }) {
     ui.resultTitle.textContent = won ? (state.level.stage === 6 ? "Sector secured" : "Mission complete") : "Regroup. Rebuild. Return.";
     ui.resultStars.textContent = won ? "★".repeat(state.reward.stars) + "☆".repeat(3 - state.reward.stars) : "↻";
     ui.resultCopy.textContent = won ? `${state.level.name} · ${state.lives}/${state.level.lives} lives protected.` : `${state.level.name} · ${state.waveIndex} waves completed. Your earned XP is safe.`;
-    ui.resultRewards.innerHTML = `${state.reward?.unlockedClasses?.map(key=>`<div class="next-discovery">NEW WEAPON TYPE / <strong>${weapons.find(w=>w.key===key).name}</strong><br>Choose it in your loadout before deploying.</div>`).join('')||''}<span>${state.kills} kills recorded · ${loadoutCapacity(profile)}/6 category slots</span><strong>+${state.runXp} XP earned</strong><span>Commander Lv ${profile.level} · ${profile.skillPoints} SP available</span>${state.reward?.firstClear ? `<span>First-clear bonus included: +${state.level.firstClearXp} XP</span>` : ""}<p>${won ? "Replay for more stars, or advance to the next mission." : "Try crossfire at bends, upgrade key towers, and spend your skill points."}</p><span>${nextArsenalUnlock(profile)}</span>`;
+    ui.resultRewards.innerHTML = `${state.reward?.unlockedClasses?.map(key=>`<div class="next-discovery">NEW WEAPON TYPE / <strong>${weapons.find(w=>w.key===key).name}</strong><br>${loadoutKeys(profile).includes(key)?"Added to your loadout.":"Available in Change loadout."}</div>`).join('')||''}${state.reward?.slotReward?`<div class="next-discovery">+1 LOADOUT SLOT${state.reward.slotReward.refund?` · ${state.reward.slotReward.refund} SP returned`:""}</div>`:""}<span>${state.kills} kills recorded · ${loadoutCapacity(profile)}/6 category slots</span><strong>+${state.runXp} XP earned</strong><span>Commander Lv ${profile.level} · ${profile.skillPoints} SP available</span>${state.reward?.firstClear ? `<span>First-clear bonus included: +${state.level.firstClearXp} XP</span>` : ""}<p>${won ? "Replay for more stars, or advance to the next mission." : "Try crossfire at bends, upgrade key towers, and spend your skill points."}</p><span>${nextArsenalUnlock(profile)}</span>`;
     ui.resultNextButton.classList.toggle("hidden", !won || levels.indexOf(state.level) === levels.length - 1);
     ui.resultSkillsButton.textContent = `Commander skills · ${profile.skillPoints} SP`;
     ui.resultModal.classList.remove("hidden");
@@ -1804,7 +1821,12 @@ export function createGame({ ui, levels }) {
   });
   ui.skillTreeNodes.addEventListener("click", (event) => {
     const node=event.target.closest('[data-select-skill]');
-    if(node){syncDoctrine(node.dataset.selectSkill);return;}
+    if(node){
+      syncDoctrine(node.dataset.selectSkill);
+      if(matchMedia('(max-width:700px)').matches)ui.skillTreeNodes.querySelector('.node-inspector').scrollIntoView({block:'start'});
+      else ui.skillTreeNodes.querySelector(`.graph-node[data-select-skill="${node.dataset.selectSkill}"]`)?.focus({preventScroll:true});
+      return;
+    }
     const branch=event.target.closest('[data-skill-branch]');
     if(branch){const first=skillTree.find(s=>s.branch===branch.dataset.skillBranch);syncDoctrine(first.key);return;}
     const equippedActiveKey = equipActiveKeyFromEvent(event);
@@ -1817,10 +1839,19 @@ export function createGame({ ui, levels }) {
     }
     const skillKey = skillKeyFromEvent(event);
     if (!skillKey || !buySkill(profile, skillKey)) return;
+    if(skillKey==='loadoutSlots'&&state&&!state.result){
+      state.arsenalProfile.skills.loadoutSlots=profile.skills.loadoutSlots;
+      state.arsenalProfile.arsenal={loadout:loadoutKeys(state.arsenalProfile)};
+      renderWeaponBar();
+    }
+    profile.onboarding.researchSpent=true;
+    profile.arsenal={loadout:loadoutKeys(profile)};
     saveProfile(profile);
     refreshTowerSkillBonuses();
     if (state) { renderAbilityBar(); }
     syncDoctrine();
+    const purchase=ui.skillTreeNodes.querySelector('.skill-purchase');
+    (purchase.disabled?ui.skillTreeNodes.querySelector('.graph-node.selected'):purchase).focus({preventScroll:true});
     syncHud();
   });
 
@@ -1944,8 +1975,8 @@ export function createGame({ ui, levels }) {
     syncDoctrine();
     if (state) { renderAbilityBar(); syncHud(); }
   });
-  ui.launchWaveButton.addEventListener("click", () => { launchWave(state); syncHud(); });
-  ui.autoWaveToggle.addEventListener("change", () => { profile.settings.autoWave = ui.autoWaveToggle.checked; saveProfile(profile); });
+
+
   ui.soundButton.addEventListener("click", () => { profile.settings.muted = !profile.settings.muted; saveProfile(profile); syncHud(); });
   ui.weaponEquipButton.addEventListener("click", () => {
     const key = ui.weaponEquipButton.dataset.weaponKey;
@@ -2006,8 +2037,7 @@ export function createGame({ ui, levels }) {
     if (/^[1-6]$/.test(event.key)) ui.weaponBar.querySelectorAll(".weapon-card")[Number(event.key) - 1]?.click();
     if (event.code === "Space") {
       event.preventDefault();
-      if (state.phase === "prepare" && !state.isPaused) ui.launchWaveButton.click();
-      else ui.playPauseButton.click();
+      ui.playPauseButton.click();
     }
     if (event.key.toLowerCase() === "q") ui.abilityBar.querySelector("button")?.click();
     if (event.key === "Escape") {
@@ -2048,9 +2078,9 @@ export function createGame({ ui, levels }) {
     gold: state?.gold,
     player: { level: profile.level, xp: profile.xp, skillPoints: profile.skillPoints },
     skills: profile.skills,
-    weaponKills:profile.weaponKills,runWeaponKills:state?.runWeaponKills,loadoutSlots:loadoutCapacity(profile),placementLimit:placementLimit(profile),caches:profile.caches, loot:state?.loot,
+    weaponKills:profile.weaponKills,runWeaponKills:state?.runWeaponKills,loadoutSlots:loadoutCapacity(profile),placementLimit:placementLimit(profile),slotRewards:profile.slotRewards,onboarding:profile.onboarding,
     classUnlocks:weapons.filter(w=>classUnlocked(profile,w.key)).map(w=>w.key),speedTiles:state?.level.speedTiles||[],loadout:state?equippedWeapons(weapons,state.arsenalProfile).map(w=>w.key):[],
-    fieldMines:state?.mines, drone:state?.drone,drones:state?.drones,selectedDrone:state?.selectedDroneId,napalmField:state?.napalm, cache:state?.cache, water:state?.level.water||[],
+    fieldMines:state?.mines, drone:state?.drone,drones:state?.drones,selectedDrone:state?.selectedDroneId,napalmField:state?.napalm,  water:state?.level.water||[],
     skillTreeOpen: !ui.skillTreeModal.classList.contains("hidden"),
     arsenalOpen: !ui.arsenalModal.classList.contains("hidden"),
     wave: state ? `${Math.min(state.waveIndex + 1, state.level.waves.length)}/${state.level.waves.length}` : null,

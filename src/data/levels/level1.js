@@ -1,8 +1,8 @@
-// 1-1 · Landing Zone. Authored route, terrain and waves.
+// 1-1 · Introductory mission. Authored route and waves.
 const level1 = {
   "id": "level_1",
   "name": "Landing Zone",
-  "description": "Hold the bends. Two complementary towers make a strong opening.",
+  "description": "Three weapons, two alien types. Find a bend and hold the line.",
   "sector": 1,
   "stage": 1,
   "biome": "outpost",
@@ -11,9 +11,9 @@ const level1 = {
   "cols": 16,
   "rows": 9,
   "tileSize": 48,
-  "startGold": 235,
+  "startGold": 360,
   "lives": 18,
-  "threat": 0.85,
+  "threat": 0.62,
   "clearXp": 45,
   "firstClearXp": 50,
   "blockers": [
@@ -40,30 +40,6 @@ const level1 = {
       "col": 15,
       "kind": "rock",
       "cost": 0
-    },
-    {
-      "row": 3,
-      "col": 3,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 5,
-      "col": 5,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 1,
-      "col": 3,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 3,
-      "col": 5,
-      "kind": "cargo",
-      "cost": 50
     }
   ],
   "pads": [
@@ -324,7 +300,7 @@ const level1 = {
     },
     {
       "id": 4,
-      "name": "Fast flank",
+      "name": "Hold the line",
       "healthScale": 1.3,
       "reward": 50,
       "spawns": [
@@ -383,82 +359,6 @@ const level1 = {
         {
           "enemy": "alien_normal",
           "at": 9.56
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "name": "Final assault",
-      "healthScale": 1.4,
-      "reward": 55,
-      "spawns": [
-        {
-          "enemy": "alien_normal",
-          "at": 0.4
-        },
-        {
-          "enemy": "alien_normal",
-          "at": 1.04
-        },
-        {
-          "enemy": "alien_tank",
-          "at": 1.5
-        },
-        {
-          "enemy": "alien_fast",
-          "at": 1.68
-        },
-        {
-          "enemy": "alien_normal",
-          "at": 2.32
-        },
-        {
-          "enemy": "alien_normal",
-          "at": 2.96
-        },
-        {
-          "enemy": "alien_normal",
-          "at": 3.6
-        },
-        {
-          "enemy": "alien_fast",
-          "at": 4.24
-        },
-        {
-          "enemy": "alien_normal",
-          "at": 4.88
-        },
-        {
-          "enemy": "alien_normal",
-          "at": 5.52
-        },
-        {
-          "enemy": "alien_normal",
-          "at": 6.16
-        },
-        {
-          "enemy": "alien_fast",
-          "at": 6.8
-        },
-        {
-          "enemy": "alien_normal",
-          "at": 7.44
-        },
-        {
-          "enemy": "alien_normal",
-          "at": 8.08
-        },
-        {
-          "enemy": "alien_normal",
-          "at": 8.72
-        },
-        {
-          "enemy": "alien_fast",
-          "at": 9.36
-        },
-        {
-          "enemy": "alien_normal",
-          "at": 10
         }
       ]
     }

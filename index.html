@@ -3,12 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="./assets/hud/icons/favicon.svg" />
     <title>Aliens Tower Defense · Frontier Campaign</title>
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./src/ui/battle.css" />
     <link rel="stylesheet" href="./src/ui/arsenal.css" />
     <link rel="stylesheet" href="./src/ui/skillTree.css" />
     <link rel="stylesheet" href="./src/ui/hud.css" /><link rel="stylesheet" href="./src/ui/frontier.css" /><link rel="stylesheet" href="./src/ui/command.css" />
+  <link rel="stylesheet" href="./src/ui/deck.css" />
   </head>
   <body>
     <main class="app-shell">
@@ -25,7 +27,7 @@
             <div class="level-grid" id="level-grid"></div>
             <aside class="mission-briefing"><div id="mission-briefing"></div><button class="primary-button" id="menu-play-button" type="button">Deploy squad →</button></aside>
           </div>
-          <div class="menu-foot"><span>Permanent skills. New tactics. One more try.</span><a class="jam-link" href="https://vibejam.com/" target="_blank" rel="noopener noreferrer">Vibe Jam 2026 ↗</a><span>COMMAND UPDATE / 06</span></div>
+          <div class="menu-foot"><span>Permanent skills. New tactics. One more try.</span><a class="jam-link" href="https://vibejam.com/" target="_blank" rel="noopener noreferrer">Vibe Jam 2026 ↗</a><span>FIELD GUIDE / 07</span></div>
         </div>
       </section>
 
@@ -65,37 +67,29 @@
             </div>
           </div>
           <div class="hud-group hud-controls" role="group" aria-label="Game controls">
-            <button class="control-button speed-state" id="speed-toggle-button" type="button" title="Game Speed">1x</button>
-            <button class="control-button icon-control pause-icon" id="play-pause-button" type="button" title="Pause" aria-label="Pause"><svg class="pause-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg><svg class="play-symbol" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 4 12 8-12 8z"/></svg></button>
+            <button class="control-button speed-state" id="speed-toggle-button" type="button" title="Game Speed"><img class="control-sprite" src="./assets/hud/icons/speed-1.svg" alt="1x" /></button>
+            <button class="control-button icon-control pause-icon" id="play-pause-button" type="button" title="Pause" aria-label="Pause"><img class="control-sprite pause-symbol" src="./assets/hud/icons/pause.svg" alt="" /><img class="control-sprite play-symbol" src="./assets/hud/icons/play.svg" alt="" /></button>
             <button class="control-button gear-button" id="gear-button" type="button" title="Menu" aria-label="Menu"><img src="./assets/hud/icons/command-menu.png" width="64" height="64" alt="" /></button>
           </div>
         </header>
 
-        <section class="mission-toolbar">
-          <div><strong id="battle-title"></strong><span id="wave-preview"></span></div>
-          <div class="wave-actions"><label><input id="auto-wave-toggle" type="checkbox"> Auto waves</label><button class="primary-button" id="launch-wave-button" type="button">Launch wave</button></div>
-        </section>
         <section class="arena-wrap">
           <canvas id="game-canvas" width="1280" height="720" aria-label="Battlefield. Select a tower, then select a free tile to build."></canvas>
           <aside class="tower-sidebar" id="tower-sidebar">
-            <div class="tower-sidebar-head">
+            <div id="tower-inspector" class="hidden"><div class="tower-sidebar-head">
               <div>
-                <p>Tower Stats</p>
+                <p>UPGRADE</p>
                 <h2 id="tower-sidebar-title">Weapon</h2>
               </div>
-              <button class="icon-button compact" id="tower-sidebar-close-button" type="button" aria-label="Close tower stats">×</button>
+              <button class="icon-button compact" id="tower-sidebar-close-button" type="button" aria-label="Back to weapons">←</button>
             </div>
             <div class="weapon-stat-list" id="tower-stat-list"></div>
-            <div id="tower-actions" class="tower-actions"></div>
+            <div id="tower-actions" class="tower-actions"></div></div>
+            <div id="deployment-panel"><div class="deck-top"><button id="field-loadout-button" type="button">Change loadout ↗</button></div><div class="weapon-bar" id="weapon-bar"></div><div class="power-section"><div class="power-label"><span>POWER</span><button id="field-power-button" type="button">Change ↗</button></div><div class="ability-bar" id="ability-bar"></div></div></div>
           </aside>
         </section>
 
-        <div class="battle-status"><span id="battle-message" role="status"></span><span class="keyboard-hint">1–6 build · Space wave/pause · Q ability · Esc cancel · F fullscreen</span></div>
-        <footer class="hud hud-bottom">
-          <div class="armory-heading"><span>FIELD ARMORY <i>/ SELECT & DEPLOY</i></span><button id="field-loadout-button" type="button">Change loadout ↗</button><span>1–6 WEAPONS <i>·</i> Q ACTIVE</span></div>
-          <div class="ability-bar" id="ability-bar"></div>
-          <div class="weapon-bar" id="weapon-bar"></div>
-        </footer>
+        <div class="battle-status"><span id="battle-message" role="status"></span></div>
       </section>
 
       <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="pause-modal" aria-label="Command menu">
@@ -105,7 +99,7 @@
           <button class="secondary-button" id="restart-button" type="button">Restart</button>
           <button class="secondary-button" id="change-level-button" type="button">Mission select</button>
           <button class="secondary-button" id="sound-button" type="button">Sound on</button>
-          <p class="controls-help">1–6: choose tower · Space: launch / pause<br>Q: ability · Escape: cancel / menu · F: fullscreen</p>
+          <p class="controls-help">1–6: choose tower · Space: pause<br>Q: ability · Escape: cancel / menu · F: fullscreen</p>
         </div>
       </section>
 
@@ -145,23 +139,23 @@
         </div>
       </section>
 
-      <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="arsenal-modal" aria-labelledby="arsenal-title"><div class="arsenal-card"><div class="arsenal-head"><div><p>FRONTIER / CATEGORY LOADOUT</p><h2 id="arsenal-title">Choose your squad.</h2></div><button class="icon-button" id="arsenal-close-button" type="button" aria-label="Close arsenal">×</button></div><p class="arsenal-intro">Start with two weapon types. Clear different missions to discover more. Start with three category slots. Find more slots in the command graph and mission caches, up to six total. Change your loadout here, then deploy — or restart the current mission to apply it.</p><div class="arsenal-goal" id="arsenal-goal"></div><div id="arsenal-content"></div><div id="arsenal-restart-panel" class="arsenal-restart-panel hidden"><p>Apply changes by restarting this mission. Deployed towers and wave progress will reset; permanent rewards stay saved.</p><button id="arsenal-restart-button" class="primary-button" type="button">Apply loadout & restart mission</button></div></div></section>
+      <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="arsenal-modal" aria-labelledby="arsenal-title"><div class="arsenal-card"><div class="arsenal-head"><div><p>FRONTIER / CATEGORY LOADOUT</p><h2 id="arsenal-title">Choose your squad.</h2></div><button class="icon-button" id="arsenal-close-button" type="button" aria-label="Close arsenal">×</button></div><p class="arsenal-intro">Choose your weapons and one power. New slots fill automatically.</p><div class="arsenal-goal" id="arsenal-goal"></div><div id="arsenal-content"></div><section id="power-picker" aria-label="Choose a power"></section><div id="arsenal-restart-panel" class="arsenal-restart-panel hidden"><p>Apply changes by restarting this mission. Deployed towers and wave progress will reset; permanent rewards stay saved.</p><button id="arsenal-restart-button" class="primary-button" type="button">Apply loadout & restart mission</button></div></div></section>
 
       <section class="modal-backdrop hidden" role="dialog" aria-modal="true" id="skill-tree-modal" aria-label="Commander skills">
         <div class="skill-tree-card">
           <div class="skill-tree-head">
             <div>
-              <p>FRONTIER / COMMAND DOCTRINE</p>
-              <h2>Command upgrades.</h2>
+              <p>COMMANDER</p>
+              <h2>Make your next move.</h2>
             </div>
             <div class="doctrine-head-actions"><button class="secondary-button" id="reset-skills-button" type="button" title="Refund commander nodes for free. Combat records stay saved.">Refund nodes</button><button class="icon-button" id="skill-tree-close-button" type="button" aria-label="Close skill tree">×</button></div>
           </div>
           <div class="skill-tree-summary">
             <div><span>Commander LV</span><strong id="skill-tree-level">1</strong></div>
             <div><span>Available SP</span><strong id="skill-tree-sp">0</strong></div>
-            <div><span>Node SP</span><strong id="skill-tree-spent">0</strong></div>
+            <div><span>Invested SP</span><strong id="skill-tree-spent">0</strong></div>
           </div>
-          <p class="skill-explainer">Every level earns 10 SP. Follow a connection to unlock the next node. Select any node to see its effect and requirements.</p>
+          <p class="skill-explainer">Choose a talent. Each rank costs SP. Connections show what it unlocks next.</p>
           <div class="skill-tree-nodes" id="skill-tree-nodes"></div>
 
         </div>

@@ -1,3 +1,4 @@
+import {autoStart} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { chromium } from 'playwright';
@@ -11,10 +12,9 @@ const errors = [];
 const read = page => page.evaluate(() => JSON.parse(window.render_game_to_text()));
 const advance = (page, ms) => page.evaluate(ms => window.advanceTime(ms), ms);
 
-async function pageFor(viewport, fixture=false) {
+async function pageFor(viewport, fixture=false, profile={schemaVersion:6,level:5,xp:45,settings:{muted:true}}) {
   const context = await browser.newContext({viewport});
-  await context.addInitScript(() => localStorage.setItem('aliens-tower-defense-profile',
-    JSON.stringify({schemaVersion:4, level:5, xp:45, settings:{muted:true}})));
+  await context.addInitScript(p => localStorage.setItem('aliens-tower-defense-profile',JSON.stringify(p)),profile);
   if (fixture) await context.route('**/src/data/levels/index.js', route => route.fulfill({
     contentType:'application/javascript',
     body:`import l from './level1.js';export const levels=[{...l,lives:3,startGold:9876,track:l.track.slice(0,3),waves:[{name:'Integrity test',healthScale:1,reward:0,spawns:[{enemy:'alien_normal',at:0},{enemy:'alien_normal',at:1}]},{name:'Reserve',healthScale:1,reward:0,spawns:[{enemy:'alien_normal',at:0}]}]}];`,
@@ -65,14 +65,14 @@ try {
       return {loaded:img.complete&&img.naturalWidth===64&&img.naturalHeight===64,
         alpha:data.some((v,i)=>i%4===3&&v===0), opaque:data.some((v,i)=>i%4===3&&v===255)};
     }));
-    assert.equal(sprites.length,7);
+    assert.equal(sprites.length,10);
     assert.ok(sprites.every(s=>s.loaded&&s.alpha&&s.opaque), 'Native-alpha sprites must load');
     await page.getByRole('button',{name:/Game speed 1x/}).click();
     assert.equal((await read(page)).gameSpeed,2);
     await page.getByRole('button',{name:'Pause',exact:true}).click();
     assert.equal((await read(page)).paused,true);
     assert.deepEqual(await page.locator('#play-pause-button').evaluate(button => ({
-      visibleSymbols:[...button.querySelectorAll('svg')].filter(svg=>getComputedStyle(svg).display!=='none').length,
+      visibleSymbols:[...button.querySelectorAll('img')].filter(svg=>getComputedStyle(svg).display!=='none').length,
       legacySymbol:getComputedStyle(button,'::before').content,
     })), {visibleSymbols:1,legacySymbol:'none'}, 'Resume displays a single play symbol');
     await page.getByRole('button',{name:'Play',exact:true}).click();
@@ -86,10 +86,18 @@ try {
     await page.screenshot({path:`${out}/hud-${viewport.width}x${viewport.height}.png`,fullPage:true});
     if(viewport.width===1024) {
       const ability=await page.locator('.ability-bar').boundingBox(),weapons=await page.locator('.weapon-bar').boundingBox();
-      assert.ok(weapons.y>=ability.y+ability.height || weapons.x>=ability.x+ability.width,'Armory cannot overlap special');
+      assert.ok(weapons.y+weapons.height<=ability.y || ability.y+ability.height<=weapons.y || weapons.x>=ability.x+ability.width,'Armory cannot overlap special');
       assert.ok(weapons.y+weapons.height<=viewport.height,'Notebook armory stays in view');
     }
     await page.context().close();
+  }
+  for(const viewport of [{width:1024,height:768},{width:1280,height:720},{width:1920,height:1080}]){
+    const page=await pageFor(viewport,false,{schemaVersion:6,level:12,skills:{loadoutSlots:1},slotRewards:{level_4:true,level_10:true},missions:Object.fromEntries(Array.from({length:10},(_,i)=>['level_'+(i+1),{clears:1}])),arsenal:{loadout:['flamethrower','rocket_launcher','machine_pistol','assault_rifle','magnum','laser']},equippedActiveKey:'napalm',settings:{muted:true}});
+    const deck=await page.locator('#tower-sidebar').boundingBox(),power=await page.locator('.ability-full-art').boundingBox();
+    assert.equal(await page.locator('.weapon-card').count(),6);
+    assert.ok(power.y>=deck.y&&power.y+power.height<=deck.y+deck.height,'full power image visible beside six categories, without scrolling');
+    assert.equal(await page.locator('.weapon-nickname').evaluateAll(es=>es.some(e=>e.scrollWidth>e.clientWidth+1)),false,'weapon names fit');
+    await page.screenshot({path:`${out}/six-slots-${viewport.width}.png`,fullPage:true});await page.context().close();
   }
   const page=await pageFor({width:1280,height:720});
   const state=await read(page),pad=state.pads[0],rect=await page.locator('#game-canvas').boundingBox();
@@ -98,7 +106,7 @@ try {
     rect.y+(state.board.y+(pad.row+.5)*state.board.tile)*rect.height/720);
   await verifyCounters(page);
   assert.equal((await read(page)).gold,state.gold-70);
-  await page.click('#launch-wave-button');
+  await autoStart(page);
   assert.equal(await page.locator('#hud-wave-track .current').count(),1);
   const speed=await page.locator('#speed-toggle-button').elementHandle();
   const box=await speed.boundingBox();
@@ -115,7 +123,7 @@ try {
 
   const damaged=await pageFor({width:320,height:844},true);
   await verifyCounters(damaged);
-  await damaged.click('#launch-wave-button');
+  await autoStart(damaged);
   for(let i=0;i<20&&(await read(damaged)).lives>1;i++) await advance(damaged,1000);
   assert.equal((await read(damaged)).lives,1);
   assert.equal(await damaged.locator('.lives-chip.critical').count(),1);

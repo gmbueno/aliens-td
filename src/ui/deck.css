@@ -1,0 +1,145 @@
+/* A single equipment deck beside a larger battlefield. */
+#game-screen{grid-template-columns:minmax(0,1fr);grid-template-rows:var(--hud-height) minmax(0,1fr) 20px;gap:12px;padding:14px;height:100dvh;min-height:0;position:fixed}
+#game-screen .arena-wrap{grid-column:1;grid-row:2;display:grid;grid-template-columns:minmax(0,1fr) 310px;align-items:center;gap:16px;width:100%;height:100%;max-width:1680px;overflow:hidden}
+#game-screen #game-canvas{width:100%;height:auto;max-height:100%;object-fit:contain;aspect-ratio:16/9;align-self:center;border:0;background:none}
+#game-screen .tower-sidebar{display:block;position:static;inset:auto;width:100%;min-width:0;height:100%;max-height:100%;align-self:stretch;overflow:auto;padding:16px;border:1px solid #4a5f64;background:linear-gradient(160deg,#263a40,#111e26 65%);border-radius:9px;scrollbar-width:thin;scrollbar-color:#667c7e #14242b;box-shadow:inset 0 1px #b0c5ab20}
+#game-screen .battle-status{grid-row:3;grid-column:1;width:100%;max-width:1680px;margin:0 auto;min-height:0;font-size:11px;color:#d1c6a9;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#game-screen .tower-sidebar-head{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:0 0 16px;margin:0 0 16px}
+#game-screen .tower-sidebar-head p{font:9px monospace;color:#abbdba;letter-spacing:2px;margin:0 0 6px}
+#game-screen .tower-sidebar-head h2{font:700 24px 'Trebuchet MS',sans-serif;margin:0;color:#f0ead4}
+#game-screen .tower-sidebar-head button{flex:0 0 38px;min-height:38px;background:#253d46;border:1px solid #66858b;color:#e6dfc3;border-radius:5px;font-size:22px}
+#game-screen .tower-sidebar .weapon-stat-list{grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:18px}
+#game-screen .tower-sidebar .weapon-stat-row{display:grid;gap:5px;padding:6px 0}
+#game-screen .tower-sidebar .weapon-stat-row strong{font-size:15px}
+#game-screen .tower-sidebar .tower-role{display:none}
+#game-screen .target-buttons{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+#game-screen .target-buttons button{min-height:42px}
+#game-screen .target-description{display:none}
+#game-screen .tower-actions{gap:10px}
+#game-screen .upgrade-button{padding:12px;gap:10px;min-height:92px}
+#game-screen .upgrade-topline strong{font-size:13px}
+#game-screen .upgrade-preview{font:10px/1.5 monospace}
+#game-screen .panel-section-label{font-size:9px;margin-top:7px}
+#game-screen .tower-actions [data-refund-note]{display:none}
+#deployment-panel{min-height:100%;display:flex;flex-direction:column;gap:18px}
+.deck-top{display:flex;justify-content:flex-end;padding-bottom:14px;border-bottom:1px solid #81959430}
+.deck-top button,.power-label button{background:none;border:1px solid #677d79;color:#e1dfc8;border-radius:5px;padding:8px 11px;font:12px 'Trebuchet MS',sans-serif;cursor:pointer;min-height:36px}
+.deck-top button:hover,.power-label button:hover{background:#435a4a;color:#fff1c6}
+#deployment-panel .weapon-bar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-column:auto;grid-row:auto;gap:10px;min-height:0;width:100%;height:auto;overflow:visible}
+#deployment-panel .weapon-card{height:142px;border-radius:6px}
+#deployment-panel .weapon-select{display:grid;grid-template-rows:24px minmax(0,1fr) 25px;gap:2px;padding:9px 10px 10px;height:100%;min-height:0}
+#deployment-panel .weapon-topline{padding:0;gap:4px;position:static;justify-content:space-between}
+#deployment-panel .weapon-price{font-size:14px;margin-right:18px}
+#deployment-panel .weapon-topline kbd{font-size:9px;padding:1px 4px}
+#deployment-panel .weapon-state{position:absolute;right:8px;bottom:10px;font-size:14px;color:#c9e7ae}
+#deployment-panel .weapon-art{height:70px;max-height:100%;width:100%;object-fit:contain}
+#deployment-panel .weapon-nickname{font-size:12px;line-height:1.2;padding-right:6px}
+#deployment-panel .weapon-info-button{width:23px;height:28px;min-height:0;top:8px;right:3px}
+#deployment-panel .weapon-art-stage{height:100%;min-height:0}
+#deployment-panel .empty-loadout-card{height:142px;min-height:0;font-size:10px;padding:8px}
+#deployment-panel .empty-loadout-card small{display:none}
+#deployment-panel .power-section{margin-top:auto;padding-top:16px;border-top:1px solid #81959430}
+.power-label{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.power-label>span{font:10px monospace;letter-spacing:2px;color:#cec09d}
+.power-label button{font-size:10px;padding:5px 9px;min-height:30px}
+#deployment-panel .ability-bar{display:block;grid-column:auto;grid-row:auto;width:100%;margin:0}
+#deployment-panel .ability-card.ability-illustrated{display:block;position:relative;height:170px;width:100%;padding:0;border:0;background:none}
+#deployment-panel .ability-full-art{width:100%;height:100%;max-height:none;object-fit:contain;display:block}
+#deployment-panel .ability-caption{display:none}
+#deployment-panel .ability-topline{position:absolute;top:9px;left:calc(50% - 47px);right:auto}
+#deployment-panel .ability-illustrated>small{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;width:auto;min-width:64px}
+.hud-top .control-button:has(.control-sprite){border:0;background:none;box-shadow:none;padding:0}
+.hud-top .control-sprite{width:46px;height:46px;object-fit:contain}
+.hud-top .control-button .play-symbol{display:none}
+.hud-top .control-button.play-icon .play-symbol{display:block}
+.hud-top .control-button.play-icon .pause-symbol{display:none}
+@keyframes learn-pulse{0%,100%{box-shadow:inset 0 0 0 1px #ffe29c55,0 0 0 0 #ffe29c00}50%{box-shadow:inset 0 0 0 2px #ffe09f,0 0 16px 1px #ffd27b55}}
+.learn-pulse{animation:learn-pulse 2.4s ease-in-out infinite}
+.hud-top .player-chip.learn-pulse{animation:learn-pulse 2.4s ease-in-out infinite;background:linear-gradient(130deg,#556047,#182822)}
+#deployment-panel .ability-card.learn-pulse{border-radius:9px;animation:learn-pulse 2.4s ease-in-out infinite}
+.power-picker-head{display:flex;align-items:baseline;gap:15px;margin-top:24px}.power-picker-head h3{font:700 24px 'Trebuchet MS',sans-serif;color:#ecdfb9;margin:8px 0}.power-picker-head span{font:10px monospace;color:#adc6b9}
+.power-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}
+.power-options button{display:grid;justify-items:center;gap:8px;padding:16px;border:1px solid #48656c;background:#192e38;border-radius:7px;color:#d4e2dc;cursor:pointer}
+.power-options button.selected{border-color:#e1c385;background:#34463e;box-shadow:inset 0 0 0 1px #e1c385}
+.power-options img{width:100%;height:150px;object-fit:contain}.power-options strong{font-size:15px}.power-options span{font-size:11px;text-align:center;color:#b4c7cb}.power-options small{font:10px monospace;color:#ebce91}
+/* Readable paths: no panning, no crossing wires, one checkout. */
+#skill-tree-modal .skill-tree-card{width:min(1140px,96vw);max-height:94dvh;padding:26px;background:#14242c;border-color:#60736e;border-radius:12px;overflow:auto}
+#skill-tree-modal .skill-tree-head{position:static;background:none;padding:0 0 20px;margin:0;align-items:center}
+#skill-tree-modal .skill-tree-head h2{font:700 32px/1.1 'Trebuchet MS',sans-serif;letter-spacing:-.8px;color:#f3ecd8}
+#skill-tree-modal .skill-tree-head p{color:#bcb08c;font-size:9px;letter-spacing:2px;margin:0 0 9px}
+#skill-tree-modal .skill-tree-summary{display:flex;flex-wrap:wrap;gap:26px;margin:18px 0 14px}
+#skill-tree-modal .skill-tree-summary>div{gap:9px}
+#skill-tree-modal .skill-tree-summary>div:nth-child(2){margin-left:auto;order:3;padding:10px 16px;background:#e9d9af;color:#24383a;border-radius:6px}
+#skill-tree-modal .skill-tree-summary>div:nth-child(2) span,#skill-tree-modal .skill-tree-summary>div:nth-child(2) strong{color:#24383a}
+#skill-tree-modal .skill-tree-summary strong{font-size:22px;color:#dbe6dc}
+#skill-tree-modal .skill-explainer{display:block;margin:0 0 20px;font-size:12px;color:#b5c6c7;line-height:1.5}
+#skill-tree-nodes{display:grid;grid-template-columns:minmax(0,1fr) 288px;gap:20px;align-items:stretch}
+.talent-workspace{min-width:0;background:#0e1c24;border:1px solid #405a62;border-radius:8px;overflow:hidden}
+#skill-tree-modal .doctrine-branches{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:0;border-bottom:1px solid #405a62;background:#20323b}
+#skill-tree-modal .doctrine-branches button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:70px;padding:10px 4px;border:0;border-bottom:3px solid transparent;color:#aabfbe;background:none;font:12px 'Trebuchet MS',sans-serif;opacity:1;text-align:center}
+#skill-tree-modal .doctrine-branches button.selected{background:#34453f;border-bottom-color:#e1c385;color:#f3e5bb}
+#skill-tree-modal .doctrine-branches button svg{width:21px;height:21px}
+.talent-section{padding:20px 16px 14px}.talent-section-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 20px}.talent-section-title h3{margin:0;font:700 22px 'Trebuchet MS',sans-serif;color:#e5eadb}.talent-section-title span{font:10px monospace;color:#a7b7b6}
+#skill-tree-modal .command-board{height:auto;overflow:visible;min-width:0}
+.talent-graph{position:relative;display:grid;grid-template-columns:repeat(var(--columns),minmax(0,1fr));grid-template-rows:repeat(var(--rows),128px);gap:32px 16px;isolation:isolate;zoom:1}
+.talent-connections{position:absolute;inset:0;width:100%;height:100%;z-index:-1;overflow:visible}.talent-connections path{fill:none;stroke:#435962;stroke-width:2;stroke-dasharray:5 5;vector-effect:non-scaling-stroke}.talent-connections path.open{stroke:#b0b98a;stroke-dasharray:none}
+#skill-tree-modal .talent-node{position:relative;left:auto;top:auto;transform:none;width:100%;height:128px;min-height:0;display:grid;grid-template-columns:28px minmax(0,1fr);grid-template-rows:24px 30px 23px 5px;align-content:center;align-items:center;justify-items:start;gap:6px 7px;padding:11px;border:1px solid #53676c;border-radius:7px;background:#22343d;color:#bbc9c5;box-shadow:0 3px 6px #0003;filter:none;opacity:1;text-align:left}
+.talent-symbol{width:26px;height:26px;grid-row:1;grid-column:1;color:#a2b6ac}.talent-symbol svg{width:100%;height:100%}
+#skill-tree-modal .talent-node strong{grid-row:2;grid-column:1/-1;font:700 12px/1.2 'Trebuchet MS',sans-serif;max-width:100%;color:inherit;letter-spacing:0}
+.talent-rank{grid-row:1;grid-column:2;justify-self:end;font:bold 15px monospace;white-space:nowrap}.talent-rank small{font:10px monospace;opacity:.7}
+.talent-cost{grid-row:3;grid-column:1/-1;width:100%;font:10px monospace;color:#a3b6b3;display:flex;align-items:center;gap:4px}.talent-cost b{font-size:13px}.talent-cost i{font:16px monospace;margin-left:auto;font-style:normal}
+.talent-progress{grid-row:4;grid-column:1/-1;display:flex;gap:3px;width:100%}.talent-progress i{height:3px;background:#53676c;flex:1;border-radius:2px}.talent-progress i.on{background:#b4dda4}
+#skill-tree-modal .talent-node.available{border-color:#c5ae76;background:linear-gradient(135deg,#435249,#2b3d39);color:#fff1d0;box-shadow:inset 0 1px #ffe6a920,0 3px 6px #0003}
+#skill-tree-modal .talent-node.available .talent-cost{color:#ffda91}#skill-tree-modal .talent-node.available .talent-symbol{color:#e3ce9e}
+#skill-tree-modal .talent-node.locked{opacity:.55;background:#182932;border-color:#4b5b61}
+#skill-tree-modal .talent-node.unfunded{opacity:.68;filter:saturate(.35)}
+#skill-tree-modal .talent-node.mastered{background:#24443b;border-color:#7ab695;color:#ccecd7}.talent-node.mastered .talent-cost{color:#bde4c5}
+#skill-tree-modal .talent-node.selected{outline:2px solid #f9e4b3;outline-offset:3px}
+#skill-tree-modal .talent-node:hover{filter:brightness(1.12)}
+.talent-legend{display:flex;gap:18px;flex-wrap:wrap;margin:22px 0 0;font:9px monospace;color:#adc0be}.talent-legend span{display:flex;align-items:center;gap:6px}.talent-legend i{width:7px;height:7px;border:1px solid #647b80;background:#22343d;border-radius:2px}.talent-legend i.ready{background:#c5ae76;border-color:#c5ae76}.talent-legend i.complete{background:#7ab695;border-color:#7ab695}
+#skill-tree-modal .node-inspector{padding:22px;border:1px solid #6b7b70;border-radius:8px;background:linear-gradient(135deg,#2e413e,#203138);min-height:0}
+#skill-tree-modal .inspector-kicker{display:flex;justify-content:space-between;color:#c5c7a9;font:10px monospace;letter-spacing:1px}
+#skill-tree-modal .inspector-icon{width:35px;height:35px;margin:22px 0 16px;color:#e7d1a0}
+#skill-tree-modal .node-inspector h3{font-size:27px;margin:0 0 10px;line-height:1.1}
+#skill-tree-modal .inspector-state{font:10px monospace;color:#c8d5bc}
+#skill-tree-modal .node-inspector>p{font-size:12px;line-height:1.65;margin:14px 0;color:#bdcdca}
+#skill-tree-modal .skill-preview{margin:0;padding:16px 0;border-color:#afc0a330;gap:8px}
+#skill-tree-modal .skill-preview strong{font:700 16px/1.5 'Trebuchet MS',sans-serif;color:#ffe2a6}
+#skill-tree-modal .skill-preview small{font:9px monospace;letter-spacing:1px}
+#skill-tree-modal .prerequisite-link{margin:12px 0 0;border:0;padding:8px 0;background:none;color:#bccab8;font-size:10px}
+.talent-checkout{margin-top:auto;padding-top:18px}.checkout-total{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}.checkout-total span{font-size:11px;color:#c8d4ca}.checkout-total strong{font:700 30px 'Trebuchet MS',sans-serif;color:#f7e3b0}.checkout-total small{font:11px monospace}
+#skill-tree-modal .skill-purchase{width:100%;min-height:46px;background:#ebd7a3;border:1px solid #f5e6bd;border-radius:5px;color:#213630;font-size:13px}
+#skill-tree-modal .skill-purchase:disabled{opacity:.6;filter:saturate(.15);background:#3a4d4e;color:#c9d3cc;border-color:#6a7b72}
+.checkout-balance{display:block;text-align:center;font:10px monospace;color:#bdcab8;margin:10px 0 0}
+#skill-tree-modal .skill-equip{font-size:11px;background:#203b46;border-color:#658995;color:#d7e4d8}
+#skill-tree-modal .node-inspector .skill-application{margin:12px 0 0;padding:0;font-size:10px;color:#adbfbc}
+@media(max-width:1100px){#game-screen .arena-wrap{grid-template-columns:minmax(0,1fr) 260px;gap:10px}#game-screen .tower-sidebar{padding:12px}#deployment-panel .weapon-card{height:126px}#deployment-panel .weapon-art{height:58px}#deployment-panel .ability-card.ability-illustrated{height:150px}}
+@media(max-width:760px) and (min-height:581px),(max-width:720px) and (max-height:580px){
+ body{overflow:auto}#game-screen{position:static;height:auto;min-height:100dvh;padding:8px;grid-template-rows:var(--hud-height) auto 20px;gap:10px}#game-screen .arena-wrap{display:flex;flex-direction:column;gap:10px;height:auto;overflow:visible}#game-screen #game-canvas{width:100%;height:auto}#game-screen .tower-sidebar{position:static;height:auto;max-height:none;width:100%;padding:12px}#deployment-panel{gap:12px;min-height:0}#deployment-panel .weapon-bar{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}#deployment-panel .weapon-card{height:126px}#deployment-panel .weapon-select{padding:7px;grid-template-rows:20px minmax(0,1fr) 27px}#deployment-panel .weapon-nickname{font-size:11px}#deployment-panel .weapon-art{height:58px}#deployment-panel .weapon-price{font-size:12px}#deployment-panel .weapon-info-button{top:5px;right:1px}#deployment-panel .power-section{display:grid;grid-template-columns:1fr 120px;align-items:center;margin:0;padding-top:12px}#deployment-panel .power-label{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:0}#deployment-panel .ability-card.ability-illustrated{height:130px}#deployment-panel .ability-topline{left:12px}.deck-top{padding-bottom:10px}#game-screen .battle-status{white-space:normal;height:30px}#game-screen .tower-actions{max-width:none}#game-screen .upgrade-button{min-height:84px}
+}
+@media(max-height:580px) and (min-width:721px){#game-screen{padding:6px;gap:6px;grid-template-rows:var(--hud-height) minmax(0,1fr) 14px}#game-screen .arena-wrap{grid-template-columns:minmax(0,1fr) 230px;gap:8px}#game-screen .tower-sidebar{padding:9px}#deployment-panel{gap:10px}#deployment-panel .weapon-bar{gap:7px}#deployment-panel .weapon-card{height:110px}#deployment-panel .weapon-select{padding:5px 8px;grid-template-rows:18px minmax(0,1fr) 21px}#deployment-panel .weapon-art{height:50px}#deployment-panel .weapon-price{font-size:12px}#deployment-panel .weapon-nickname{font-size:10px}.deck-top{padding:0 0 8px}.deck-top button{min-height:28px;font-size:10px;padding:5px 8px}#deployment-panel .power-section{padding-top:8px}#deployment-panel .ability-card.ability-illustrated{height:125px}.hud-top .control-sprite{width:36px;height:36px}#game-screen .battle-status{font-size:9px}}
+@media(max-width:900px){#skill-tree-nodes{grid-template-columns:minmax(0,1fr) 250px;gap:12px}#skill-tree-modal .skill-tree-card{padding:18px}.talent-section{padding:16px 12px}.talent-graph{gap:32px 10px}#skill-tree-modal .talent-node{padding:9px;gap:6px 4px}#skill-tree-modal .node-inspector{padding:18px}}
+@media(max-width:700px){#skill-tree-nodes{grid-template-columns:1fr;gap:14px}#skill-tree-modal .skill-tree-card{padding:14px;max-height:96dvh}#skill-tree-modal .skill-tree-head{gap:10px;flex-wrap:nowrap;padding-bottom:14px}#skill-tree-modal .skill-tree-head h2{font-size:23px}.doctrine-head-actions{gap:6px}#skill-tree-modal #reset-skills-button{font-size:9px;max-width:75px;padding:6px}#skill-tree-modal .skill-tree-summary{gap:10px;margin:14px 0}#skill-tree-modal .skill-tree-summary span{font-size:8px}#skill-tree-modal .skill-tree-summary strong{font-size:18px}#skill-tree-modal .skill-tree-summary>div:nth-child(2){padding:8px}#skill-tree-modal .skill-explainer{font-size:11px;margin-bottom:14px}#skill-tree-modal .doctrine-branches button{font-size:10px;gap:6px;min-height:60px}.talent-section-title h3{font-size:20px}.talent-section-title span{font-size:8px}.talent-section{padding:16px 10px}.talent-graph{column-gap:10px}#skill-tree-modal .talent-node{padding:8px;grid-template-columns:22px minmax(0,1fr)}#skill-tree-modal .talent-node strong{font-size:11px}.talent-symbol{width:22px;height:22px}.talent-rank{font-size:12px}.talent-rank small{font-size:8px}#skill-tree-modal .inspector-icon{display:none}#skill-tree-modal .node-inspector h3{margin-top:16px;font-size:25px}.talent-legend{gap:12px;font-size:8px}#skill-tree-modal .node-inspector{padding:18px}.power-options{gap:8px}.power-options button{padding:8px}.power-options img{height:115px}.power-options strong{font-size:11px}.power-options span{font-size:9px}.power-picker-head{display:block}.power-picker-head h3{font-size:22px}}
+@media(prefers-reduced-motion:reduce){.learn-pulse,.hud-top .player-chip.learn-pulse,#deployment-panel .ability-card.learn-pulse{animation:none;box-shadow:inset 0 0 0 2px #ffe09f}}
+/* Review pass: keep the canvas hit area at its actual 16:9 ratio, and remove empty deck space. */
+#game-screen #game-canvas{width:min(100%,calc((100dvh - var(--hud-height) - 60px) * 16 / 9));height:auto;max-height:none;justify-self:center}
+#game-screen .tower-sidebar{height:auto;align-self:center}
+#deployment-panel{min-height:0}#deployment-panel .power-section{margin-top:0}
+#skill-tree-modal .talent-node strong{font-size:14px}#skill-tree-modal .talent-cost{font-size:12px}#skill-tree-modal .talent-cost b{font-size:15px}
+@media(max-width:760px) and (min-height:581px),(max-width:720px) and (max-height:580px){#game-screen #game-canvas{width:100%}}
+@media(max-width:700px){#skill-tree-modal .talent-node strong{font-size:11px}#skill-tree-modal .talent-cost{font-size:10px}#skill-tree-modal .talent-cost b{font-size:12px}}
+/* Keep the full power card visible alongside six weapons on notebook screens. */
+#deployment-panel .weapon-bar{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#deployment-panel .weapon-card{height:132px}
+#deployment-panel .weapon-select{padding:8px 7px;grid-template-rows:22px minmax(0,1fr) 28px}
+#deployment-panel .weapon-nickname{font-size:11px;line-height:1.15}
+#deployment-panel .weapon-art{height:62px}
+#deployment-panel .weapon-price{font-size:12px;margin-right:11px}
+#deployment-panel .weapon-info-button{width:18px;right:0;top:7px;font-size:12px}
+#deployment-panel .weapon-topline kbd{font-size:8px;padding:1px 3px}
+#deployment-panel .weapon-state{right:5px;bottom:5px;font-size:10px}
+@media(min-width:761px) and (max-height:800px){#deployment-panel .weapon-card{height:118px}#deployment-panel .ability-card.ability-illustrated{height:150px}#deployment-panel{gap:12px}.deck-top{padding-bottom:10px}#game-screen .tower-sidebar{padding:12px}#deployment-panel .weapon-art{height:53px}#deployment-panel .power-section{padding-top:10px}}
+@media(max-width:1100px) and (min-width:761px){#deployment-panel .weapon-bar{gap:6px}#deployment-panel .weapon-select{padding:7px 5px}#deployment-panel .weapon-topline kbd{display:none}#deployment-panel .weapon-nickname{font-size:10px}#deployment-panel .weapon-price{font-size:12px}}
+@media(max-height:580px) and (min-width:721px){#deployment-panel .weapon-bar{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}#deployment-panel .weapon-card{height:100px}#deployment-panel .weapon-select{grid-template-rows:18px minmax(0,1fr) 26px;padding:5px}#deployment-panel .weapon-nickname{font-size:9px}#deployment-panel .weapon-art{height:40px}#deployment-panel .weapon-price{font-size:10px}#deployment-panel .weapon-topline kbd{display:none}#deployment-panel .ability-card.ability-illustrated{height:115px}}
+@media(max-width:700px){#skill-tree-modal .skill-tree-head{position:sticky;top:-14px;z-index:5;background:#14242c;padding-top:8px}.node-inspector{scroll-margin-top:110px}}
+#deployment-panel .weapon-nickname{white-space:normal;overflow:visible;text-overflow:clip;max-height:none}

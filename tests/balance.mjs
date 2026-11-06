@@ -26,7 +26,7 @@ export function invest(state) {
       const effective = applySkillBonuses(weapon, state.profile);
       for(let row=0;row<state.level.rows;row++) for(let col=0;col<state.level.cols;col++) {
         const key=`${row}:${col}`;
-        if(state.tileSets.path.has(key)||state.tileSets.blockers.has(key)||state.towers.some(t=>t.row===row&&t.col===col)||state.tileSets.water.has(key)||(!state.cache.opened&&state.cache.row===row&&state.cache.col===col)||(state.drone?.base.row===row&&state.drone.base.col===col))continue;
+        if(state.tileSets.path.has(key)||state.tileSets.blockers.has(key)||state.towers.some(t=>t.row===row&&t.col===col)||state.tileSets.water.has(key)||(state.drone?.base.row===row&&state.drone.base.col===col))continue;
         const point={x:state.board.x+(col+.5)*state.board.tile,y:state.board.y+(row+.5)*state.board.tile};
         const pad=state.level.pads.find(p=>p.row===row&&p.col===col);
         const range=effective.range*(pad?.type==='range'?1.18:1);
@@ -56,7 +56,7 @@ export function invest(state) {
 export function simulate(level, ranks, investDuringCombat = false) {
   const profile=makeProfile(ranks);
   profile.missions=Object.fromEntries(levels.slice(0,levels.indexOf(level)).map(l=>[l.id,{clears:1,stars:3,bestLives:l.lives}]));
-  profile.caches=Object.fromEntries(levels.slice(0,levels.indexOf(level)).filter(l=>['level_4','level_10'].includes(l.id)).map(l=>[l.id,true]));
+  profile.slotRewards=Object.fromEntries(levels.slice(0,levels.indexOf(level)).filter(l=>['level_4','level_10'].includes(l.id)).map(l=>[l.id,true]));
   if(ranks)profile.arsenal.loadout=['assault_rifle','machine_pistol','shotgun','magnum','sniper','rocket_launcher','laser','flamethrower','handgun'].filter(key=>classUnlocked(profile,key));
   const state=createInitialState(level,profile,{width:1280,height:720});
   let frames=0;

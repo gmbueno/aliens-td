@@ -1,19 +1,19 @@
-// 1-2 · Cargo Crossing. Authored route, terrain and waves.
+// 1-2 · Introductory mission. Authored route and waves.
 const level2 = {
   "id": "level_2",
-  "name": "Cargo Crossing",
-  "description": "Cargo occupies the best corners. Clear a crate to open a firing position.",
+  "name": "Wide Crossing",
+  "description": "Cover both bends. Skitters move quickly; Machine Pistols slow them down.",
   "sector": 1,
   "stage": 2,
   "biome": "outpost",
-  "rule": "Salvage",
+  "rule": "Crossfire",
   "recommendedLevel": 2,
   "cols": 16,
   "rows": 9,
   "tileSize": 48,
-  "startGold": 235,
+  "startGold": 350,
   "lives": 18,
-  "threat": 1.12,
+  "threat": 0.83,
   "clearXp": 45,
   "firstClearXp": 55,
   "blockers": [
@@ -40,54 +40,6 @@ const level2 = {
       "col": 15,
       "kind": "rock",
       "cost": 0
-    },
-    {
-      "row": 1,
-      "col": 5,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 3,
-      "col": 7,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 5,
-      "col": 5,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 7,
-      "col": 7,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 5,
-      "col": 10,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 7,
-      "col": 12,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 2,
-      "col": 10,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 4,
-      "col": 12,
-      "kind": "cargo",
-      "cost": 50
     }
   ],
   "pads": [
@@ -437,7 +389,7 @@ const level2 = {
           "at": 1.04
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_normal",
           "at": 1.5
         },
         {

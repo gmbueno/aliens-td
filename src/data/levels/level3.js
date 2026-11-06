@@ -1,8 +1,8 @@
-// 1-3 · Switchback. Authored route, terrain and waves.
+// 1-3 · Introductory mission. Authored route and waves.
 const level3 = {
   "id": "level_3",
   "name": "Switchback",
-  "description": "Fast skitters arrive in packs. Shotguns punish clusters. Amber overdrive tiles make aliens 35% faster. Cover their exits.",
+  "description": "Meet the armored Bulwark. Upgrade your weapons to break through its defenses.",
   "sector": 1,
   "stage": 3,
   "biome": "outpost",
@@ -11,9 +11,9 @@ const level3 = {
   "cols": 16,
   "rows": 9,
   "tileSize": 48,
-  "startGold": 235,
+  "startGold": 350,
   "lives": 18,
-  "threat": 1.24,
+  "threat": 1.0,
   "clearXp": 45,
   "firstClearXp": 60,
   "blockers": [
@@ -40,78 +40,6 @@ const level3 = {
       "col": 15,
       "kind": "rock",
       "cost": 0
-    },
-    {
-      "row": 5,
-      "col": 2,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 7,
-      "col": 4,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 1,
-      "col": 2,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 3,
-      "col": 4,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 1,
-      "col": 6,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 3,
-      "col": 8,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 5,
-      "col": 6,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 7,
-      "col": 8,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 5,
-      "col": 11,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 7,
-      "col": 13,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 2,
-      "col": 11,
-      "kind": "cargo",
-      "cost": 50
-    },
-    {
-      "row": 4,
-      "col": 13,
-      "kind": "cargo",
-      "cost": 50
     }
   ],
   "pads": [
@@ -397,7 +325,7 @@ const level3 = {
           "at": 8.87
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_normal",
           "at": 9.64
         },
         {
@@ -509,7 +437,7 @@ const level3 = {
           "at": 2.96
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_normal",
           "at": 3.6
         },
         {
@@ -537,7 +465,7 @@ const level3 = {
           "at": 7.44
         },
         {
-          "enemy": "alien_tank",
+          "enemy": "alien_normal",
           "at": 8.08
         },
         {
@@ -563,24 +491,7 @@ const level3 = {
       ]
     }
   ],
-  "speedTiles": [
-    {
-      "row": 3,
-      "col": 3
-    },
-    {
-      "row": 2,
-      "col": 3
-    },
-    {
-      "row": 6,
-      "col": 10
-    },
-    {
-      "row": 6,
-      "col": 11
-    }
-  ]
+  "speedTiles": []
 };
 
 export default level3;

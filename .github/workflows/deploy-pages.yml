@@ -85,7 +85,7 @@ jobs:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:placement
 
-      - name: Validate a complete campaign mission through the UI
+      - name: Validate three-mission onboarding and persistence through the UI
         env:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:browser

@@ -9,9 +9,9 @@ try{
  page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('response',r=>{if(r.url().startsWith(url)&&r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
  await page.goto(url);await page.click('#menu-play-button');await page.waitForLoadState('networkidle');
  assert.ok((await page.evaluate(()=>document.baseURI)).includes(`/releases/${version}-`));
- const state=JSON.parse(await page.evaluate(()=>window.render_game_to_text()));assert.deepEqual(state.classUnlocks,['handgun','assault_rifle']);
- assert.equal(await page.locator('.weapon-select:enabled').count(),2);
+ const state=JSON.parse(await page.evaluate(()=>window.render_game_to_text()));assert.deepEqual(state.classUnlocks,['handgun','assault_rifle','machine_pistol']);
+ assert.equal(await page.locator('.weapon-select:enabled').count(),3);
  await page.locator('img').evaluateAll(images=>Promise.all(images.map(img=>img.decode())));
  assert.deepEqual(errors,[]);await fs.mkdir('output/frontier',{recursive:true});await page.screenshot({path:'output/frontier/build-smoke.png',fullPage:true});
- console.log('PASS: packaged release resolves modules, images, audio and CSS; fresh profile keeps two starter types.');
+ console.log('PASS: packaged release resolves modules, images, audio and CSS; fresh profile keeps three starter types.');
 }finally{await browser.close();}

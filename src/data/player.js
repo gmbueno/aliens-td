@@ -5,8 +5,8 @@ export const PLAYER_PROFILE_KEY = "aliens-tower-defense-profile";
 
 export function createDefaultProfile() {
   return {
-    schemaVersion: 5,
-    weaponKills: {}, caches: {}, lootRolls: 0, lootMisses: 0, legacyActives: [],
+    schemaVersion: 6,
+    weaponKills: {}, slotRewards: {}, onboarding: { researchSpent:false, towerUpgraded:false, powerUsed:false, seenWeapons:[] }, legacyActives: [],
     level: 1,
     xp: 0,
     skillPoints: 0,
@@ -14,7 +14,7 @@ export function createDefaultProfile() {
     equippedActiveKey: DEFAULT_EQUIPPED_ACTIVE_KEY,
     missions: {},
     arsenal: defaultArsenal(),
-    settings: { muted: false, autoWave: false },
+    settings: { muted: false },
   };
 }
 

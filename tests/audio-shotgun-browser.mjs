@@ -1,3 +1,4 @@
+import {autoStart} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -31,7 +32,7 @@ try {
    await page.click(`.weapon-card[data-weapon-key="${key}"] .weapon-select`);
    const s=await read(page),rect=await page.locator('#game-canvas').boundingBox(),pad=s.pads[0];
    await page.mouse.click(rect.x+(s.board.x+(pad.col+.5)*s.board.tile)/1280*rect.width,rect.y+(s.board.y+(pad.row+.5)*s.board.tile)/720*rect.height);
-   await page.click('#launch-wave-button');
+   await autoStart(page);
    const events=[];
    for(let n=0;n<5;n++) {
      const previous=(await read(page)).audio.played;

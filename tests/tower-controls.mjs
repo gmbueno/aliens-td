@@ -1,10 +1,11 @@
+import {autoStart} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
 const url=process.env.GAME_URL || 'http://127.0.0.1:4176';
 const out=process.env.GAME_OUTPUT || 'output/ui-refresh/controls';
 await fs.mkdir(out,{recursive:true});
-const browser=await chromium.launch({headless:true,...(process.env.GAME_BROWSER_EXECUTABLE ? {executablePath:process.env.GAME_BROWSER_EXECUTABLE} : {})});
+const browser=await chromium.launch({headless:true,args:['--mute-audio'],...(process.env.GAME_BROWSER_EXECUTABLE ? {executablePath:process.env.GAME_BROWSER_EXECUTABLE} : {})});
 const errors=[];
 const state=p=>p.evaluate(()=>JSON.parse(window.render_game_to_text()));
 async function create(viewport={width:1440,height:1000},touch=false) {
@@ -16,7 +17,7 @@ async function create(viewport={width:1440,height:1000},touch=false) {
 }
 async function deploy(page,late=false) {
  if(late){await page.click('[data-sector="3"]');await page.click('[data-level-id="level_18"]');}
- await page.click('#menu-play-button');
+ await page.click('#menu-play-button');await page.click('#play-pause-button');
 }
 async function tile(page,row,col) {
  const {board}=await state(page);const rect=await page.locator('#game-canvas').boundingBox();
@@ -61,7 +62,7 @@ try {
  await page.click('[data-sell]');assert.equal((await state(page)).gold,630);
  await page.click('#gear-button');await page.click('#change-level-button');await page.click('[data-sector="1"]');await page.click('[data-level-id="level_1"]');await page.click('#menu-play-button');
  // Live combat: kills change gold and ammo while the pointer remains held.
- await place(page,'assault_rifle');await page.click('#launch-wave-button');
+ await place(page,'assault_rifle');await autoStart(page);
  const before=(await state(page)).gold;
  await heldClick(page,'[data-target="last"]',()=>page.evaluate(()=>window.advanceTime(22000)));
  assert.equal((await state(page)).towers[0].targeting,'last');assert.ok((await state(page)).gold>before);
@@ -70,8 +71,8 @@ try {
  await page.click('#play-pause-button');
  await heldClick(page,'[data-target="nearest"]');assert.equal((await state(page)).towers[0].targeting,'nearest');
  await page.screenshot({path:`${out}/live-combat.png`,fullPage:true});
- await page.click('#gear-button');await page.click('#restart-button');await place(page,'sniper');
- assert.equal((await state(page)).gold,25);assert.equal(await page.locator('[data-upgrade="power"]').isDisabled(),true);
+ await page.click('#gear-button');await page.click('#restart-button');await place(page,'sniper');await page.click('[data-upgrade="tactical"]');
+ assert.equal((await state(page)).gold,13);assert.equal(await page.locator('[data-upgrade="power"]').isDisabled(),true);
  assert.match(await page.locator('[data-upgrade="power"] [data-upgrade-status]').textContent(),/Need \$\d+ more/);
  await page.screenshot({path:`${out}/insufficient-funds.png`,fullPage:true});
  await page.click('[data-sell]');const select=page.locator('[data-weapon-key="handgun"] .weapon-select');await select.focus();await page.keyboard.press('Space');

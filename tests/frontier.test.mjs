@@ -4,7 +4,7 @@ import {normalizeProfile,recordVictory} from '../src/systems/profile.js';
 import {weapons} from '../src/data/weapons.js';
 import {enemies} from '../src/data/enemies.js';
 import {levels} from '../src/data/levels/index.js';
-import {classUnlocked,classMilestones,cacheReward,applyArsenal} from '../src/data/arsenal.js';
+import {classUnlocked,classMilestones,missionSlotReward,applyArsenal} from '../src/data/arsenal.js';
 import {createInitialState,placeTower,stepState,launchWave,fireTower,upgradeTower} from '../src/game.js';
 import {missionRecords} from './fixtures.mjs';
 globalThis.localStorage={getItem(){return null;},setItem(){}};
@@ -13,9 +13,9 @@ const make=()=>{const s=createInitialState({...levels[0],waves:[{name:'Energy en
 const tick=(s,time)=>{for(let n=0;n<time*60;n++)stepState(s,1/60);};
 function dummy(tower,id,x=100,y=0){return {...enemies.alien_normal,id,x:tower.x+x,y:tower.y+y,life:1e7,maxLife:1e7,shield:0,armor:0,speed:0,radius:15,segment:0,progress:0,burnTimer:0,slowTimer:0,stunTimer:0,angle:0};}
 
-test('fresh and high-level legacy saves start with exactly two types until distinct mission milestones',()=>{
+test('fresh and high-level legacy saves start with exactly three types until distinct mission milestones',()=>{
  for(const raw of [{},{level:99,schemaVersion:3},{schemaVersion:4,level:50}]){
-  const p=normalizeProfile(raw);assert.deepEqual(weapons.filter(w=>classUnlocked(p,w.key)).map(w=>w.key),['handgun','assault_rifle']);
+  const p=normalizeProfile(raw);assert.deepEqual(weapons.filter(w=>classUnlocked(p,w.key)).map(w=>w.key),['handgun','assault_rifle','machine_pistol']);
  }
  const p=normalizeProfile();
  for(let i=0;i<10;i++){
@@ -56,15 +56,15 @@ test('energy upgrades improve their stated role and critical upgrades change rea
  assert.equal(s.projectiles.at(-1).damage,handgun.weapon.directDamage*handgun.weapon.critDamage);
 });
 test('amber overdrive is on the route, separate from ice, and increases real movement by 35%',()=>{
- assert.equal(levels.filter(l=>l.speedTiles?.length).length,6);
+ assert.equal(levels.filter(l=>l.speedTiles?.length).length,5);
  for(const l of levels)for(const tile of l.speedTiles||[]){assert.ok(l.track.some(t=>t.row===tile.row&&t.col===tile.col));assert.ok(!l.slowTiles.some(t=>t.row===tile.row&&t.col===tile.col));}
  const normal=make(),fast=make();fast.level={...fast.level,speedTiles:[fast.level.track[0]]};
  for(const s of [normal,fast]){launchWave(s);const dummyTower={x:s.path[0].x-100,y:s.path[0].y};s.enemies=[dummy(dummyTower,'runner')];s.enemies[0].speed=10;}
  tick(normal,.5);tick(fast,.5);assert.ok(Math.abs(fast.enemies[0].progress/normal.enemies[0].progress-1.35)<.001);
 });
-test('trait aliens retain distinct artwork and ordinary caches now supply only field credits',()=>{
+test('trait aliens retain distinct artwork and ordinary missions never grant cache rewards',()=>{
  const keys=['alien_medic','alien_steadfast','alien_rager','alien_broodmother'];assert.equal(new Set(keys.map(k=>enemies[k].asset)).size,4);
  assert.ok(keys.every(k=>enemies[k].asset.startsWith('assets/frontier/aliens/')));
- const p=normalizeProfile(),reward=cacheReward(p,levels[0]);assert.equal(reward.credits,60);assert.equal(reward.slot,false);
- assert.equal(cacheReward(p,levels[0]),null);assert.equal(applyArsenal(weapons[0],p).attachments,undefined);
+ const p=normalizeProfile();assert.equal(missionSlotReward(p,levels[0]),null);
+ assert.equal(missionSlotReward(p,levels[0]),null);assert.equal(applyArsenal(weapons[0],p).attachments,undefined);
 });

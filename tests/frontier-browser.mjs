@@ -1,3 +1,4 @@
+import {autoStart} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -25,7 +26,7 @@ try{
  assert.equal(await energy.locator('.ability-full-art').getAttribute('src').then(s=>s.includes('napalm')),true);
  await energy.click('[data-weapon-key="laser"] .weapon-select');await tile(energy,3,1);
  await energy.click('[data-weapon-key="flamethrower"] .weapon-select');await tile(energy,5,0);
- await energy.click('#launch-wave-button');await advance(energy,500);await energy.waitForTimeout(250);
+ await autoStart(energy);await advance(energy,500);await energy.waitForTimeout(250);
  let state=await read(energy);assert.ok(state.towers.find(t=>t.weapon==='laser').beam);assert.ok(state.enemies.some(e=>e.burnTimer>0));assert.equal(state.projectiles.length,0);assert.ok(state.audio.activeEnergyVoices>0);
  await shot(energy,'continuous-laser-flame',true);assert.equal((await read(energy)).audio.activeEnergyVoices,0);
  await energy.click('#play-pause-button');await advance(energy,4800);state=await read(energy);assert.ok(state.towers.find(t=>t.weapon==='laser').cooling);assert.equal(state.towers.find(t=>t.weapon==='laser').beam,null);

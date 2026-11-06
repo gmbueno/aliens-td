@@ -1,3 +1,4 @@
+import {autoStart} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -31,7 +32,7 @@ try{
   await p.mouse.down();await p.waitForTimeout(50);await p.mouse.up();
   const placed=await read(p);assert.equal(placed.towers.length,1,level.id);assert.equal(placed.gold,start.gold-70);assert.equal(placed.towers[0].row,tile.row);assert.equal(placed.towers[0].col,tile.col);
   await p.mouse.move(pos.x+3,pos.y+3);await p.screenshot({path:`${out}/${level.id}-placed.png`});
-  await p.click('#launch-wave-button');
+  await p.evaluate(()=>{const s=JSON.parse(window.render_game_to_text());window.advanceTime(Math.max(0,s.waveDelay-.3)*1000);});
   // Native RAF must still animate, without a time-step hook reviving a loop
   // that crashed while hovering. First enemies spawn at 0.4s in every mission.
   await p.waitForFunction(()=>JSON.parse(window.render_game_to_text()).enemies.length>0,{},{timeout:5000});

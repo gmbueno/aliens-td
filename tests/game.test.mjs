@@ -42,13 +42,11 @@ test('18 authored missions have valid paths, distinct layouts, legal obstacles/p
   }
 });
 
-test('preparation waits indefinitely and first launch cannot generate gold',()=>{
-  const state=make();tick(state,120);
-  assert.equal(state.enemies.length,0); assert.equal(state.waveIndex,0);
-  const gold=state.gold;
-  assert.equal(activateChronoBreak(state),false);
-  assert.equal(launchWave(state),true);assert.equal(launchWave(state),false);
-  assert.equal(state.gold,gold);tick(state,1);assert.ok(state.enemies.length>0);
+test('preparation launches automatically without a cash bonus; pause stops the clock',()=>{
+ const state=make(),gold=state.gold;assert.equal(activateChronoBreak(state),false);
+ state.isPaused=true;tick(state,30);assert.equal(state.waveDelay,18);assert.equal(state.phase,'prepare');
+ state.isPaused=false;tick(state,18.5);assert.equal(state.phase,'combat');assert.ok(state.enemies.length>0);assert.equal(state.gold,gold);
+ state.phase='prepare';state.waveDelay=6;const before=state.gold;assert.equal(launchWave(state),true);assert.equal(state.gold,before);assert.equal(launchWave(state),false);
 });
 
 test('cannot build on route, obstacle, occupied tile, out of bounds or without funds',()=>{
@@ -62,7 +60,7 @@ test('cannot build on route, obstacle, occupied tile, out of bounds or without f
 });
 
 test('obstacle clearance charges once and opens a usable position',()=>{
-  const state=make();const obstacle=state.level.blockers.find(t=>t.cost);
+  const state=make(levels[3]);const obstacle=state.level.blockers.find(t=>t.cost);
   const gold=state.gold;assert.equal(clearObstacle(state,obstacle),true);
   assert.equal(state.gold,gold-obstacle.cost);assert.equal(clearObstacle(state,obstacle),false);
   assert.ok(placeTower(state,'handgun',obstacle.row,obstacle.col));
@@ -106,7 +104,7 @@ test('pause freezes simulation and cooldowns; 2x advances them twice as fast',()
   state.isPaused=true;tick(state,10);assert.equal(state.activeAbilities.chronoBreak.cooldown,cooldown);
   state.isPaused=false;state.gameSpeed=2;tick(state,.5);
   assert.ok(Math.abs(state.activeAbilities.chronoBreak.cooldown-(cooldown-1))<.001);
-  state.phase='prepare';const c=state.activeAbilities.chronoBreak.cooldown;tick(state,10);assert.equal(state.activeAbilities.chronoBreak.cooldown,c);
+  state.phase='prepare';state.gameSpeed=1;state.waveDelay=6;const c=state.activeAbilities.chronoBreak.cooldown;tick(state,5);assert.equal(state.activeAbilities.chronoBreak.cooldown,c);
 });
 
 test('artillery and napalm apply damage and cooldown, without duplicate kill rewards',()=>{
@@ -122,7 +120,7 @@ test('artillery and napalm apply damage and cooldown, without duplicate kill rew
 test('legacy profiles migrate without losing skills, points or equipped ability',()=>{
   const profile=normalizeProfile({level:6,xp:24,skillPoints:40,skills:{damage:2},equippedActiveKey:'napalm'});
   assert.equal(profile.level,6);assert.equal(profile.skills.damage,2);assert.equal(profile.skillPoints,40);assert.equal(profile.equippedActiveKey,'napalm');
-  assert.deepEqual(profile.missions,{});assert.equal(profile.settings.autoWave,false);
+  assert.deepEqual(profile.missions,{});assert.equal(profile.settings.autoWave,undefined);
   const total=profile.skillPoints+spentSkillPoints(profile);resetSkills(profile);assert.equal(profile.skillPoints,total);assert.equal(spentSkillPoints(profile),0);
   assert.ok(saveProfile(profile));assert.equal(loadProfile().skillPoints,total);
   assert.equal(normalizeProfile(null).level,1);

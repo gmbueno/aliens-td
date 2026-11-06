@@ -242,7 +242,7 @@ const level14 = {
       "id": 1,
       "name": "Fast flank",
       "healthScale": 1,
-      "reward": 45,
+      "reward": 53,
       "spawns": [
         {
           "enemy": "alien_normal",
@@ -290,7 +290,7 @@ const level14 = {
       "id": 2,
       "name": "Shield formation",
       "healthScale": 1.1,
-      "reward": 50,
+      "reward": 58,
       "spawns": [
         {
           "enemy": "alien_normal",
@@ -346,7 +346,7 @@ const level14 = {
       "id": 3,
       "name": "Shield formation",
       "healthScale": 1.2,
-      "reward": 55,
+      "reward": 63,
       "spawns": [
         {
           "enemy": "alien_normal",
@@ -422,7 +422,7 @@ const level14 = {
       "id": 4,
       "name": "Shield formation",
       "healthScale": 1.3,
-      "reward": 60,
+      "reward": 68,
       "spawns": [
         {
           "enemy": "alien_broodmother",
@@ -506,7 +506,7 @@ const level14 = {
       "id": 5,
       "name": "Shield formation",
       "healthScale": 1.4,
-      "reward": 65,
+      "reward": 73,
       "spawns": [
         {
           "enemy": "alien_normal",
@@ -598,7 +598,7 @@ const level14 = {
       "id": 6,
       "name": "Shield formation",
       "healthScale": 1.5,
-      "reward": 70,
+      "reward": 78,
       "spawns": [
         {
           "enemy": "alien_normal",
@@ -698,7 +698,7 @@ const level14 = {
       "id": 7,
       "name": "Shield formation",
       "healthScale": 1.6,
-      "reward": 75,
+      "reward": 83,
       "spawns": [
         {
           "enemy": "alien_broodmother",
@@ -806,7 +806,7 @@ const level14 = {
       "id": 8,
       "name": "Final assault",
       "healthScale": 1.7,
-      "reward": 80,
+      "reward": 88,
       "spawns": [
         {
           "enemy": "alien_broodmother",

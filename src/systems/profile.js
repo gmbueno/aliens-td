@@ -1,4 +1,4 @@
-import { normalizeArsenal, classMilestones, classUnlocked, refundExcessSlots } from "../data/arsenal.js";
+import { normalizeArsenal, classMilestones, classUnlocked, refundExcessSlots, missionSlotReward, SLOT_REWARD_LEVELS, loadoutKeys } from "../data/arsenal.js";
 import { PLAYER_PROFILE_KEY, createDefaultProfile, xpNeeded } from "../data/player.js";
 import { DEFAULT_EQUIPPED_ACTIVE_KEY, SP_PER_LEVEL, createDefaultSkills, isActiveAbilityKey, skillTree, spentSkillPoints, activeUnlocked } from "../data/skills.js";
 
@@ -25,7 +25,7 @@ export function normalizeProfile(rawProfile = {}) {
       clears: integer(value?.clears),
       bestLives: integer(value?.bestLives),
     }])),
-    settings: { muted: Boolean(rawProfile.settings?.muted), autoWave: Boolean(rawProfile.settings?.autoWave) },
+    settings: { muted: Boolean(rawProfile.settings?.muted) },
     equippedActiveKey: isActiveAbilityKey(rawProfile.equippedActiveKey)
       ? rawProfile.equippedActiveKey
       : DEFAULT_EQUIPPED_ACTIVE_KEY,
@@ -37,9 +37,13 @@ export function normalizeProfile(rawProfile = {}) {
   profile.caches=Object.fromEntries(Object.entries(rawProfile.caches||{}).filter(([key,value])=>/^level_\d+$/.test(key)&&value).map(([key])=>[key,true]));
   profile.arsenal = normalizeArsenal(rawProfile.arsenal, profile);
   const previousSchema=profile.schemaVersion;
-  profile.schemaVersion=5;
+  profile.schemaVersion=6;
+  profile.slotRewards=Object.fromEntries(SLOT_REWARD_LEVELS.filter(k=>rawProfile.slotRewards?.[k]||profile.caches[k]||(previousSchema<6&&profile.missions[k]?.clears)).map(k=>[k,true]));
+  delete profile.caches;
+  const hints=rawProfile.onboarding||{};
+  profile.onboarding={researchSpent:Boolean(hints.researchSpent||spentSkillPoints(profile)>0),towerUpgraded:Boolean(hints.towerUpgraded),powerUsed:Boolean(hints.powerUsed),seenWeapons:Array.isArray(hints.seenWeapons)?hints.seenWeapons.filter(k=>k in classMilestones):Object.keys(classMilestones).filter(k=>classUnlocked(profile,k))};
   profile.weaponKills=Object.fromEntries(Object.entries(rawProfile.weaponKills||{}).filter(([key])=>key in classMilestones || ['drone','mines','artillery','napalm'].includes(key)).map(([key,value])=>[key,integer(value)]));
-  if(!activeUnlocked(profile,profile.equippedActiveKey))profile.equippedActiveKey=null;
+  if(!activeUnlocked(profile,profile.equippedActiveKey))profile.equippedActiveKey=DEFAULT_EQUIPPED_ACTIVE_KEY;
   const earned = Math.max(0, profile.level - 1) * SP_PER_LEVEL;
   const available = Math.max(integer(rawProfile.skillPoints), earned - spentSkillPoints(profile));
   profile.skillPoints = Math.max(0, available);
@@ -57,6 +61,7 @@ export function normalizeProfile(rawProfile = {}) {
     profile.skillPoints=Math.max(integer(rawProfile.skillPoints)+refund+Math.max(0,oldSpent-spentSkillPoints(profile)),earned-spentSkillPoints(profile));
   }
   refundExcessSlots(profile);
+  profile.arsenal={loadout:loadoutKeys(profile)};
   return profile;
 }
 
@@ -90,14 +95,16 @@ export function recordVictory(profile, level, lives) {
   const xp = level.clearXp + (firstClear ? level.firstClearXp : 0) + newStars * 15;
   profile.missions[level.id] = { stars: Math.max(previous.stars, stars), clears: previous.clears + 1, bestLives: Math.max(previous.bestLives, lives) };
   addXp(profile, xp);
+  const slotReward=missionSlotReward(profile,level);
+  profile.arsenal={loadout:loadoutKeys(profile)};
   const unlockedClasses=Object.keys(classMilestones).filter(key=>!known.has(key)&&classUnlocked(profile,key));
-  return { stars, firstClear, newStars, xp, unlockedClasses };
+  return { stars, firstClear, newStars, xp, unlockedClasses, slotReward };
 }
 
 export function resetSkills(profile) {
   profile.skillPoints += spentSkillPoints(profile);
   profile.skills = createDefaultSkills();
-  if(!activeUnlocked(profile,profile.equippedActiveKey))profile.equippedActiveKey=null;
+  if(!activeUnlocked(profile,profile.equippedActiveKey))profile.equippedActiveKey=DEFAULT_EQUIPPED_ACTIVE_KEY;
 }
 
 export function addXp(profile, amount) {

@@ -4,13 +4,13 @@ import {normalizeProfile,resetSkills} from '../src/systems/profile.js';
 import {levels} from '../src/data/levels/index.js';
 import {weapons} from '../src/data/weapons.js';
 import {skillTree,buySkill,activeAbilityStats,activeAbilities} from '../src/data/skills.js';
-import {loadoutCapacity,loadoutKeys,equipCategory,cacheReward,placementLimit,applyArsenal} from '../src/data/arsenal.js';
+import {loadoutCapacity,loadoutKeys,equipCategory,missionSlotReward,placementLimit,applyArsenal} from '../src/data/arsenal.js';
 import {createInitialState,placeTower,sellTower,fireTower,updateProjectiles,upgradeTower,launchWave,stepState,activateNapalm,activateArtillery,targetForTower} from '../src/game.js';
 import {upgradeDrone,droneStats} from '../src/systems/fieldSupport.js';
 import {targetingUnlocked} from '../src/systems/targeting.js';
 import {missionRecords} from './fixtures.mjs';
 globalThis.localStorage={getItem(){return null;},setItem(){}};
-const profile=(raw={})=>normalizeProfile({schemaVersion:5,level:20,missions:missionRecords(),settings:{muted:true},...raw});
+const profile=(raw={})=>normalizeProfile({schemaVersion:6,level:20,missions:missionRecords(),settings:{muted:true},...raw});
 const make=(raw={},key='magnum')=>{const p=profile({...raw,arsenal:{loadout:[key,...(raw.arsenal?.loadout||[])]}});const s=createInitialState({...levels[0],threat:1,waves:[{name:'Test',healthScale:1,reward:0,spawns:[{enemy:'alien_normal',at:1000}]}]},p,{width:1280,height:720});s.gold=10000;return s;};
 const enemy=(id,x,y=128,life=10000)=>({id,key:'alien_normal',x,y,life,maxLife:life,shield:0,armor:0,radius:10,speed:0,angle:0,segment:0,progress:0,burnTimer:0,burnDamage:0,slowTimer:0,stunTimer:0,gold:0,xp:0});
 const tick=(s,t)=>{for(let n=0;n<t*60;n++)stepState(s,1/60);};
@@ -21,17 +21,17 @@ test('only categories remain, with 3 initial slots and a hard six-slot cap',()=>
  assert.ok(equipCategory(p,0,'laser'));assert.equal(loadoutKeys(p)[0],'laser');assert.equal(equipCategory(p,5,'sniper'),false);
  for(const w of weapons){const effective=applyArsenal(w,p);assert.equal(effective.directDamage,w.directDamage);assert.equal(effective.attachments,undefined);assert.equal(effective.rarity,undefined);}
 });
-test('specific caches grant permanent slots once; overflow refunds trained slots without exceeding six',()=>{
+test('specific mission victories grant permanent slots once; overflow refunds trained slots without exceeding six',()=>{
  const p=profile();buySkill(p,'loadoutSlots');buySkill(p,'loadoutSlots');
- const start=p.skillPoints;assert.equal(cacheReward(p,levels[3]).slot,true);assert.equal(loadoutCapacity(p),6);
- assert.equal(cacheReward(p,levels[3]),null);assert.equal(p.skillPoints,start);
- const reward=cacheReward(p,levels[9]);assert.equal(reward.refund,8);assert.equal(p.skills.loadoutSlots,1);assert.equal(loadoutCapacity(p),6);assert.equal(p.skillPoints,start+8);
+ const start=p.skillPoints;assert.equal(missionSlotReward(p,levels[3]).slot,true);assert.equal(loadoutCapacity(p),6);
+ assert.equal(missionSlotReward(p,levels[3]),null);assert.equal(p.skillPoints,start);
+ const reward=missionSlotReward(p,levels[9]);assert.equal(reward.refund,8);assert.equal(p.skills.loadoutSlots,1);assert.equal(loadoutCapacity(p),6);assert.equal(p.skillPoints,start+8);
  assert.equal(buySkill(p,'loadoutSlots'),false);const saved=normalizeProfile(JSON.parse(JSON.stringify(p)));assert.equal(saved.skillPoints,p.skillPoints);assert.equal(loadoutCapacity(saved),6);
  resetSkills(saved);assert.equal(loadoutCapacity(saved),5);
 });
 test('old models and attachments are removed and model-license SP returns exactly once',()=>{
  const old={schemaVersion:4,level:5,skillPoints:27,skills:{damage:1},arsenal:{spSpent:8,heavy:'laser',blueprints:{handgun:'legendary'},attachments:{handgun:['incendiary']}}};
- const p=normalizeProfile(old);assert.equal(p.schemaVersion,5);assert.deepEqual(Object.keys(p.arsenal),['loadout']);assert.ok(p.skillPoints>=35);
+ const p=normalizeProfile(old);assert.equal(p.schemaVersion,6);assert.deepEqual(Object.keys(p.arsenal),['loadout']);assert.ok(p.skillPoints>=35);
  const again=normalizeProfile(JSON.parse(JSON.stringify(p)));assert.equal(again.skillPoints,p.skillPoints);assert.equal(again.skills.damage,1);
 });
 test('one tower per category initially, two after research, and selling restores placement availability',()=>{

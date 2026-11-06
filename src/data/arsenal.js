@@ -3,16 +3,16 @@ import { skillRank } from './skills.js';
 
 export const MAX_LOADOUT_SLOTS = 6;
 export const STARTING_SLOTS = 3;
-export const SLOT_CACHE_LEVELS = ['level_4', 'level_10'];
-export const classMilestones = {handgun:0,assault_rifle:0,machine_pistol:1,shotgun:2,magnum:3,sniper:4,rocket_launcher:6,flamethrower:8,laser:10};
+export const SLOT_REWARD_LEVELS = ['level_4', 'level_10'];
+export const classMilestones = {handgun:0,assault_rifle:0,machine_pistol:0,shotgun:1,magnum:3,sniper:4,rocket_launcher:6,flamethrower:8,laser:10};
 const originalArt={handgun:assets.slots.weapons.handgun,assault_rifle:assets.slots.weapons.assaultRifle,machine_pistol:assets.slots.weapons.machinePistol,magnum:assets.slots.weapons.magnum,shotgun:assets.slots.weapons.shotgun,sniper:assets.slots.weapons.sniper};
 export const weaponArt = key => originalArt[key] || `assets/frontier/weapons/${key}-common.png`;
 export const campaignClears = profile => Object.values(profile.missions || {}).filter(m => m.clears > 0).length;
 export function classUnlocked(profile,key) { return key in classMilestones && campaignClears(profile) >= classMilestones[key]; }
 export function classRequirement(key) { const n=classMilestones[key];return n===1?'Complete your first mission':n?`Complete ${n} different missions`:'Starter weapon'; }
 export function nextClassUnlock(profile) { const cleared=campaignClears(profile);return Object.entries(classMilestones).filter(([,n])=>n>cleared).sort((a,b)=>a[1]-b[1])[0] || null; }
-export function cacheSlots(profile) { return SLOT_CACHE_LEVELS.filter(key=>profile.caches?.[key]).length; }
-export function loadoutCapacity(profile) { return Math.min(MAX_LOADOUT_SLOTS, STARTING_SLOTS + skillRank(profile,'loadoutSlots') + cacheSlots(profile)); }
+export function missionSlots(profile) { return SLOT_REWARD_LEVELS.filter(key=>(profile.slotRewards?.[key] || profile.caches?.[key])).length; }
+export function loadoutCapacity(profile) { return Math.min(MAX_LOADOUT_SLOTS, STARTING_SLOTS + skillRank(profile,'loadoutSlots') + missionSlots(profile)); }
 export function placementLimit(profile) { return 1 + Math.min(1,skillRank(profile,'duplicates')); }
 export function defaultArsenal() { return { loadout: [] }; }
 export function loadoutKeys(profile) {
@@ -38,15 +38,17 @@ export function applyArsenal(weapon) {
     fireMode:weapon.continuous==='laser'?'Continuous beam':weapon.continuous==='flame'?'Flame cone':weapon.pelletCount?'Pellet spread':weapon.pierce?'Piercing shot':weapon.atkSpeed>=5?'Automatic':'Single shot'};
 }
 export function equippedWeapons(weapons,profile) { return loadoutKeys(profile).map(key=>weapons.find(w=>w.key===key)).filter(Boolean); }
-// Cache slots replace redundant slot training at the six-slot cap, with a full SP refund.
+// Mission slots replace redundant slot training at the six-slot cap, with a full SP refund.
 export function refundExcessSlots(profile) {
-  const excess=Math.max(0,STARTING_SLOTS+cacheSlots(profile)+skillRank(profile,'loadoutSlots')-MAX_LOADOUT_SLOTS);
+  const excess=Math.max(0,STARTING_SLOTS+missionSlots(profile)+skillRank(profile,'loadoutSlots')-MAX_LOADOUT_SLOTS);
   if(excess){profile.skills.loadoutSlots-=excess;profile.skillPoints+=excess*8;}
   return excess*8;
 }
-export function cacheReward(profile,level) {
-  if(profile.caches[level.id])return null;
-  profile.caches[level.id]=true;
-  const slot=SLOT_CACHE_LEVELS.includes(level.id),refund=refundExcessSlots(profile);
-  return {name:slot?'Permanent loadout slot':'Field supplies',slot,refund,credits:slot?0:60};
+export function missionSlotReward(profile,level) {
+  if(!SLOT_REWARD_LEVELS.includes(level.id)||profile.slotRewards?.[level.id]||profile.caches?.[level.id])return null;
+  profile.slotRewards ||= {};
+  profile.slotRewards[level.id]=true;
+  const refund=refundExcessSlots(profile);
+  profile.arsenal={loadout:loadoutKeys(profile)};
+  return {slot:true,refund};
 }

@@ -194,7 +194,7 @@ const level5 = {
       "id": 1,
       "name": "Fast flank",
       "healthScale": 1,
-      "reward": 35,
+      "reward": 43,
       "spawns": [
         {
           "enemy": "alien_normal",
@@ -250,7 +250,7 @@ const level5 = {
       "id": 2,
       "name": "Fast flank",
       "healthScale": 1.1,
-      "reward": 40,
+      "reward": 48,
       "spawns": [
         {
           "enemy": "alien_normal",
@@ -314,7 +314,7 @@ const level5 = {
       "id": 3,
       "name": "Armored convoy",
       "healthScale": 1.2,
-      "reward": 45,
+      "reward": 53,
       "spawns": [
         {
           "enemy": "alien_normal",
@@ -386,7 +386,7 @@ const level5 = {
       "id": 4,
       "name": "Armored convoy",
       "healthScale": 1.3,
-      "reward": 50,
+      "reward": 58,
       "spawns": [
         {
           "enemy": "alien_normal",
@@ -466,7 +466,7 @@ const level5 = {
       "id": 5,
       "name": "Armored convoy",
       "healthScale": 1.4,
-      "reward": 55,
+      "reward": 63,
       "spawns": [
         {
           "enemy": "alien_normal",
@@ -554,7 +554,7 @@ const level5 = {
       "id": 6,
       "name": "Final assault",
       "healthScale": 1.5,
-      "reward": 60,
+      "reward": 68,
       "spawns": [
         {
           "enemy": "alien_normal",
