@@ -1,6 +1,6 @@
 import { normalizeArsenal, classMilestones, classUnlocked, refundExcessSlots, missionSlotReward, SLOT_REWARD_LEVELS, loadoutKeys } from "../data/arsenal.js";
 import { PLAYER_PROFILE_KEY, createDefaultProfile, xpNeeded } from "../data/player.js";
-import { DEFAULT_EQUIPPED_ACTIVE_KEY, SP_PER_LEVEL, createDefaultSkills, isActiveAbilityKey, skillTree, spentSkillPoints, activeUnlocked } from "../data/skills.js";
+import { DEFAULT_EQUIPPED_ACTIVE_KEY, SP_PER_LEVEL, createDefaultSkills, isActiveAbilityKey, skillTree, spentSkillPoints, activeUnlocked, equippedPowerKeys } from "../data/skills.js";
 
 export function normalizeProfile(rawProfile = {}) {
   if (!rawProfile || typeof rawProfile !== "object") rawProfile = {};
@@ -62,6 +62,7 @@ export function normalizeProfile(rawProfile = {}) {
   }
   refundExcessSlots(profile);
   profile.arsenal={loadout:loadoutKeys(profile)};
+  profile.equippedSecondaryActiveKey=equippedPowerKeys(profile)[1]||null;
   return profile;
 }
 
@@ -104,6 +105,7 @@ export function recordVictory(profile, level, lives) {
 export function resetSkills(profile) {
   profile.skillPoints += spentSkillPoints(profile);
   profile.skills = createDefaultSkills();
+  profile.equippedSecondaryActiveKey=null;
   if(!activeUnlocked(profile,profile.equippedActiveKey))profile.equippedActiveKey=DEFAULT_EQUIPPED_ACTIVE_KEY;
 }
 

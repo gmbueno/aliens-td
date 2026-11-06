@@ -16,6 +16,7 @@ export const skillTree=[
  node('drone','Patrol Drone','An automatic patrol drone. More ranks improve its damage and range.',3,8,'support',310,145),
  node('extraDrone','Wingman','Add a second drone with its own upgrades and targeting.',1,12,'support',310,295,'drone'),
  node('chronoBreak','Chrono Break','Each rank extends the freeze by 0.2s and reduces cooldown by 2s.',10,5,'support',110,295,null,{type:'active',active:'chronoBreak'}),
+ node('powerSlots','Dual Support','Equip a second, different power. Each has its own cooldown.',1,12,'support',110,445,'chronoBreak'),
  node('artillery','Artillery Strike','+180 damage per shell. Starts with 10 shells in 5 seconds.',10,5,'artillery',310,145,null,{type:'active',active:'artillery'}),
  node('artilleryCooldown','Rapid Artillery','Reduce Artillery cooldown by 4s per rank, from 45s to 25s.',5,4,'artillery',110,325,'artillery'),
  node('artilleryArea','Wide Barrage','Increase Artillery blast radius by 15% per rank.',5,4,'artillery',310,325,'artillery'),
@@ -49,4 +50,20 @@ export function activeAbilityStats(ability,profile){
  if(key==='chronoBreak')return {rank,cooldown:50-2*rank,duration:3+.2*rank,damage:0,area:0};
  if(key==='artillery')return {rank,cooldown:45-4*r('artilleryCooldown'),duration:5+r('artilleryDuration'),shots:10+2*r('artilleryDuration'),damage:1800+180*rank,area:130*(1+.15*r('artilleryArea'))};
  return {rank,cooldown:50-4*r('napalmCooldown'),duration:6+r('napalmDuration'),damage:1000+50*rank,area:180*(1+.18*r('napalmArea'))};
+}
+
+// Preserve the original primary selection when loading older saves.
+export const powerCapacity=profile=>1+Math.min(1,Math.max(0,skillRank(profile,'powerSlots')));
+export function equippedPowerKeys(profile){
+ const first=isActiveAbilityKey(profile.equippedActiveKey)?profile.equippedActiveKey:DEFAULT_EQUIPPED_ACTIVE_KEY;
+ const second=isActiveAbilityKey(profile.equippedSecondaryActiveKey)&&profile.equippedSecondaryActiveKey!==first?profile.equippedSecondaryActiveKey:activeAbilities.find(a=>a.key!==first).key;
+ return powerCapacity(profile)===2?[first,second]:[first];
+}
+export function equipPower(profile,key,slot=0){
+ if(!isActiveAbilityKey(key)||!Number.isInteger(slot)||slot<0||slot>=powerCapacity(profile))return false;
+ const keys=equippedPowerKeys(profile),other=keys.indexOf(key);
+ if(other>=0) [keys[slot],keys[other]]=[keys[other],keys[slot]];
+ else keys[slot]=key;
+ profile.equippedActiveKey=keys[0];profile.equippedSecondaryActiveKey=keys[1]||null;
+ return true;
 }

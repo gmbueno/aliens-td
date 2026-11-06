@@ -16,7 +16,7 @@ function encounter(p=profile(),spawns=[{enemy:'alien_steadfast',at:0}]){
  const s=make(p,level);launchWave(s);tick(s,.02);return s;
 }
 test('command graph is acyclic with valid prerequisites, and locks purchases until trained',()=>{
- const keys=new Set(skillTree.map(s=>s.key));assert.equal(keys.size,22);
+ const keys=new Set(skillTree.map(s=>s.key));assert.equal(keys.size,23);
  for(const skill of skillTree){let current=skill,seen=new Set();while(current.requires){assert.ok(keys.has(current.requires.key));assert.ok(!seen.has(current.key));seen.add(current.key);current=skillTree.find(s=>s.key===current.requires.key);}}
  const p=profile();assert.equal(buySkill(p,'pontoons'),false);assert.equal(buySkill(p,'extraDrone'),false);
  assert.ok(buySkill(p,'salvage'));assert.ok(buySkill(p,'supplies'));assert.ok(buySkill(p,'pontoons'));assert.equal(buySkill(p,'pontoons'),false);

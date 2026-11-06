@@ -1,5 +1,5 @@
 import {loadoutCapacity} from '../data/arsenal.js';
-import { activeAbilities, activeAbilityStats, activeUnlocked, canBuySkill, prerequisiteMet, skillRank, skillTree, spentSkillPoints } from '../data/skills.js';
+import { equippedPowerKeys, activeAbilities, activeAbilityStats, activeUnlocked, canBuySkill, prerequisiteMet, skillRank, skillTree, spentSkillPoints } from '../data/skills.js';
 
 const branches={armament:{name:'Training',color:'#ffbb57'},logistics:{name:'Deployment',color:'#49d9ee'},support:{name:'Support',color:'#bca3ff'},artillery:{name:'Artillery',color:'#f2c478'},napalm:{name:'Napalm',color:'#ff9970'}};
 const paths={
@@ -12,6 +12,7 @@ const paths={
  pontoons:'M2 18q3-4 6 0t6 0 6 0M4 12h16l-3 5H7ZM7 12V6h10v6',
  mines:'M12 7a6 6 0 1 0 0 12 6 6 0 0 0 0-12M12 2v3m-8 0 3 3m13-3-3 3M2 13h2m16 0h2M5 21l2-3m12 3-2-3',
  drone:'M7 7l10 10M17 7 7 17M5 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6m14 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6M5 16a3 3 0 1 0 0 6 3 3 0 0 0 0-6m14 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6',
+ powerSlots:'M3 4h7v16H3Zm11 0h7v16h-7M6 8v8m11-8v8',
  chronoBreak:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m0 4v7l5 3',
  artillery:'M3 19h18M5 16Q7 2 19 6m-3-4 4 4-5 2M4 21v-4m15 4v-4',
  napalm:'M13 2c2 7 8 9 7 14a8 8 0 0 1-16 0c0-4 3-7 4-8 0 4 2 5 3 4s3-5 2-10Z',
@@ -23,6 +24,7 @@ function preview(skill,profile){
  if(skill.key==='salvage')return `${rank*15}% → ${next*15}% lower clearance cost`;
  if(skill.key==='supplies')return `+$${rank*25} → +$${next*25} starting funds`;
  if(skill.key==='loadoutSlots')return `${loadoutCapacity(profile)} → ${Math.min(6,loadoutCapacity(profile)+1)} weapon slots`;
+ if(skill.key==='powerSlots')return '1 → 2 powers · separate cooldowns';
  if(skill.key==='duplicates')return '1 → 2 towers per category';
  if(skill.key==='weakest')return 'Unlock Weakest targeting for guns and UAVs';
  if(skill.key==='extraDrone')return '1 → 2 independent patrol drones';
@@ -65,7 +67,7 @@ export function renderSkillTree(ui,profile,selectedKey){
  <div class="talent-legend"><span><i class="ready"></i>Can upgrade</span><span><i class="complete"></i>Complete</span><span><i></i>Unavailable</span></div></div></div>
  <aside class="node-inspector"><div class="inspector-kicker">${branches[branch].name} <span>${rank} / ${selected.maxRank}</span></div><div class="inspector-icon">${icon(selected.key)}</div><h3>${selected.name}</h3><span class="inspector-state">${state}</span><p>${selected.description}</p><div class="skill-preview"><small>${maxed?'MASTERED':'NEXT RANK'}</small><strong>${maxed?'All ranks completed':preview(selected,profile)}</strong></div>${parent?`<button class="prerequisite-link" type="button" data-select-skill="${parent.key}"><span>${met?'✓':'🔒'} ${parent.name} · rank 1</span><b>→</b></button>`:''}
  <div class="talent-checkout"><div class="checkout-total"><span>${maxed?'Total invested':'Cost per rank'}</span><strong>${maxed?rank*selected.cost:selected.cost} <small>SP</small></strong></div><button class="skill-purchase" data-skill-key="${selected.key}" type="button" ${canBuy?'':'disabled'}>${maxed?'Completed':!met&&!rank?'Train prerequisite first':selected.key==='loadoutSlots'&&!canBuy&&profile.skillPoints>=selected.cost?'All six slots available':profile.skillPoints<selected.cost?`Need ${selected.cost-profile.skillPoints} more SP`:`${rank?'Upgrade to rank '+(rank+1):'Train first rank'} →`}</button><span class="checkout-balance">${canBuy?`${profile.skillPoints} → ${profile.skillPoints-selected.cost} SP remaining`:`${profile.skillPoints} SP available`}</span></div>
- ${selected.active?`<button class="skill-equip" data-equip-active-key="${selected.key}" type="button" ${profile.equippedActiveKey===selected.key?'disabled':''}>${profile.equippedActiveKey===selected.key?'✓ Equipped power':'Equip this power'}</button>`:''}<p class="skill-application">${selected.weaponEffect||['salvage','pontoons','duplicates','weakest','loadoutSlots'].includes(selected.key)?'Applies immediately.':'Applies on your next deployment.'}</p></aside>`;
+ ${selected.active?`<button class="skill-equip" data-equip-active-key="${selected.key}" type="button" ${equippedPowerKeys(profile).includes(selected.key)?'disabled':''}>${equippedPowerKeys(profile).includes(selected.key)?'✓ Equipped power':'Equip this power'}</button>`:''}<p class="skill-application">${selected.weaponEffect||['salvage','pontoons','duplicates','weakest','loadoutSlots','powerSlots'].includes(selected.key)?'Applies immediately.':'Applies on your next deployment.'}</p></aside>`;
 }
 export function skillKeyFromEvent(event){return event.target.closest('[data-skill-key]')?.dataset.skillKey||null;}
 export function equipActiveKeyFromEvent(event){return event.target.closest('[data-equip-active-key]')?.dataset.equipActiveKey||null;}

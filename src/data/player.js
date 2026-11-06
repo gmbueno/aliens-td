@@ -12,6 +12,7 @@ export function createDefaultProfile() {
     skillPoints: 0,
     skills: createDefaultSkills(),
     equippedActiveKey: DEFAULT_EQUIPPED_ACTIVE_KEY,
+    equippedSecondaryActiveKey: null,
     missions: {},
     arsenal: defaultArsenal(),
     settings: { muted: false },

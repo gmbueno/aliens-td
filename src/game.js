@@ -8,7 +8,7 @@ import { equippedWeapons, classUnlocked, classRequirement, nextClassUnlock, camp
 import { renderArsenal, nextArsenalUnlock } from "./ui/arsenalView.js";
 import { weapons } from "./data/weapons.js";
 import { xpNeeded } from "./data/player.js";
-import { activeAbilities, activeAbilityStats, buySkill, isActiveAbilityKey, activeUnlocked, skillRank, skillTree } from "./data/skills.js";
+import { equippedPowerKeys, equipPower, activeAbilities, activeAbilityStats, buySkill, isActiveAbilityKey, activeUnlocked, skillRank, skillTree } from "./data/skills.js";
 import { assets as assetPaths } from "./data/assets.js";
 import { addXp, loadProfile, saveProfile, recordVictory, resetSkills } from "./systems/profile.js";
 import { applyTowerUpgrades, towerUpgradeCost, towerUpgradePaths, towerUpgradePathsFor, upgradePreview, applySkillBonuses, effectiveWeaponByKey as findEffectiveWeaponByKey, refreshTowerSkillBonuses as refreshTowersWithSkills } from "./systems/weaponStats.js";
@@ -210,7 +210,7 @@ function abilityStats(profile, abilityKey) {
 
 function canUseAbility(state, abilityKey) {
   const status = activeStatus(state, abilityKey);
-  return !state.isPaused && !state.result && state.phase === "combat" && state.equippedActiveKey === abilityKey && status && status.cooldown <= 0 && status.timer <= 0;
+  return !state.isPaused && !state.result && state.phase === "combat" && state.equippedActiveKeys.includes(abilityKey) && status && status.cooldown <= 0 && status.timer <= 0;
 }
 
 export function activateChronoBreak(state) {
@@ -323,7 +323,8 @@ export function createInitialState(level, profile, canvas) {
     runMode: "play",
     gameSpeed: 1,
     isPaused: false,
-    equippedActiveKey: activeUnlocked(profile,profile.equippedActiveKey)?profile.equippedActiveKey:null,
+    equippedActiveKey: equippedPowerKeys(profile)[0],
+    equippedActiveKeys: equippedPowerKeys(profile),
     selectedActiveKey: null,
     activeAbilities: Object.fromEntries(activeAbilities.map((ability) => [ability.key, {
       cooldown: 0,
@@ -1477,13 +1478,13 @@ export function createGame({ ui, levels }) {
     const stats=droneStats(drone),total=drone.upgrades.power+drone.upgrades.tactical;
     ui.towerSidebar.classList.remove('hidden');ui.towerSidebar.classList.add('inspecting-tower');ui.towerSidebarCloseButton.classList.remove('hidden');
     ui.towerSidebarTitle.textContent=`Patrol Drone ${state.drones.indexOf(drone)+1}`;
-    setMarkup(ui.towerStatList,`<p class="tower-role">Route patrol · click the UAV or its landing pad</p>${[['Kills this mission',drone.kills],['Damage',stats.damage],['Fire rate',(1/stats.interval).toFixed(1)+'/s'],['Range',stats.range]].map(([k,v])=>`<div class="weapon-stat-row"><span>${k}</span><strong>${v}</strong></div>`).join('')}`);
-    mountActions(`drone:${drone.id}`,`<div class="drone-tabs">${state.drones.map((d,i)=>`<button type="button" data-select-drone="${d.id}">UAV ${i+1}</button>`).join('')}</div><div class="panel-section-label">TARGET PRIORITY</div><div class="target-buttons" role="group" aria-label="Drone target priority">${targetModes.map(m=>`<button type="button" data-target="${m.key}" title="${m.key==='weakest'&&!targetingUnlocked(profile,m.key)?'Unlock Finish the Weak in Training':m.hint}"><i>${m.icon}</i><span>${m.name}</span></button>`).join('')}</div><p class="target-description" data-target-description></p><div class="panel-section-label">UAV FIELD UPGRADES <span data-drone-total></span></div>${['power','tactical'].map(key=>`<button type="button" class="upgrade-button" data-drone-upgrade="${key}"><span class="upgrade-topline"><strong>${key==='power'?'High-caliber UAV':'Sensors & motors'}</strong><small data-drone-rank></small></span><span class="upgrade-preview">${key==='power'?'+60% base damage per rank':'+20% range and fire rate per rank'}</span><span class="upgrade-purchase" data-drone-status></span></button>`).join('')}<p class="upgrade-limit" data-drone-budget></p>`);
+    setMarkup(ui.towerStatList,`<p class="tower-role">Route patrol · click the UAV or its landing pad</p>${[['Damage',stats.damage],['Range',stats.range],['Kills',drone.kills]].map(([k,v])=>`<div class="weapon-stat-row"><span>${k}</span><strong>${v}</strong></div>`).join('')}`);
+    mountActions(`drone:${drone.id}`,`<div class="drone-tabs">${state.drones.map((d,i)=>`<button type="button" data-select-drone="${d.id}">UAV ${i+1}</button>`).join('')}</div><div class="panel-section-label">Upgrades <span data-drone-total></span></div>${['power','tactical'].map(key=>`<button type="button" class="upgrade-button" data-drone-upgrade="${key}"><span class="upgrade-topline"><strong>${key==='power'?'High-caliber UAV':'Sensors & motors'}</strong><small data-drone-rank></small></span><span class="upgrade-preview">${key==='power'?'+60% base damage per rank':'+20% range and fire rate per rank'}</span><span class="upgrade-purchase" data-drone-status></span></button>`).join('')}<p class="upgrade-limit" data-drone-budget></p><div class="panel-section-label">Target priority</div><div class="target-buttons" role="group" aria-label="Drone target priority">${targetModes.map(m=>`<button type="button" data-target="${m.key}" title="${m.key==='weakest'&&!targetingUnlocked(profile,m.key)?'Unlock Finish the Weak in Training':m.hint}"><span>${m.name}</span></button>`).join('')}</div><p class="target-description" data-target-description></p>`);
     ui.towerActions.querySelectorAll('[data-select-drone]').forEach(b=>{b.classList.toggle('selected',b.dataset.selectDrone===drone.id);b.setAttribute('aria-pressed',String(b.dataset.selectDrone===drone.id));});
     ui.towerActions.querySelectorAll('[data-target]').forEach(b=>{b.disabled=Boolean(state.result)||!targetingUnlocked(profile,b.dataset.target);b.classList.toggle('selected',b.dataset.target===drone.targeting);b.setAttribute('aria-pressed',String(b.dataset.target===drone.targeting));});
     ui.towerActions.querySelector('[data-target-description]').textContent=targetModes.find(m=>m.key===drone.targeting).hint;
     ui.towerActions.querySelector('[data-drone-total]').textContent=`${total}/4`;
-    ui.towerActions.querySelector('[data-drone-budget]').textContent=`${total}/4 installed · up to 3 per branch`;
+    ui.towerActions.querySelector('[data-drone-budget]').textContent='4 upgrades per drone';
     ui.towerActions.querySelectorAll('[data-drone-upgrade]').forEach(b=>{const key=b.dataset.droneUpgrade,cost=droneUpgradeCost(drone,key),rank=drone.upgrades[key],max=rank>=3||total>=4;b.disabled=max||state.gold<cost||Boolean(state.result);b.classList.toggle('needs-gold',!max&&state.gold<cost);b.querySelector('[data-drone-rank]').textContent=rank+'/3';b.querySelector('[data-drone-status]').textContent=max?'Upgrade limit reached':state.gold<cost?`$${cost} · need $${cost-state.gold} more`:`Upgrade · $${cost}`;});
   }
 
@@ -1499,28 +1500,22 @@ export function createGame({ ui, levels }) {
     ui.towerSidebarCloseButton.classList.toggle("hidden", !tower && !state.selectedObstacle);
     if (tower) {
       ui.towerSidebarTitle.textContent = tower.weapon.name;
-      const overview = [
-        ["Kills this mission",tower.kills||0],
-        ["Damage", tower.weapon.directDamage.toLocaleString("en-US")],
-        ["Fire rate", `${tower.weapon.atkSpeed}/s`],
-        ["Range", tower.range],
-        [tower.weapon.continuous==='laser' ? tower.reloadTimer>0?"Cooling":"Heat reserve" : tower.reloadTimer>0?"Reloading":"Ammo", tower.reloadTimer > 0 ? `${tower.reloadTimer.toFixed(1)}s` : `${tower.ammo} / ${tower.weapon.capacity}`],
-      ];
-      setMarkup(ui.towerStatList, `<p class="tower-role">${tower.weapon.role}${tower.pad ? ` · ${tower.pad === "range" ? "+18% range pad" : "+15% damage pad"}` : ""}</p>${overview.map(([label, value]) => `<div class="weapon-stat-row"><span>${label}</span><strong>${value}</strong></div>`).join("")}`);
+      const overview = [["Damage",tower.weapon.directDamage.toLocaleString("en-US")],["Range",tower.range],["Kills",tower.kills||0]];
+      setMarkup(ui.towerStatList,overview.map(([label,value])=>`<div class="weapon-stat-row"><span>${label}</span><strong>${value}</strong></div>`).join(''));
       // Keep controls mounted for the selected tower, including when gold/ammo changes
       // between pointerdown and pointerup. Only patch their text and availability.
       const paths = towerUpgradePathsFor(tower.weapon.key);
       mountActions(`tower:${tower.id}`, `
-        <div class="panel-section-label">TARGET PRIORITY <span>Firing order</span></div>
-        <div class="target-buttons" role="group" aria-label="Target priority">${targetModes.map(mode => `<button type="button" data-target="${mode.key}" title="${mode.key==='weakest'&&!targetingUnlocked(profile,mode.key)?'Unlock Finish the Weak in Training':mode.hint}"><i aria-hidden="true">${mode.icon}</i><span>${mode.name}</span></button>`).join("")}</div>
-        <p class="target-description" data-target-description></p>
-        <div class="panel-section-label upgrade-heading">FIELD UPGRADES <span data-upgrade-budget></span></div>
+        <div class="panel-section-label upgrade-heading">Upgrades <span data-upgrade-budget></span></div>
         ${paths.map(path => `<button type="button" class="upgrade-button upgrade-${path.key}" data-upgrade="${path.key}">
           <span class="upgrade-topline"><strong>${path.name}</strong><span class="upgrade-ranks" aria-hidden="true">${Array.from({length:path.maxRank||3},(_,i)=>i).map(rank => `<i data-rank="${rank}"></i>`).join("")}</span></span>
           <span class="upgrade-preview" data-preview></span>
           <span class="upgrade-purchase"><span data-upgrade-status></span><b data-cost></b></span>
         </button>`).join("")}
         <p class="upgrade-limit" data-upgrade-limit></p>
+        <div class="panel-section-label">Target priority</div>
+        <div class="target-buttons" role="group" aria-label="Target priority">${targetModes.map(mode => `<button type="button" data-target="${mode.key}" title="${mode.key==='weakest'&&!targetingUnlocked(profile,mode.key)?'Unlock Finish the Weak in Training':mode.hint}"><span>${mode.name}</span></button>`).join("")}</div>
+        <p class="target-description" data-target-description></p>
         <button type="button" class="secondary-button sell-button" data-sell="true"><span>Sell tower</span><strong data-sell-value></strong></button>
         <p class="upgrade-limit" data-refund-note></p>`);
       const total = tower.upgrades.power + tower.upgrades.tactical;
@@ -1531,7 +1526,7 @@ export function createGame({ ui, levels }) {
         button.disabled = Boolean(state.result)||!targetingUnlocked(profile,button.dataset.target);
       });
       ui.towerActions.querySelector("[data-target-description]").textContent = targetModes.find(mode => mode.key === tower.targeting)?.hint || targetModes[0].hint;
-      ui.towerActions.querySelector("[data-upgrade-budget]").textContent = `${total} / 4 installed`;
+      ui.towerActions.querySelector("[data-upgrade-budget]").textContent = `${total} / 4`;
       paths.forEach(path => {
         const button = ui.towerActions.querySelector(`[data-upgrade="${path.key}"]`);
         const rank = tower.upgrades[path.key];
@@ -1546,12 +1541,12 @@ export function createGame({ ui, levels }) {
         button.querySelectorAll("[data-rank]").forEach(pip => pip.classList.toggle("filled", Number(pip.dataset.rank) < rank));
         const next = applyTowerUpgrades(effectiveWeaponByKey(tower.weapon.key), { ...tower, upgrades: { ...tower.upgrades, [path.key]: rank + 1 } });
         const preview = branchMaxed || limitReached ? path.detail : upgradePreview(tower.weapon,next,path.key);
-        button.querySelector("[data-preview]").textContent = preview;
+        setMarkup(button.querySelector("[data-preview]"),preview.split(' · ').map(part=>`<span>${part.replace(/→ (.*)/,'→ <b>$1</b>')}</span>`).join(''));
         button.querySelector("[data-upgrade-status]").textContent = branchMaxed ? "Fully upgraded" : limitReached ? "Tower limit reached" : state.gold < cost ? `Need $${cost - state.gold} more` : "Upgrade";
         button.querySelector("[data-cost]").textContent = branchMaxed ? `${maxRank} / ${maxRank}` : limitReached ? "4 / 4" : `$${cost}`;
         button.setAttribute("aria-label", `${path.name}, rank ${rank} of ${maxRank}. ${preview}. ${button.querySelector("[data-upgrade-status]").textContent}${branchMaxed || limitReached ? "" : `, ${cost} credits`}`);
       });
-      ui.towerActions.querySelector("[data-upgrade-limit]").textContent = total >= 4 ? "All 4 upgrades installed on this tower." : tower.weapon.key==='magnum'?"Choose 4 upgrades total · Penetrator has 2 ranks.":"Choose 4 upgrades total · up to 3 in one branch.";
+      ui.towerActions.querySelector("[data-upgrade-limit]").textContent = total >= 4 ? "All 4 upgrades installed" : "4 upgrades per tower";
       ui.towerActions.querySelector("[data-sell-value]").textContent = `+$${sellValue(state, tower)}`;
       ui.towerActions.querySelector("[data-sell]").disabled = Boolean(state.result);
       ui.towerActions.querySelector("[data-refund-note]").textContent = state.waveIndex === 0 && state.phase === "prepare" ? "Full refund before the first wave." : "Returns 70% of your total investment.";
@@ -1572,11 +1567,12 @@ export function createGame({ ui, levels }) {
 
   function renderWeaponBar() {
     ui.weaponBar.style.setProperty('--loadout-count',loadoutCapacity(state.arsenalProfile));
-    ui.weaponBar.innerHTML=equippedWeapons(weapons,state.arsenalProfile).map((weapon,index)=>{
+    ui.weaponBar.style.setProperty('--weapon-rows',Math.ceil(loadoutCapacity(state.arsenalProfile)/2));
+    ui.weaponBar.innerHTML=equippedWeapons(weapons,state.arsenalProfile).map((weapon)=>{
       const effective=applySkillBonuses(weapon,state.arsenalProfile);
       return `<article class="weapon-card" data-weapon-key="${weapon.key}" style="--weapon-card-art:url('${new URL(assetUrl(weapon.slotCardAsset),document.baseURI).href}');--weapon-accent:${weapon.accent}">
       <button class="weapon-select" type="button" aria-label="Build ${weapon.name}, ${weapon.price} credits" aria-pressed="false">
-      <span class="weapon-topline"><kbd>${index+1}</kbd><span class="weapon-state">READY</span><span class="weapon-price">$${weapon.price}</span></span>
+      <span class="weapon-topline"><span class="weapon-state">READY</span><span class="weapon-price">$${weapon.price}</span></span>
       <span class="weapon-art-stage"><img class="weapon-art" src="${assetUrl(effective.hudAsset)}" alt="" draggable="false"></span>
       <span class="weapon-caption"><strong class="weapon-nickname">${weapon.key==='flamethrower'?weapon.nickname:weapon.name}</strong></span>
       </button>
@@ -1593,13 +1589,9 @@ export function createGame({ ui, levels }) {
   }
 
   function renderAbilityBar() {
-    const equippedAbility = activeAbilities.find((ability) => ability.key === state.equippedActiveKey);
-    if(!equippedAbility){ui.abilityBar.innerHTML=`<button class="ability-card ability-locked" data-open-doctrine type="button"><span class="ability-topline"><kbd>Q</kbd><span>SUPPORT</span></span><span class="locked-special-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5ZM12 14v3"/></svg></span><strong>${profile.equippedActiveKey?'Equipped next run':'Unlock a special'}</strong><small>Command graph →</small></button>`;return;}
-    ui.abilityBar.innerHTML = [equippedAbility].filter(Boolean).map((ability) => {
-      const stats = abilityStats(state.arsenalProfile, ability.key);
+    ui.abilityBar.innerHTML = state.equippedActiveKeys.map(key=>activeAbilities.find(a=>a.key===key)).map((ability) => {
       return `
         <button class="ability-card ability-illustrated active-${ability.key}" data-active-key="${ability.key}" type="button" title="${ability.name}">
-          <span class="ability-topline"><kbd>Q</kbd><span>POWER</span></span>
           <img class="ability-full-art" src="${assetUrl(assetPaths.slots.activeCards[ability.key])}" alt="${ability.name}" draggable="false">
           <strong class="ability-caption">${ability.name}</strong>
           <small>Ready</small>
@@ -1653,12 +1645,14 @@ export function createGame({ ui, levels }) {
   }
 
   let arsenalClass = 'handgun';
+  let powerSlot = 0;
   function syncArsenal() {
     renderArsenal(ui.arsenalContent,profile,weapons,arsenalClass);
-    document.getElementById('power-picker').innerHTML=`<div class="power-picker-head"><h3>One power. Your choice.</h3><span>All three available</span></div><div class="power-options">${activeAbilities.map(a=>`<button type="button" data-choose-power="${a.key}" class="${profile.equippedActiveKey===a.key?'selected':''}" aria-pressed="${profile.equippedActiveKey===a.key}"><img src="${assetPaths.slots.activeCards[a.key]}" alt=""><strong>${a.name}</strong><span>${a.key==='chronoBreak'?'Freeze every alien':a.key==='artillery'?'Bombard a marked area':'Burn an area over time'}</span><small>${profile.equippedActiveKey===a.key?'✓ EQUIPPED':'SELECT'}</small></button>`).join('')}</div>`;
+    const powers=equippedPowerKeys(profile);powerSlot=Math.min(powerSlot,powers.length-1);
+    document.getElementById('power-picker').innerHTML=`<div class="power-picker-head"><h3>${powers.length===2?'Your support duo.':'Choose your power.'}</h3><span>${powers.length===2?'Independent cooldowns':'Second slot: Support → Dual Support'}</span></div>${powers.length===2?`<div class="power-slot-tabs" role="group" aria-label="Power to replace">${powers.map((key,i)=>`<button type="button" data-power-slot="${i}" class="${i===powerSlot?'selected':''}" aria-pressed="${i===powerSlot}">${i?'Secondary':'Primary'} · ${activeAbilities.find(a=>a.key===key).shortName}</button>`).join('')}</div>`:''}<div class="power-options">${activeAbilities.map(a=>`<button type="button" data-choose-power="${a.key}" class="${powers[powerSlot]===a.key?'selected':''}" aria-pressed="${powers[powerSlot]===a.key}"><img src="${assetPaths.slots.activeCards[a.key]}" alt=""><strong>${a.name}</strong><span>${a.key==='chronoBreak'?'Freeze every alien':a.key==='artillery'?'Bombard a marked area':'Burn an area over time'}</span><small>${powers[powerSlot]===a.key?'✓ EQUIPPED':powers.includes(a.key)?'SWAP POSITIONS':'SELECT'}</small></button>`).join('')}</div>`;
 
     document.getElementById('arsenal-restart-panel').classList.toggle('hidden',!state||Boolean(state.result));
-    const deploymentConfig=p=>JSON.stringify({keys:loadoutKeys(p),slots:loadoutCapacity(p),skills:p.skills,active:p.equippedActiveKey});
+    const deploymentConfig=p=>JSON.stringify({keys:loadoutKeys(p),slots:loadoutCapacity(p),skills:p.skills,active:equippedPowerKeys(p)});
     document.getElementById('arsenal-restart-button').disabled=Boolean(state&&deploymentConfig(state.arsenalProfile)===deploymentConfig(profile));
     ui.arsenalGoal.textContent = `COMMANDER LV ${profile.level} / ${nextArsenalUnlock(profile)}`;
   }
@@ -1673,7 +1667,7 @@ export function createGame({ ui, levels }) {
     (state?(state.result?ui.resultArsenalButton:document.getElementById("field-loadout-button")):ui.menuArsenalButton).focus();
   }
   document.getElementById('field-power-button').addEventListener('click',()=>{openArsenal();document.getElementById('power-picker').scrollIntoView({block:'center'});});
-  document.getElementById('power-picker').addEventListener('click',event=>{const key=event.target.closest('[data-choose-power]')?.dataset.choosePower;if(!isActiveAbilityKey(key))return;profile.equippedActiveKey=key;saveProfile(profile);syncArsenal();});
+  document.getElementById('power-picker').addEventListener('click',event=>{const slot=event.target.closest('[data-power-slot]');if(slot){powerSlot=Number(slot.dataset.powerSlot);syncArsenal();return;}const key=event.target.closest('[data-choose-power]')?.dataset.choosePower;if(!equipPower(profile,key,powerSlot))return;saveProfile(profile);syncArsenal();});
   document.getElementById('field-loadout-button').addEventListener('click',openArsenal);
   document.getElementById('weapon-customize-button').addEventListener('click',event=>{arsenalClass=event.currentTarget.dataset.customizeWeapon;ui.arsenalContent.dataset.slot=Math.max(0,loadoutKeys(profile).indexOf(arsenalClass));closeWeaponInfo();openArsenal();});
   document.getElementById('arsenal-restart-button').addEventListener('click',()=>{if(state&&!state.result)startLevel(state.level);});
@@ -1832,7 +1826,7 @@ export function createGame({ ui, levels }) {
     const equippedActiveKey = equipActiveKeyFromEvent(event);
     if (equippedActiveKey) {
       if (!isActiveAbilityKey(equippedActiveKey)||!activeUnlocked(profile,equippedActiveKey)) return;
-      profile.equippedActiveKey = equippedActiveKey;
+      equipPower(profile,equippedActiveKey);
       saveProfile(profile);
       syncDoctrine();
       return;
@@ -1844,6 +1838,13 @@ export function createGame({ ui, levels }) {
       state.arsenalProfile.arsenal={loadout:loadoutKeys(state.arsenalProfile)};
       renderWeaponBar();
     }
+    if(skillKey==='powerSlots'&&state&&!state.result){
+      state.arsenalProfile.skills.powerSlots=profile.skills.powerSlots;
+      // Add only the newly purchased slot; never reset an existing cooldown or power.
+      state.equippedActiveKeys=equippedPowerKeys(state.arsenalProfile);
+      state.arsenalProfile.equippedSecondaryActiveKey=state.equippedActiveKeys[1];
+    }
+    profile.equippedSecondaryActiveKey=equippedPowerKeys(profile)[1]||null;
     profile.onboarding.researchSpent=true;
     profile.arsenal={loadout:loadoutKeys(profile)};
     saveProfile(profile);
@@ -2039,7 +2040,7 @@ export function createGame({ ui, levels }) {
       event.preventDefault();
       ui.playPauseButton.click();
     }
-    if (event.key.toLowerCase() === "q") ui.abilityBar.querySelector("button")?.click();
+    if (["q","e"].includes(event.key.toLowerCase())) ui.abilityBar.querySelectorAll("[data-active-key]")[event.key.toLowerCase()==="q"?0:1]?.click();
     if (event.key === "Escape") {
       if (state.selectedWeaponKey || state.selectedTowerId || state.selectedDroneId || state.selectedActiveKey || state.selectedObstacle) {
         state.selectedWeaponKey = state.selectedTowerId = state.selectedDroneId = state.selectedActiveKey = state.selectedObstacle = null;
@@ -2088,6 +2089,8 @@ export function createGame({ ui, levels }) {
     selectedWeapon: state?.selectedWeaponKey,
     selectedTower: state?.selectedTowerId,
     equippedActive: state?.equippedActiveKey,
+    equippedPowers: state?.equippedActiveKeys,
+    nextEquippedPowers: equippedPowerKeys(profile),
     nextEquippedActive: profile.equippedActiveKey,
     selectedActive: state?.selectedActiveKey,
     activeAbilities: state ? Object.fromEntries(activeAbilities.map((ability) => [
