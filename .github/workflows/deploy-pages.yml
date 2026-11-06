@@ -80,6 +80,11 @@ jobs:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:frontier
 
+      - name: Validate pointer preview and placement on every mission
+        env:
+          GAME_URL: http://127.0.0.1:4173
+        run: npm run test:placement
+
       - name: Prepare production files
         run: npm run build
 
@@ -103,6 +108,7 @@ jobs:
             output/doctrine
             output/hud
             output/frontier
+            output/placement
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

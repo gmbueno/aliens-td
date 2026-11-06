@@ -1140,16 +1140,14 @@ function drawGame(ctx, state, assets) {
       const canPlace = state.gold >= selected.price+(tileSets.water.has(key)?PONTOON_COST:0) && (!tileSets.water.has(key)||skillRank(state.profile,'pontoons')) && !tileSets.path.has(key) && !tileSets.blockers.has(key) && !occupied;
       const x = board.x + state.hoverTile.col * board.tile + board.tile / 2;
       const y = board.y + state.hoverTile.row * board.tile + board.tile / 2;
-      if(level.speedTiles?.some(tile=>tile.row===row&&tile.col===col)){
-        ctx.fillStyle='#e99c2540';ctx.fillRect(x+3,y+3,board.tile-6,board.tile-6);
-        const index=level.track.findIndex(t=>t.row===row&&t.col===col),to=level.track[Math.min(index+1,level.track.length-1)];
-        ctx.save();ctx.translate(x+board.tile/2,y+board.tile/2);ctx.rotate(Math.atan2(to.row-row,to.col-col));
-        ctx.strokeStyle='#ffe39a';ctx.lineWidth=3;ctx.lineCap='round';
-        for(const cx of [-10,4]){ctx.beginPath();ctx.moveTo(cx-4,-9);ctx.lineTo(cx+5,0);ctx.lineTo(cx-4,9);ctx.stroke();}ctx.restore();
-      }
       const pad = level.pads?.find(tile => tile.row === state.hoverTile.row && tile.col === state.hoverTile.col);
       drawRangeCircle(ctx, x, y, selected.range * (pad?.type === "range" ? 1.18 : 1), canPlace ? "rgba(116, 224, 108, 0.88)" : "rgba(255, 103, 125, 0.82)");
       drawPlacementIndicator(ctx, board, state.hoverTile.row, state.hoverTile.col, canPlace);
+      ctx.save();
+      ctx.globalAlpha = canPlace ? .65 : .35;
+      drawTower(ctx, { weapon: selected, x, y, tile: board.tile, angle: 0,
+        platform: tileSets.water.has(key) ? PONTOON_COST : 0 }, assets);
+      ctx.restore();
     }
   }
 
