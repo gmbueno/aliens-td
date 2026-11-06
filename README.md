@@ -42,6 +42,7 @@ GAME_URL=http://localhost:4173 npm run test:arsenal
 GAME_URL=http://localhost:4173 npm run test:progression
 GAME_URL=http://localhost:4173 npm run test:hud
 GAME_URL=http://localhost:4173 npm run test:frontier
+GAME_URL=http://localhost:4173 npm run test:placement
 ```
 
 The unit/campaign tests use Node 22 without dependencies. The browser suite uses Playwright and saves screenshots under ignored `output/`. The balance runner uses a repeatable placement policy, reinvests between waves, and deliberately does not use active abilities. It is a regression benchmark, not a promise that every strategy wins.
@@ -140,3 +141,11 @@ heat, fuel, pause/audio, card art, map previews and responsive research states.
 Core tests also cover the two-type opening, milestone progression, flame cone,
 critical upgrades and overdrive terrain. PixelForge provenance and its reported
 US$0.0604 cost are documented in `assets/frontier/`.
+
+### Placement hotfix (0.5.1)
+
+Fixed a hover-rendering exception on overdrive maps that froze the canvas before
+placement. The preview shows the equipped weapon, its range and destination tile.
+`test:placement` physically moves the mouse before building on all 18 missions,
+checks rejected road tiles and purchase accounting, then verifies that the native
+animation loop continues spawning enemies. This is a deployment gate.
