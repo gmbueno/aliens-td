@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="./src/ui/command-center.css" />
   <link rel="stylesheet" href="./src/ui/frontier-theme.css" />
   <link rel="stylesheet" href="./src/ui/refinement.css" />
+  <link rel="stylesheet" href="./src/ui/mobile.css" />
   </head>
   <body>
     <main class="app-shell">
@@ -77,8 +78,10 @@
         </header>
 
         <section class="arena-wrap">
-          <canvas id="game-canvas" width="1280" height="720" aria-label="Battlefield. Select a tower, then select a free tile to build."></canvas>
+          <div class="battlefield-viewport" id="battlefield-viewport"><canvas id="game-canvas" width="1280" height="720" aria-label="Battlefield. Select a tower, then select a free tile to build."></canvas></div>
           <aside class="tower-sidebar" id="tower-sidebar">
+            <div class="mobile-battle-tools"><button id="mobile-deck-toggle" type="button" aria-expanded="true" aria-controls="mobile-deck-body"><img src="./assets/refinement/loadout.png" alt=""><span>Arsenal</span><i aria-hidden="true">⌃</i></button><div class="mobile-map-tools" role="group" aria-label="Map view"><button id="map-zoom-out" type="button" aria-label="Zoom out">−</button><button id="map-fit" type="button" aria-label="Show entire map" title="Show entire map"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6"/></svg></button><button id="map-zoom-in" type="button" aria-label="Zoom in">+</button></div></div>
+            <div class="mobile-deck-body" id="mobile-deck-body">
             <div id="tower-inspector" class="hidden"><div class="tower-sidebar-head">
               <div>
                 <p>EMPLACEMENT</p>
@@ -89,7 +92,7 @@
             <div class="weapon-stat-list" id="tower-stat-list"></div>
             <div id="tower-actions" class="tower-actions"></div></div>
             <div id="deployment-panel"><div class="deck-top"><button id="field-loadout-button" type="button" title="Change loadout" aria-label="Change loadout"><img src="./assets/refinement/loadout.png" alt=""><span>Loadout</span></button></div><div class="weapon-bar" id="weapon-bar"></div><div class="power-section"><div class="power-label"><span><img src="./assets/refinement/power-swap.png" alt="">SUPPORT</span><button id="field-power-button" type="button" title="Change power" aria-label="Change power"><img src="./assets/refinement/power-swap.png" alt=""></button></div><div class="ability-bar" id="ability-bar"></div></div></div>
-          </aside>
+            </div></aside>
         </section>
 
         <div class="battle-status"><span id="battle-message" role="status"></span></div>

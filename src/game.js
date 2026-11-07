@@ -1,5 +1,6 @@
 import {setMissileAim,updateTacticalDefense,drawTacticalDefense,producePathMines} from './systems/tacticalDefense.js';
 import {weaponRangeCells,rangePerimeter} from './systems/rangeGeometry.js';
+import {createMobileBattlefield} from './ui/mobileBattlefield.js';
 import {currentWave,endlessWave,beginFreeplay} from './systems/endless.js';
 import { targetForTower, targetModes, targetingUnlocked, enemySpeed } from './systems/targeting.js';
 export { targetForTower } from './systems/targeting.js';
@@ -1319,6 +1320,7 @@ function drawGame(ctx, state, assets) {
 }
 
 export function createGame({ ui, levels }) {
+  const mobileBattlefield=createMobileBattlefield(ui);
   const ctx = ui.canvas.getContext("2d");
   const assets = createAssetStore();
   const audio = createWeaponAudio();
@@ -1407,7 +1409,7 @@ export function createGame({ ui, levels }) {
     const hints=profile.onboarding;
     const research=campaignClears(profile)>0&&!hints.researchSpent&&profile.skillPoints>=4;
     for(const button of [ui.playerLevelButton,ui.menuSkillsButton,ui.resultSkillsButton])button.classList.toggle('learn-pulse',research);
-    const discovery=weapons.some(w=>classUnlocked(profile,w.key)&&!hints.seenWeapons.includes(w.key));
+    const discovery=campaignClears(profile)>0&&weapons.some(w=>!['handgun','assault_rifle','machine_pistol'].includes(w.key)&&classUnlocked(profile,w.key)&&!hints.seenWeapons.includes(w.key));
     for(const button of [document.getElementById('field-loadout-button'),ui.menuArsenalButton,ui.resultArsenalButton])button.classList.toggle('learn-pulse',discovery);
     const upgrade=state&&!hints.towerUpgraded&&state.towers.length>0;
     ui.towerActions.querySelectorAll('[data-upgrade]').forEach(b=>b.classList.toggle('learn-pulse',Boolean(upgrade&&!b.disabled)));
@@ -1493,6 +1495,7 @@ export function createGame({ ui, levels }) {
       card.querySelector(".weapon-state").textContent = full ? "✓" : selected ? "+" : "";
     });
     syncTowerSidebar();
+    mobileBattlefield.sync(state);
     syncHints();
   }
 
@@ -1628,6 +1631,7 @@ export function createGame({ ui, levels }) {
   }
 
   function renderWeaponBar() {
+    ui.weaponBar.dataset.count=loadoutCapacity(state.arsenalProfile);
     ui.weaponBar.style.setProperty('--loadout-count',loadoutCapacity(state.arsenalProfile));
     ui.weaponBar.style.setProperty('--weapon-rows',Math.ceil(loadoutCapacity(state.arsenalProfile)/2));
     ui.weaponBar.innerHTML=equippedWeapons(weapons,state.arsenalProfile).map((weapon)=>{
@@ -1778,6 +1782,7 @@ export function createGame({ ui, levels }) {
     actionsPanelKey = null;
     ui.mainMenu.classList.add("hidden");
     ui.gameScreen.classList.remove("hidden");
+    mobileBattlefield.reset();
     ui.pauseModal.classList.add("hidden");
     ui.resultModal.classList.add("hidden");
     renderAbilityBar();
@@ -2138,6 +2143,7 @@ export function createGame({ ui, levels }) {
     mode: !document.getElementById("stats-screen").classList.contains("hidden")?"stats":ui.mainMenu.classList.contains("hidden") ? "game" : "menu",
     coordinateSystem: "canvas origin top-left, x right, y down",
     audio: audio.diagnostics(),
+    mobileView:mobileBattlefield.diagnostics(),
     board: state?.board,
     phase: state?.phase, freeplay:state?.freeplay,endlessRound:state?.endlessRound,entranceCountdown:state?Math.max(0,state.phase==='prepare'?state.waveDelay+(currentWave(state)?.spawns[0]?.at||0):(currentWave(state)?.spawns.find((s,i)=>!state.spawnedInWave.has(i))?.at||0)-state.waveTime):0,
     paused: state?.isPaused,

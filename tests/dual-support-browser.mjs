@@ -22,10 +22,10 @@ try {
  for(const viewport of [{width:1280,height:720},{width:1024,height:768},{width:390,height:844}]){
   const p=await h.pageFor({},viewport);await p.click('#menu-play-button');
   const b=await p.evaluate(()=>{const rect=q=>{const r=document.querySelector(q).getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}};return {canvas:rect('#game-canvas'),deck:rect('#tower-sidebar'),cards:[...document.querySelectorAll('.weapon-card')].map(e=>{const r=e.getBoundingClientRect(),price=e.querySelector('.weapon-price').getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,priceX:price.x+price.width/2}})}});
-  assert.equal(b.cards[0].y,b.cards[1].y);assert.ok(b.cards[2].y>b.cards[0].y);
+  assert.equal(b.cards[0].y,b.cards[1].y);if(viewport.width>760)assert.ok(b.cards[2].y>b.cards[0].y);else assert.equal(b.cards[2].y,b.cards[0].y);
   for(const c of b.cards)assert.ok(Math.abs(c.priceX-c.x-c.w/2)<2,'price centered');
   if(viewport.width>760){assert.ok(Math.abs(b.canvas.h-b.deck.h)<1);assert.ok(Math.abs(b.canvas.y-b.deck.y)<1);assert.ok(Math.abs(b.canvas.x+b.canvas.w-b.deck.x)<1);}
   await p.click('[data-weapon-key="handgun"] .weapon-select');await tile(p,5,3);await tile(p,5,3);await h.shot(p,'upgrade-'+viewport.width);await p.context().close();
  }
- h.finish();console.log('PASS: purchase live without resetting cooldown, all power pairs, aiming, independent timers, pause, swap/restart/save, shortcuts, two columns, centered prices and flush canvas-height deck.');
+ h.finish();console.log('PASS: purchase live without resetting cooldown, all power pairs, aiming, independent timers, pause, swap/restart/save, shortcuts, adaptive columns, centered prices and flush canvas-height deck.');
 } finally {await h.browser.close();}

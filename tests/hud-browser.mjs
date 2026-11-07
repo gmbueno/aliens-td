@@ -45,6 +45,7 @@ async function verifyCounters(page) {
       if(el.scrollWidth>el.clientWidth+1) problems.push(`${el.className}: ${el.scrollWidth}/${el.clientWidth}`);
     }
     for(const el of hud.querySelectorAll('.readout-label, .hud-readout strong, .hud-sp')) {
+      if(el.getBoundingClientRect().width<=1||!el.getClientRects().length)continue;
       const r=el.getBoundingClientRect(),p=el.closest('.hud-chip').getBoundingClientRect();
       if(r.right>p.right-2 || r.left<p.left+2) problems.push(`clipped ${el.textContent}`);
     }

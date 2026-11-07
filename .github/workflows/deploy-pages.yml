@@ -75,6 +75,11 @@ jobs:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:refinement
 
+      - name: Validate mobile layout, real touch navigation and first-run guidance
+        env:
+          GAME_URL: http://127.0.0.1:4173
+        run: npm run test:mobile
+
       - name: Validate tactical economy, specialists and enemy control
         env:
           GAME_URL: http://127.0.0.1:4173
@@ -141,6 +146,7 @@ jobs:
             output/placement
             output/browser
             output/refinement
+            output/mobile
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
