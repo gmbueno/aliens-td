@@ -12,7 +12,7 @@ try{
  }
  const p=await h.pageFor({schemaVersion:4,level:12,missions:missionRecords(),skills:{loadoutSlots:2},caches:{level_4:true},arsenal:{spSpent:8,blueprints:{handgun:'legendary'},attachments:{handgun:['incendiary']}}});
  await p.click('[data-sector="1"]');await p.click('[data-level-id="level_1"]');await p.click('#menu-play-button');assert.equal((await read(p)).loadout.length,6);
- await p.click('[data-weapon-key="handgun"] .weapon-select');await tile(p,5,3,250);assert.equal((await read(p)).towers.length,1);
+ await p.click('[data-weapon-key="handgun"] .weapon-select');await tile(p,5,3,250);assert.equal((await read(p)).towers.length,1);await p.click('[data-weapon-key="handgun"] .weapon-select');await tile(p,1,1);assert.equal((await read(p)).towers.length,2);
  assert.ok(await p.locator('[data-weapon-key="handgun"] .weapon-select').isDisabled());
  await p.click('[data-info-weapon-key="handgun"]');assert.ok(await p.locator('#weapon-equip-button').isDisabled());await p.click('#weapon-customize-button');assert.equal((await read(p)).paused,true);
  await p.click('[data-loadout-slot="0"]');await p.click('[data-equip-category="rocket_launcher"]');assert.equal((await read(p)).loadout[0],'handgun','current deployment keeps its categories');

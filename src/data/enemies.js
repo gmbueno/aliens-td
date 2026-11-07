@@ -1,6 +1,7 @@
 import { assets } from "./assets.js";
 
 export const enemies = {
+ alien_flyer:{key:'alien_flyer',label:'Sky Wraith',life:6500,speed:72,damage:2,gold:18,xp:4,flying:true,shape:'triangle',color:'#b7c99b',asset:'assets/tactics/flyer.png',visualSize:72},
   alien_normal: {
     key: "alien_normal",
     label: "Scout",

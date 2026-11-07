@@ -20,7 +20,7 @@ test('Free play preserves the army, advances procedurally without mission reward
  const a=endlessWave(levels[0],1),b=endlessWave(levels[0],30),c=endlessWave(levels[0],100000);assert.deepEqual(a,endlessWave(levels[0],1));assert.ok(b.healthScale>a.healthScale&&b.spawns.length>a.spawns.length);assert.ok(c.spawns.length<=180&&Number.isFinite(c.healthScale));assert.ok(new Set(b.spawns.map(s=>s.enemy)).size>=4);
 });
 test('new army caps progress from one through three and old Stasis cooldowns survive migration once',()=>{
- for(let r=0;r<3;r++)assert.equal(placementLimit({skills:{duplicates:r}}),r+1);
+ for(let r=0;r<4;r++)assert.equal(placementLimit({skills:{duplicates:r}}),r+2);
  const p=normalizeProfile({schemaVersion:6,skills:{chronoBreak:3},skillPoints:8});assert.equal(p.skills.chronoCooldown,3);const again=normalizeProfile(JSON.parse(JSON.stringify(p)));assert.equal(again.skillPoints,p.skillPoints);assert.equal(again.skills.chronoCooldown,3);resetSkills(p);assert.equal(p.skills.chronoCooldown,0);
  assert.equal(weapons.find(w=>w.key==='laser').directDamage,624);
 });

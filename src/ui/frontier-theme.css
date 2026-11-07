@@ -1,0 +1,32 @@
+/* A shared olive-and-brass command language throughout the game. */
+:root{--gold:#dfb55d;--paper:#eee1b9;--armor:#242c20;--edge:#81764b}
+body{background:radial-gradient(ellipse at 30% 15%,#4c4b2b44,transparent 65%),repeating-linear-gradient(112deg,#b9a56908 0 1px,transparent 1px 7px),#141a14;color:var(--paper)}
+body::before{background:radial-gradient(ellipse at 25% 70%,#81703f20,transparent 65%)!important}
+.menu-card,.pause-card,.arsenal-card,.weapon-info-card,.stats-screen{background:radial-gradient(ellipse at top left,#4b4b2d66,transparent 60%),#1a2119;border:1px solid var(--edge);border-radius:3px;box-shadow:0 14px 55px #0008}
+.menu-card{border-top:3px solid #d6a74d}.menu-head{border-color:#a48d5144}.menu-head h1,.arsenal-head h2,.stats-head h1,.weapon-info-head h2{color:var(--paper)}
+.commander-button,.commander-button:hover,.hud-top .player-chip{background:linear-gradient(140deg,#41462b,#1f281c);border-color:#a58d51;color:#e9d5a2}
+.menu-loadout button,.secondary-button,.icon-button{background:#2b3424;border-color:#7d7d53;color:#e7d9af}
+.primary-button,.sector-tabs button.selected,.doctrine-branches button.selected{background:linear-gradient(135deg,#af7724,#dfb456);border-color:#e8c477;color:#202619;font-weight:800}
+.primary-button:hover{background:#edc875;color:#182114}.secondary-button:hover,.icon-button:hover{background:#495038;border-color:#d8ba71}
+.sector-tabs button{background:#252d21;border-color:#6c7050;color:#b8b695}
+.level-tile{background:linear-gradient(145deg,#30382a,#212a20);border-color:#626b4a;border-radius:3px;color:#d9d3b3}.level-tile.selected{border-color:#e7ba64;background:linear-gradient(145deg,#4b4b2b,#2a3522);box-shadow:inset 0 0 0 1px #d6b560}
+.level-tile:hover{border-color:#c7b674}.level-tile .map-preview{background:#192218}.mission-briefing{border-color:#766b44;background:#1c251b}.mission-briefing h2{color:#eddfb8}.mission-briefing p,.menu-card p{color:#bfc1a3}
+.enemy-roster span,.briefing-legend,.next-discovery{border-color:#81764b60;background:#2b342555;color:#d1c79d}
+.hud-top .hud-chip{background:linear-gradient(135deg,#30392a,#171f18);border-color:#9c8951}.hud-top .hud-chip::before{filter:sepia(.6) saturate(.7) hue-rotate(345deg)}
+.hud-top .readout-label,.hud-top .hud-label{color:#d6c69d}.hud-top .hud-readout strong,.hud-top .hud-chip strong{color:#f0e2bd}
+.hud-top .hud-symbol{filter:drop-shadow(0 2px 2px #0009)}
+.hud-top .hud-controls .control-sprite{filter:sepia(.45) hue-rotate(345deg) saturate(.75)}
+#game-screen .tower-sidebar{background:linear-gradient(150deg,#323d2a,#1b261c 70%);border-color:#8c8051}
+#deployment-panel .weapon-card{background:linear-gradient(150deg,#3b422c,#222e21);border-color:#747b51;box-shadow:inset 0 1px #d9c38422}
+#deployment-panel .weapon-card.selected{background:#505538;border-color:#edc471}#deployment-panel .weapon-price{color:#f6d38c}
+#deployment-panel .power-section,.deck-top{border-color:#9c90534a}.deck-top button,.power-label button{border-color:#999264;color:#dfd6b3}.deck-top button:hover,.power-label button:hover{background:#4b5235}
+#game-screen .upgrade-button{background:linear-gradient(140deg,#424d32,#2a3826);border-color:#92966a}#game-screen .upgrade-button:hover:not(:disabled){border-color:#e4c273;background:#4b5639}
+#game-screen .target-buttons button{background:#24301f;border-color:#65754d;color:#c9cfad}#game-screen .target-buttons button.selected{background:#d1c484;color:#26301f;border-color:#efdb97}
+#game-screen .tower-sidebar-head h2,.weapon-info-title{color:#f2dfb5}.arsenal-head{background:#1a2119}.category-card,.loadout-slots button,.power-options button{background:#293523;border-color:#737b50;color:#d9dbb5}.category-card.selected,.power-options button.selected,.loadout-slots button.selected{background:#454b2d;border-color:#e2b968}
+.power-slot-tabs button{background:#263320;border-color:#888653}.power-slot-tabs button.selected{background:#4b5131;border-color:#ddbb6b}
+.combat-record{background:#293724;border-color:#66734b}.combat-record h2{color:#ebe1b7}.stats-head,.stats-support{border-color:#7b7449}
+.alien-portrait{grid-column:1/-1;display:grid;place-items:center}.alien-portrait img{width:96px;height:96px;object-fit:contain}.alien-traits{font:12px/1.7 'Trebuchet MS',sans-serif;color:#d3d8b8}
+.drone-paths{display:grid;grid-template-columns:1fr 1fr;gap:6px}.drone-paths .upgrade-button{font-size:11px;padding:7px!important;gap:4px!important}.drone-paths img{width:36px;height:36px;object-fit:contain}.drone-paths [data-drone-status]{font-size:10px}.drone-paths .selected{outline:1px solid #dfbd6a}
+#game-screen .ability-full-art{image-rendering:auto}#deployment-panel .weapon-art{image-rendering:auto}
+#pause-modal .pause-card>p:first-child{font-weight:800;color:#e9d3a0;text-transform:uppercase;letter-spacing:2px}.shortcuts{border-color:#7b784d;color:#c7cbb0}
+@media(max-height:580px) and (min-width:721px){.drone-paths .upgrade-preview{display:none}}

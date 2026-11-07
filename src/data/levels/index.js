@@ -25,3 +25,13 @@ for(const [index,level] of levels.entries()){
  level.threat*=index<3?1.08:1.2;
  level.waves=level.waves.map(w=>({...w,reward:Math.round(w.reward*(index<3?1.25:1.9)),spawns:w.spawns.flatMap((s,i)=>index>=3&&i%2===0?[{...s},{...s,at:s.at+.25}]:index<3&&i%6===5?[{...s},{...s,at:s.at+.3}]:[{...s}]).sort((a,b)=>a.at-b.at)}));
 }
+
+// Optional risk/reward positions appear after the training missions.
+for(const [index,level] of levels.entries()){
+ if(index>=3){
+  const occupied=t=>[...level.track,...level.blockers,...level.pads,...(level.water||[])].some(p=>p.row===t.row&&p.col===t.col);
+  const available=[];for(let row=1;row<level.rows-1;row++)for(let col=1;col<level.cols-1;col++){const t={row,col};if(!occupied(t))available.push(t);}
+  level.blockers.push(...available.filter((_,i)=>i%13===4).slice(0,2).map(t=>({...t,kind:'infested',encounter:true,cost:0})));
+ }
+ if(index>=4)level.waves=level.waves.map((w,i)=>i%2===1?{...w,spawns:[...w.spawns,{enemy:'alien_flyer',at:3}].sort((a,b)=>a.at-b.at)}:w);
+}

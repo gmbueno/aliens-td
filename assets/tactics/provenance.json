@@ -1,0 +1,100 @@
+{
+  "studio": "https://codevon-com.github.io/pixelforge/",
+  "date": "2026-11-07",
+  "license": "CC0-1.0",
+  "batches": [
+    {
+      "name": "new-field",
+      "size": 128,
+      "count": 16,
+      "keys": [
+        "factory",
+        "missile",
+        "minelayer",
+        "gas",
+        "flyer",
+        "infested",
+        "fastest",
+        "focusTarget",
+        "cryo",
+        "burn",
+        "factory-icon",
+        "mine-icon",
+        "missile-icon",
+        "gas-icon",
+        "mine",
+        "smoke"
+      ],
+      "prompt": "Exactly16 separate military sci-fi game sprites in a strict4 by4 grid on TRUE transparent alpha. Detailed hand-painted gunmetal and brass machinery with amber lights, sculpted realistic materials, NOT pixel art. Same visual family as futuristic top-down weapon emplacements. No text, frames or backgrounds. Center each within its cell. Exact row-major order: 1 futuristic income factory with smokestacks and coin storage TOP DOWN; 2 vertical missile silo emplacement TOP DOWN; 3 automated mine dispenser emplacement TOP DOWN; 4 circular gas emitter tower with green vents TOP DOWN; 5 flying alien with broad membrane wings TOP DOWN; 6 infested military cargo crate with alien tendrils TOP DOWN; 7 gold speed lightning icon; 8 gold crosshair marking a skull icon; 9 icy blue cryogenic projectile icon; 10 amber burning projectile icon; 11 brass factory icon; 12 brass landmine icon; 13 brass missile icon; 14 brass gas cloud icon; 15 small round proximity mine TOP DOWN; 16 translucent green gas plume.",
+      "model": "openai/gpt-image-2.5-flare",
+      "hash": "2d6aec6f5f1b3fbfa174899ae78e7b9f7ac5e8311fc7bfede047f55637f12cdd",
+      "originalSize": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "weapons-hd",
+      "size": 128,
+      "count": 4,
+      "keys": [
+        "rocket_launcher",
+        "flamethrower",
+        "laser",
+        "uavBase"
+      ],
+      "prompt": "Exactly4 TOP DOWN orthographic futuristic defense weapon sprites in a strict2 by2 grid, true alpha transparent background. Realistic high definition painted game art, NOT pixelated, intricate worn steel, brushed gunmetal, brass bolts, deep mechanical grooves, tiny glowing energy accents. Match military tower defense art. All muzzles point DOWN. No text, hands, ground, card, frame or pedestal. Order top left: shoulder-fired RPG launcher tube, tall slender grey barrel and olive rocket; top right: heavy flamethrower, red orange fuel tanks and wide nozzle; bottom left: continuous laser array, tall cyan emitter with black cooling fins; bottom right: UAV landing pad square gunmetal platform with brass landing stripes and cyan circle. Center objects fully inside cells with transparent margin.",
+      "model": "openai/gpt-image-2.5-flare",
+      "hash": "2551ad27ac40672f7707e2137dbbe6eb6651cb8311a417b0ca8ad2450e7f189c",
+      "originalSize": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "chronoBreak-hd",
+      "size": 128,
+      "count": 1,
+      "keys": [
+        "chronoBreak"
+      ],
+      "prompt": "One polished cinematic sci-fi tower defense POWER CARD asset. High resolution hand-painted illustration, NOT pixel art. A tall portrait metal card centered on a transparent square canvas. Distressed dark olive gunmetal and brass beveled border, warm amber edge lights, coherent military command style. Full card visible, no cropped edges. Central luminous cyan hourglass suspended in an expanding frozen time ring; text TIME STOP at bottom. Large legible title, strong central silhouette, sophisticated realistic materials and lighting, no extra UI.",
+      "model": "openai/gpt-image-2.5-flare",
+      "hash": "dd1bd220cc5ca4cfc213efc34ef01dc9e06ccc4076080e08ee3039f79ac20b17",
+      "originalSize": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "artillery-hd",
+      "size": 128,
+      "count": 1,
+      "keys": [
+        "artillery"
+      ],
+      "prompt": "One polished cinematic sci-fi tower defense POWER CARD asset. High resolution hand-painted illustration, NOT pixel art. A tall portrait metal card centered on a transparent square canvas. Distressed dark olive gunmetal and brass beveled border, warm amber edge lights, coherent military command style. Full card visible, no cropped edges. Dramatic artillery shells falling onto an alien battlefield with bright brass orange impact explosions; text ARTILLERY at bottom. Large legible title, strong central silhouette, sophisticated realistic materials and lighting, no extra UI.",
+      "model": "openai/gpt-image-2.5-flare",
+      "hash": "3d5d41f44c6cd58d000dbcac50c24265ab03da262d166470b3fd144c0c20e034",
+      "originalSize": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "napalm-hd",
+      "size": 128,
+      "count": 1,
+      "keys": [
+        "napalm"
+      ],
+      "prompt": "One polished cinematic sci-fi tower defense POWER CARD asset. High resolution hand-painted illustration, NOT pixel art. A tall portrait metal card centered on a transparent square canvas. Distressed dark olive gunmetal and brass beveled border, warm amber edge lights, coherent military command style. Full card visible, no cropped edges. Incendiary canister releasing vivid orange fire over a battlefield; text NAPALM at bottom. Large legible title, strong central silhouette, sophisticated realistic materials and lighting, no extra UI.",
+      "model": "openai/gpt-image-2.5-flare",
+      "hash": "b82fffad5977911bbf2039e7fd62da969b9adaee13c4f3d622118d463f117a36",
+      "originalSize": [
+        1024,
+        1024
+      ]
+    }
+  ]
+}

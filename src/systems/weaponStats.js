@@ -30,6 +30,10 @@ export function applySupportBuffs(towers){
 }
 const path = (key,name,detail,multiplier=.75) => ({key,name,detail,multiplier});
 const upgradePaths = {
+ factory:[path('power','High-yield Press','+$12 per payout per rank'),path('tactical','Automation','Faster payouts and one additional payout per wave per rank',.65)],
+ missile:[path('power','Heavy Payload','More damage and wider explosions'),path('tactical','Rapid Launch','Faster launches and reloads',.65)],
+ minelayer:[path('power','Shaped Charges','More mine damage and larger blasts'),path('tactical','Assembly Line','More active mines and faster production',.65)],
+ gas:[path('power','Toxic Compound','More damage per tick'),path('tactical','Pressure System','Wider coverage and faster refill',.65)],
   beacon:[path('power','Fire Control','+15% damage for nearby weapons per rank'),path('tactical','Signal Amplifier','Larger aura; +4% range and fire-rate bonus per rank',.65)],
  laser:[path('power','Focused prism','+30% beam damage · stronger critical hits'),path('tactical','Cryo cooling','Longer heat window, faster cooling and more range',.65)],
  flamethrower:[path('power','Incinerator','Stronger direct damage and lingering burns'),path('tactical','Fuel & nozzle','More fuel, faster refill and a wider cone',.65)],
@@ -56,7 +60,11 @@ export function applyTowerUpgrades(weapon,tower) {
   next.directDamage*=1+p*damagePerRank;
   next.critChance=Math.min(.5,(weapon.critChance||0)+p*(weapon.key==='sniper'?.05:weapon.key==='handgun'?.03:0));
   next.critDamage=(weapon.critDamage||1.6)+p*(['magnum','laser'].includes(weapon.key)?.25:0);
-  if(weapon.support)next.range*=1+c*.18;
+  if(weapon.economic){next.income=15+p*12;next.incomeInterval=8-c*1.2;next.payoutLimit=4+c;}
+  else if(weapon.fixedAim){next.splashRadius+=p*12;next.reloadSpeed*=1-c*.15;next.atkSpeed*=1+c*.2;}
+  else if(weapon.minelayer){next.splashRadius+=p*8;next.mineLimit=6+c*2;next.atkSpeed*=1+c*.3;}
+  else if(weapon.gas){next.range*=1+c*.14;next.reloadSpeed*=1-c*.18;}
+  else if(weapon.support)next.range*=1+c*.18;
   else if(weapon.key==='laser') {next.capacity+=c*12;next.reloadSpeed*=1-c*.15;next.range*=1+c*.08;}
   else if(weapon.key==='flamethrower') {next.burnDamage*=1+p*.35;next.capacity+=c*8;next.reloadSpeed*=1-c*.14;next.cone+=c*.1;next.range*=1+c*.06;}
   else if(weapon.key==='shotgun') { next.pelletCount=weapon.pelletCount+p;next.spread=weapon.spread*(1-c*.14);next.range*=1+c*.1;next.reloadSpeed*=1-c*.13;next.atkSpeed*=1+c*.1; }
@@ -72,6 +80,9 @@ export function applyTowerUpgrades(weapon,tower) {
   return next;
 }
 export function upgradePreview(current,next,key) {
+  if(current.economic)return key==='power'?`Payout $${current.income} → $${next.income}`:`Cycle ${current.incomeInterval.toFixed(1)}s → ${next.incomeInterval.toFixed(1)}s · cap ${current.payoutLimit} → ${next.payoutLimit}`;
+  if(current.minelayer&&key==='tactical')return `Active mines ${current.mineLimit} → ${next.mineLimit} · faster production`;
+  if(current.gas&&key==='tactical')return `Radius ${current.range} → ${next.range} · refill ${current.reloadSpeed}s → ${next.reloadSpeed}s`;
   if(current.support)return key==='power'?`Aura damage +${Math.round((current.auraDamage||0)*100)}% → +${Math.round((next.auraDamage||0)*100)}%`:`Radius ${current.range} → ${next.range} · stronger range / rate boost`;
   if(current.key==='magnum'&&key==='tactical')return `Pierce ${current.pierce} → ${next.pierce} · ${next.pierce+1} hits, last at 50%`;
   if(current.key==='shotgun'&&key==='power')return `Pellets ${current.pelletCount} → ${next.pelletCount} · damage ${current.directDamage} → ${next.directDamage}`;

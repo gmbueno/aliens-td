@@ -34,12 +34,9 @@ test('old models and attachments are removed and model-license SP returns exactl
  const p=normalizeProfile(old);assert.equal(p.schemaVersion,7);assert.deepEqual(Object.keys(p.arsenal),['loadout']);assert.ok(p.skillPoints>=35);
  const again=normalizeProfile(JSON.parse(JSON.stringify(p)));assert.equal(again.skillPoints,p.skillPoints);assert.equal(again.skills.damage,1);
 });
-test('one tower per category initially, two after research, and selling restores placement availability',()=>{
- const s=make({},'handgun'),first=placeTower(s,'handgun',1,1),before=s.gold;assert.ok(first);assert.equal(placementLimit(s.profile),1);
- assert.equal(placeTower(s,'handgun',1,2),null);assert.equal(s.gold,before);
- buySkill(s.profile,'loadoutSlots');buySkill(s.profile,'duplicates');assert.equal(placementLimit(s.profile),2);assert.ok(placeTower(s,'handgun',1,2));assert.equal(placeTower(s,'handgun',1,4),null);
- sellTower(s,first);assert.ok(placeTower(s,'handgun',1,4));
- assert.equal(placeTower(s,'laser',1,6),null,'unselected category cannot bypass loadout');
+test('two towers initially, five with research, and selling restores placement availability',()=>{
+ const s=make({},'handgun');const first=placeTower(s,'handgun',1,1);assert.ok(first);assert.equal(placementLimit(s.profile),2);assert.ok(placeTower(s,'handgun',1,2));assert.equal(placeTower(s,'handgun',1,4),null);
+ buySkill(s.profile,'loadoutSlots');for(let i=0;i<3;i++)assert.ok(buySkill(s.profile,'duplicates'));assert.equal(placementLimit(s.profile),5);assert.ok(placeTower(s,'handgun',1,4));sellTower(s,first);assert.ok(placeTower(s,'handgun',1,1));assert.equal(placeTower(s,'laser',1,6),null);
 });
 test('loadout changes during a mission take effect only after restarting',()=>{
  const s=make({},'handgun');equipCategory(s.profile,0,'laser');assert.equal(loadoutKeys(s.arsenalProfile)[0],'handgun');assert.equal(placeTower(s,'laser',1,1),null);
@@ -69,7 +66,7 @@ test('five mine ranks deploy two extra mines each, dealing 5x previous damage',(
 test('a second drone has independent upgrades, targeting and pause-safe patrol',()=>{
  const s=make({skills:{drone:1,extraDrone:1}});assert.equal(s.drones.length,2);
  const [a,b]=s.drones,before=droneStats(a);assert.ok(upgradeDrone(s,a,'power'));assert.ok(droneStats(a).damage>before.damage);assert.equal(droneStats(b).damage,before.damage);
- assert.ok(upgradeDrone(s,a,'tactical'));assert.ok(droneStats(a).range>before.range);a.targeting='last';b.targeting='strongest';launchWave(s);tick(s,.1);const times=s.drones.map(d=>d.time);s.isPaused=true;tick(s,5);assert.deepEqual(s.drones.map(d=>d.time),times);
+ assert.ok(upgradeDrone(s,a,'tactical'));assert.equal(droneStats(a).range,before.range);assert.ok(droneStats(a).interval<before.interval);a.targeting='last';b.targeting='strongest';launchWave(s);tick(s,.1);const times=s.drones.map(d=>d.time);s.isPaused=true;tick(s,5);assert.deepEqual(s.drones.map(d=>d.time),times);
  s.gold=0;assert.equal(upgradeDrone(s,a,'power'),false);
 });
 test('Weakest is a purchased targeting mode and uses health plus shields, ignoring dead/out-of-range enemies',()=>{
