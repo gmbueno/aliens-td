@@ -14,7 +14,7 @@ export function inWeaponRange(tower,enemy){
  const a=tower.angle||0,dx=enemy.x-tower.x,dy=enemy.y-tower.y,along=dx*Math.cos(a)+dy*Math.sin(a),across=-dx*Math.sin(a)+dy*Math.cos(a);
  return along>=0&&along<=tower.range&&Math.abs(across)<=(tower.weapon.laneWidth||77)/2;
 }
-export const enemySpeed=e=>(e.speed||0)*(e.raged?(e.rageMultiplier||1):1)*(e.onHaste?1.35:1)*(e.onIce&&!e.immuneSlow?.75:1)*(e.stunTimer>0?0:1)*(e.slowTimer>0&&!e.immuneSlow?1-(e.slowStrength||.25):1);
+export const enemySpeed=e=>(e.speed||0)*(e.raged?(e.rageMultiplier||1):1)*(e.stunTimer>0?0:1)*(e.slowTimer>0&&!e.immuneSlow?1-(e.slowStrength||.25):1);
 export function targetForTower(tower,enemies,focusId=null){
  const distance=e=>Math.hypot(e.x-tower.x,e.y-tower.y);
  const marked=enemies.find(e=>e.id===focusId&&e.life>0&&inWeaponRange(tower,e));if(marked)return marked;

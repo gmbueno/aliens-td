@@ -6,10 +6,10 @@ import {loadoutKeys,loadoutCapacity} from '../src/data/arsenal.js';
 import {createInitialState,launchWave,stepState} from '../src/game.js';
 import {activeAbilities,activeUnlocked,buySkill} from '../src/data/skills.js';
 globalThis.localStorage={getItem(){return null;},setItem(){}};
-test('intro is three ready categories, all three powers, two opening species and no paid obstacles/haste',()=>{
+test('intro is three ready categories, all three powers, two opening species and no paid obstacles',()=>{
  const p=normalizeProfile();assert.deepEqual(loadoutKeys(p),['handgun','assault_rifle','machine_pistol']);assert.equal(p.equippedActiveKey,'chronoBreak');for(const a of activeAbilities)assert.ok(activeUnlocked(p,a.key));
  assert.deepEqual([...new Set(levels[0].waves.flatMap(w=>w.spawns.map(s=>s.enemy)))].sort(),['alien_fast','alien_normal']);
- for(const level of levels.slice(0,3)){assert.ok(level.startGold>=350);assert.ok(level.blockers.every(b=>!b.cost));assert.equal(level.speedTiles?.length||0,0);}
+ for(const level of levels.slice(0,3)){assert.ok(level.startGold>=350);assert.ok(level.blockers.every(b=>!b.cost));}
 });
 test('there is no cache or midpoint payout; milestone slots require victory and are never repeated',()=>{
  const p=normalizeProfile(),level={...levels[3],waves:[{name:'Empty fixture',spawns:[],reward:0},{name:'Hold',spawns:[{enemy:'alien_normal',at:100}],reward:0}]};

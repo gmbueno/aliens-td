@@ -46,12 +46,12 @@ test('energy upgrades improve their stated role and critical upgrades change rea
  const enemy=dummy(handgun,'crit');handgun.weapon.critChance=1;s.enemies=[enemy];fireTower(s,handgun,enemy);
  assert.equal(s.projectiles.at(-1).damage,handgun.weapon.directDamage*handgun.weapon.critDamage);
 });
-test('amber overdrive is on the route, separate from ice, and increases real movement by 35%',()=>{
- assert.equal(levels.filter(l=>l.speedTiles?.length).length,5);
- for(const l of levels)for(const tile of l.speedTiles||[]){assert.ok(l.track.some(t=>t.row===tile.row&&t.col===tile.col));assert.ok(!l.slowTiles.some(t=>t.row===tile.row&&t.col===tile.col));}
- const normal=make(),fast=make();fast.level={...fast.level,speedTiles:[fast.level.track[0]]};
- for(const s of [normal,fast]){launchWave(s);const dummyTower={x:s.path[0].x-100,y:s.path[0].y};s.enemies=[dummy(dummyTower,'runner')];s.enemies[0].speed=10;}
- tick(normal,.5);tick(fast,.5);assert.ok(Math.abs(fast.enemies[0].progress/normal.enemies[0].progress-1.35)<.001);
+test('all missions use ordinary path tiles; only combat effects change movement speed',()=>{
+ for(const level of levels){assert.equal(level.slowTiles,undefined);assert.equal(level.speedTiles,undefined);}
+ const normal=make(),slowed=make();
+ for(const s of [normal,slowed]){launchWave(s);const dummyTower={x:s.path[0].x-100,y:s.path[0].y};s.enemies=[dummy(dummyTower,'runner')];s.enemies[0].speed=10;}
+ slowed.enemies[0].slowTimer=2;slowed.enemies[0].slowStrength=.25;
+ tick(normal,.5);tick(slowed,.5);assert.ok(Math.abs(normal.enemies[0].progress-5)<.001);assert.ok(Math.abs(slowed.enemies[0].progress/normal.enemies[0].progress-.75)<.001);
 });
 test('trait aliens retain distinct artwork and ordinary missions never grant cache rewards',()=>{
  const keys=['alien_medic','alien_steadfast','alien_rager','alien_broodmother'];assert.equal(new Set(keys.map(k=>enemies[k].asset)).size,4);

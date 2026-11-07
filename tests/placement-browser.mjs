@@ -27,7 +27,7 @@ try{
   const p=await pageFor(level),start=await read(p);
   // A physical pointer move runs the placement preview; click-only input does
   // not exercise this rendering path and previously missed the frozen frame.
-  const invalid=await hover(p,level.speedTiles?.[0]||level.track[0]);
+  const invalid=await hover(p,level.track[0]);
   await p.mouse.click(invalid.x,invalid.y);assert.equal((await read(p)).towers.length,0);assert.equal((await read(p)).gold,start.gold);
   const tile=start.pads[0],pos=await hover(p,tile);await p.screenshot({path:`${out}/${level.id}-preview.png`});
   await p.mouse.down();await p.waitForTimeout(50);await p.mouse.up();

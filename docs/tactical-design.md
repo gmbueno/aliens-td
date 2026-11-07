@@ -8,7 +8,7 @@ Factories trade a weapon slot, placement tile and up-front funds for later comba
 
 Siege Missiles commit to a visible, movable impact point and resolve delayed explosions there, including aliens that cross later. Mine Foundries convert nearby path cells into persistent finite defenses. Gas covers every ground alien in its cell-based radius but does not stop flyers. Sky Wraiths take the direct entry-to-exit line; neither ground mines nor gas can damage them. Optional infested cargo frees land for no cash but creates three real enemies with the usual rewards and leak damage.
 
-Tile range uses the same cell-center membership for preview and acquisition. A Priority Mark overrides automatic target ordering only for weapons that aim and only while the enemy remains eligible/in range; it cannot steer fixed-point missiles, gas, or mines. Fastest uses current speed, including rage, haste, ice, stun and slow.
+Tile range uses the same cell-center membership for preview and acquisition. A Priority Mark overrides automatic target ordering only for weapons that aim and only while the enemy remains eligible/in range; it cannot steer fixed-point missiles, gas, or mines. Fastest uses current speed, including rage, stun and weapon-applied slow.
 
 ## Distinct directions for later iterations
 

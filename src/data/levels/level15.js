@@ -126,7 +126,6 @@ const level15 = {
       "type": "power"
     }
   ],
-  "slowTiles": [],
   "track": [
     {
       "col": 0,
@@ -949,24 +948,6 @@ const level15 = {
           "at": 9.85
         }
       ]
-    }
-  ],
-  "speedTiles": [
-    {
-      "row": 5,
-      "col": 3
-    },
-    {
-      "row": 6,
-      "col": 3
-    },
-    {
-      "row": 2,
-      "col": 9
-    },
-    {
-      "row": 2,
-      "col": 10
     }
   ]
 };

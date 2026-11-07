@@ -54,7 +54,6 @@ const level3 = {
       "type": "range"
     }
   ],
-  "slowTiles": [],
   "track": [
     {
       "col": 0,
@@ -490,8 +489,7 @@ const level3 = {
         }
       ]
     }
-  ],
-  "speedTiles": []
+  ]
 };
 
 export default level3;

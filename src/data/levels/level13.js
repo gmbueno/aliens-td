@@ -126,7 +126,6 @@ const level13 = {
       "type": "power"
     }
   ],
-  "slowTiles": [],
   "track": [
     {
       "col": 0,

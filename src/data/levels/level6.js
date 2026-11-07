@@ -126,7 +126,6 @@ const level6 = {
       "type": "range"
     }
   ],
-  "slowTiles": [],
   "track": [
     {
       "col": 0,
@@ -733,24 +732,6 @@ const level6 = {
           "at": 13.05
         }
       ]
-    }
-  ],
-  "speedTiles": [
-    {
-      "row": 3,
-      "col": 3
-    },
-    {
-      "row": 2,
-      "col": 3
-    },
-    {
-      "row": 6,
-      "col": 9
-    },
-    {
-      "row": 6,
-      "col": 10
     }
   ]
 };

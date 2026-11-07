@@ -126,36 +126,6 @@ const level12 = {
       "type": "range"
     }
   ],
-  "slowTiles": [
-    {
-      "row": 7,
-      "col": 1
-    },
-    {
-      "row": 4,
-      "col": 6
-    },
-    {
-      "row": 4,
-      "col": 5
-    },
-    {
-      "row": 1,
-      "col": 4
-    },
-    {
-      "row": 1,
-      "col": 5
-    },
-    {
-      "row": 3,
-      "col": 11
-    },
-    {
-      "row": 4,
-      "col": 11
-    }
-  ],
   "track": [
     {
       "col": 0,
@@ -906,20 +876,6 @@ const level12 = {
           "at": 12.36
         }
       ]
-    }
-  ],
-  "speedTiles": [
-    {
-      "row": 5,
-      "col": 6
-    },
-    {
-      "row": 1,
-      "col": 9
-    },
-    {
-      "row": 1,
-      "col": 10
     }
   ]
 };

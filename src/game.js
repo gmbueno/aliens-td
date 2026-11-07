@@ -50,7 +50,7 @@ function createAssetStore() {
   };
   Promise.all([
     ...['range-pad','power-pad','exit-mine'].map(key=>loadImage(`assets/pads/${key}.png`).then(image=>store.world[key]=image)),
-    ...['missile-flight','frost-path','haste-path','gas-cloud-a','gas-cloud-b','gas-cloud-c'].map(key=>loadImage(`assets/refinement/${key}.png`).then(image=>store.world[key]=image)),
+    ...['missile-flight','gas-cloud-a','gas-cloud-b','gas-cloud-c'].map(key=>loadImage(`assets/refinement/${key}.png`).then(image=>store.world[key]=image)),
     ...['mine','infested'].map(key=>loadImage(`assets/tactics/${key}.png`).then(image=>store.world[key]=image)),
     ...['drone','uavBase'].map(key=>loadImage(`assets/command/${key}.png`).then(image=>store.world[key]=image)),
     ...['rock','ice','growth','cargo','barrels','water'].map(key=>loadImage(`assets/frontier/world/${key}.png`).then(image=>store.world[key]=image)),
@@ -397,9 +397,7 @@ export function fireTower(state, tower, target, continuing=false) {
   if (tower.weapon.ballistic) {
     // Lead the target at firing time; pellets never steer after leaving the muzzle.
     const flight = distance(tower, target) / tower.weapon.projectileSpeed;
-    const terrainTile=state.level.track[target.segment];
-    const terrain=(state.level.speedTiles?.some(t=>t.row===terrainTile?.row&&t.col===terrainTile?.col)?1.35:1)*(state.level.slowTiles?.some(t=>t.row===terrainTile?.row&&t.col===terrainTile?.col) && !target.immuneSlow ? .75 : 1);
-    const movement = activeStatus(state, "chronoBreak").timer > 0 ? 0 : target.speed * terrain * (target.stunTimer>0?0:1) * (target.raged?target.rageMultiplier:1) * (target.slowTimer>0&&!target.immuneSlow?1-(target.slowStrength||.25):1);
+    const movement = activeStatus(state, "chronoBreak").timer > 0 ? 0 : enemySpeed(target);
     const aimX = target.x + Math.cos(target.angle || 0) * movement * flight;
     const aimY = target.y + Math.sin(target.angle || 0) * movement * flight;
     const angle = tower.weapon.directional?tower.angle:Math.atan2(aimY - tower.y, aimX - tower.x);
@@ -456,12 +454,8 @@ function updateEnemies(state, dt) {
   const births = [];
   for (const enemy of state.enemies) {
     if(enemy.life<=0)continue;
-    const tile = state.level.track[enemy.segment];
-    const onIce = !enemy.flying&&state.level.slowTiles?.some((item) => item.row === tile.row && item.col === tile.col);
-    const onHaste=!enemy.flying&&state.level.speedTiles?.some(item=>item.row===tile.row&&item.col===tile.col);
-    enemy.onHaste=Boolean(onHaste);enemy.onIce=Boolean(onIce);
     const frozen = enemy.stunTimer > 0;
-    let remaining = enemy.speed * movementDt * (onHaste ? 1.35 : 1) * (frozen ? 0 : 1) * (onIce && !enemy.immuneSlow ? .75 : 1) * (enemy.raged ? enemy.rageMultiplier : 1) * (enemy.slowTimer > 0 && !enemy.immuneSlow ? 1-(enemy.slowStrength || .25) : 1);
+    let remaining = enemySpeed(enemy) * movementDt;
     enemy.stunTimer = Math.max(0,(enemy.stunTimer || 0)-dt);
     enemy.criticalFlash=Math.max(0,(enemy.criticalFlash||0)-dt);
     enemy.healFlash=Math.max(0,(enemy.healFlash||0)-dt);
@@ -1095,15 +1089,6 @@ function drawGame(ctx, state, assets) {
         ctx.fillStyle = level.biome === "frost" ? (isPath ? "#61c7e04a" : "#367c9c30") : (isPath ? "#a8ba3433" : "#73844325");
         ctx.fillRect(x + 1, y + 1, board.tile - 2, board.tile - 2);
       }
-      const slowTile = level.slowTiles?.some(tile => tile.row === row && tile.col === col);
-      if (slowTile) {
-        const sprite=assets.world['frost-path'];if(sprite)ctx.drawImage(sprite,x+1,y+1,board.tile-2,board.tile-2);
-      }
-      if(level.speedTiles?.some(tile=>tile.row===row&&tile.col===col)){
-        const index=level.track.findIndex(t=>t.row===row&&t.col===col),to=level.track[Math.min(index+1,level.track.length-1)];
-        ctx.save();ctx.translate(x+board.tile/2,y+board.tile/2);ctx.rotate(Math.atan2(to.row-row,to.col-col)+Math.PI/2);
-        const sprite=assets.world['haste-path'];if(sprite)ctx.drawImage(sprite,-board.tile/2+1,-board.tile/2+1,board.tile-2,board.tile-2);ctx.restore();
-      }
       const pad = level.pads?.find(tile => tile.row === row && tile.col === col);
       if (pad) {
         const overlay=assets.world[pad.type==='power'?'power-pad':'range-pad'];
@@ -1355,7 +1340,6 @@ export function createGame({ ui, levels }) {
       ${(level.water||[]).map(tile=>`<rect x="${tile.col*10+1}" y="${tile.row*10+1}" width="8" height="8" fill="#4eabc2" opacity=".6"/>`).join("")}
       ${level.blockers.map(tile => `<rect x="${tile.col * 10 + 2}" y="${tile.row * 10 + 2}" width="6" height="6" rx="1" fill="${color}" opacity=".25"/>`).join("")}
       <polyline points="${level.track.map(tile => `${tile.col * 10 + 5},${tile.row * 10 + 5}`).join(" ")}" fill="none" stroke="${color}" stroke-width="5" stroke-linejoin="round" opacity=".85"/>
-      ${(level.speedTiles||[]).map(tile=>`<rect x="${tile.col*10+1}" y="${tile.row*10+1}" width="8" height="8" fill="#ffc14f"/><path d="m${tile.col*10+3},${tile.row*10+3} 3,2 -3,2" fill="none" stroke="#3f321c" stroke-width="1.2"/>`).join('')}
       ${level.pads.map(tile => `<circle cx="${tile.col * 10 + 5}" cy="${tile.row * 10 + 5}" r="2.8" fill="${tile.type === "power" ? "#ffc24c" : "#78e9ff"}"/>`).join("")}
       <circle cx="${level.track[0].col * 10 + 5}" cy="${level.track[0].row * 10 + 5}" r="4" fill="#ff806f"/>
       <circle cx="${level.track.at(-1).col * 10 + 5}" cy="${level.track.at(-1).row * 10 + 5}" r="4" fill="#d0f7b0"/>
@@ -2164,7 +2148,7 @@ export function createGame({ ui, levels }) {
     player: { level: profile.level, xp: profile.xp, skillPoints: profile.skillPoints },
     skills: profile.skills,
     weaponKills:profile.weaponKills,runWeaponKills:state?.runWeaponKills,loadoutSlots:loadoutCapacity(profile),placementLimit:placementLimit(profile),slotRewards:profile.slotRewards,onboarding:profile.onboarding,
-    classUnlocks:weapons.filter(w=>classUnlocked(profile,w.key)).map(w=>w.key),speedTiles:state?.level.speedTiles||[],loadout:state?equippedWeapons(weapons,state.arsenalProfile).map(w=>w.key):[],
+    classUnlocks:weapons.filter(w=>classUnlocked(profile,w.key)).map(w=>w.key),loadout:state?equippedWeapons(weapons,state.arsenalProfile).map(w=>w.key):[],
     fieldMines:state?.mines, drone:state?.drone,drones:state?.drones,selectedDrone:state?.selectedDroneId,napalmField:state?.napalm,  water:state?.level.water||[],
     skillTreeOpen: !ui.skillTreeModal.classList.contains("hidden"),
     arsenalOpen: !ui.arsenalModal.classList.contains("hidden"),
@@ -2219,7 +2203,6 @@ export function createGame({ ui, levels }) {
       y: Math.round(enemy.y),
       life: Math.round(enemy.life),
       shield: Math.round(enemy.shield),
-      onHaste:enemy.onHaste,
       slowTimer: enemy.slowTimer,
       slowStrength: enemy.slowStrength,
       immuneSlow: enemy.immuneSlow,

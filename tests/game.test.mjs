@@ -34,7 +34,6 @@ test('18 authored missions have valid paths, distinct layouts, legal obstacles/p
       assert.ok(tile.row>=0&&tile.row<level.rows&&tile.col>=0&&tile.col<level.cols);
       terrain.add(key);
     }
-    for(const tile of level.slowTiles)assert.ok(path.has(`${tile.row}:${tile.col}`));
     for(const wave of level.waves) {
       assert.ok(wave.spawns.length>0);
       wave.spawns.forEach((spawn,i)=>{assert.ok(enemies[spawn.enemy]);assert.ok(spawn.at>=0);if(i)assert.ok(spawn.at>=wave.spawns[i-1].at);});

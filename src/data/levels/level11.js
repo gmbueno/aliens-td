@@ -126,28 +126,6 @@ const level11 = {
       "type": "range"
     }
   ],
-  "slowTiles": [
-    {
-      "row": 5,
-      "col": 1
-    },
-    {
-      "row": 2,
-      "col": 6
-    },
-    {
-      "row": 2,
-      "col": 7
-    },
-    {
-      "row": 5,
-      "col": 12
-    },
-    {
-      "row": 4,
-      "col": 12
-    }
-  ],
   "track": [
     {
       "col": 0,

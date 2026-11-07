@@ -102,7 +102,6 @@ const level4 = {
       "type": "range"
     }
   ],
-  "slowTiles": [],
   "track": [
     {
       "col": 0,
