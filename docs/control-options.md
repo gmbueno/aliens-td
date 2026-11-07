@@ -1,6 +1,6 @@
 # Opções de controle e suporte — para decisão
 
-Propostas de design, pesquisadas em7 de novembro de2026. **Não implementadas nesta atualização.** O trabalho autorizado agora se limita à arte dos pisos/minas e ao slow opcional da Machine Pistol.
+Propostas de design, pesquisadas em 7 de novembro de 2026. **Não implementadas nesta atualização.** O trabalho autorizado agora se limita à arte dos pisos/minas e ao slow opcional da Machine Pistol.
 
 ## O que aproveitar das referências
 
@@ -14,7 +14,7 @@ Não usei supostas mecânicas de “BTD7” como fatos: a pesquisa não encontro
 
 | Opção | Funcionamento proposto | Como encaixar sem complicar | Limite importante |
 | --- | --- | --- | --- |
-| **Projetor de espuma** | Lança uma poça em2–3 SQMs do caminho. Todo alien terrestre que cruza fica mais lento. Quase nenhum dano. | Uma arma especializada em controle de área; upgrades de cobertura/duração ou aderência. | Somente o maior slow vale; poças não multiplicam a lentidão. Não pega voadores. |
+| **Projetor de espuma** | Lança uma poça em 2–3 SQMs do caminho. Todo alien terrestre que cruza fica mais lento. Quase nenhum dano. | Uma arma especializada em controle de área; upgrades de cobertura/duração ou aderência. | Somente o maior slow vale; poças não multiplicam a lentidão. Não pega voadores. |
 | **Criogel** | Acumula frio enquanto o inimigo permanece na área. Ao encher o medidor, congela por um instante. | Minha preferência é um caminho exclusivo do projetor de espuma, substituindo parte do slow por freeze, em vez de outra categoria. | Imunidade breve após congelar; chefes sofrem duração reduzida. Evita travamento permanente. |
 | **Composto corrosivo** | Reduz temporariamente a armadura de quem atravessa a nuvem. As outras armas passam a causar mais dano. | Upgrade de especialização do Gas Emitter, dando a ele uma identidade diferente do Flamethrower. | Redução com teto e duração curta; não acumula entre várias nuvens. |
 | **Relé de arco elétrico** | Um disparo salta entre poucos inimigos próximos, inclusive voadores, com bônus contra escudos. | Nova arma: anti-escudo/anti-grupo. Escolha entre mais saltos ou mais força no primeiro alvo. | Dano cai a cada salto; sem adicionar slow ou burn só para preencher upgrades. |
@@ -27,4 +27,4 @@ Começar com **Projetor de espuma + Composto corrosivo**. O primeiro cria zonas 
 
 Arco elétrico pode vir quando fizer falta uma alternativa forte contra voadores/escudos. Sentinelas ficam para uma etapa maior, porque introduzem vida de aliados, bloqueio e reposição. São propostas com decisões diferentes, em vez de seis maneiras de aplicar o mesmo debuff.
 
-A Machine Pistol continua sendo uma arma de tiros rápidos. Suppression é uma escolha de campo: base sem slow; primeiro rank25% por0,7s, segundo35% por1,3s, terceiro45% por1,9s. Isso não decide antecipadamente nenhuma proposta da tabela.
+A Machine Pistol continua sendo uma arma de tiros rápidos. Suppression é uma escolha de campo: base sem slow; primeiro rank de 25% por 0,7 s, segundo de 35% por 1,3 s, terceiro de 45% por 1,9 s. Isso não decide antecipadamente nenhuma proposta da tabela.
