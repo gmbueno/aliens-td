@@ -238,7 +238,7 @@ test('weapon-specific upgrades change the intended combat roles',()=>{
  upgradeTower(state,shotgun,'power');assert.equal(shotgun.weapon.pelletCount,4);
  upgradeTower(state,shotgun,'power');assert.equal(shotgun.weapon.pelletCount,5);
  const mp=build('machine_pistol');const slow=mp.weapon.slow;upgradeTower(state,mp,'tactical');
- assert.equal(mp.weapon.slowStrength,.35);assert.ok(mp.weapon.slow>slow);assert.equal(mp.weapon.slow,1.3);
+ assert.equal(mp.weapon.slowStrength,.25);assert.ok(mp.weapon.slow>slow);assert.equal(mp.weapon.slow,.7);
  const magnum=build('magnum'),damage=magnum.weapon.directDamage;upgradeTower(state,magnum,'power');assert.equal(magnum.weapon.directDamage,damage*1.5);
  const sniper=build('sniper'),range=sniper.range;upgradeTower(state,sniper,'tactical');assert.equal(sniper.range,Math.round(range*1.25));
  const rpg=build('rocket_launcher'),radius=rpg.weapon.splashRadius;upgradeTower(state,rpg,'power');assert.equal(rpg.weapon.splashRadius,radius+12);

@@ -56,7 +56,7 @@ export function triggerMines(state,enemy,damageEnemy,addEffect){
  }
 }
 export function drawSupport(ctx,state,world={}){
- for(const mine of state.mines){if(mine.spent)continue;ctx.save();ctx.translate(mine.x,mine.y);ctx.fillStyle='#596852';ctx.strokeStyle='#d8c38a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,6,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#ecbc63';ctx.fillRect(-2,-2,4,4);ctx.restore();}
+ for(const mine of state.mines){if(mine.spent)continue;const sprite=world['exit-mine']||world.mine;if(sprite)ctx.drawImage(sprite,mine.x-15,mine.y-15,30,30);}
  if(!state.drone)return;
  for(const drone of state.drones){
  if(world.uavBase){ctx.drawImage(world.uavBase,drone.base.x-34,drone.base.y-34,68,68);}else {ctx.save();ctx.translate(drone.base.x,drone.base.y);ctx.fillStyle='#203c46';ctx.strokeStyle='#76b9cc';ctx.lineWidth=2;ctx.fillRect(-23,-23,46,46);ctx.strokeRect(-23,-23,46,46);ctx.beginPath();ctx.arc(0,0,17,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#b6d7d9';ctx.font='bold 15px monospace';ctx.textAlign='center';ctx.fillText('UAV',0,5);ctx.restore();}}

@@ -14,7 +14,7 @@ A static HTML/CSS/JavaScript tower-defense game. [Play the production game](http
 
 ## Weapons, support and research
 
-Each tower has two weapon-specific upgrade branches and a four-upgrade budget, up to three per branch (Magnum Penetrator has two ranks). Shotgun upgrades add pellets; MP upgrades strengthen/extend slow; Sniper optics increase range; Laser upgrades improve heat/cooling; Flamethrower improves burns/fuel. Critical chance/damage upgrades depend on category.
+Each tower has two weapon-specific upgrade branches and a four-upgrade budget, up to three per branch (Magnum Penetrator has two ranks). Shotgun upgrades add pellets; MP Suppression first unlocks slow, then strengthens/extends it; Sniper optics increase range; Laser upgrades improve heat/cooling; Flamethrower improves burns/fuel. Critical chance/damage upgrades depend on category.
 
 - **Magnum:** a fixed rectangular firing lane; rotate 90° with R before placement or the inspector button after placement. It never tracks enemies by rotating during fire. straight ballistic rounds pierce 1/2/3 aliens, hitting at most 2/3/4. Earlier hits deal full damage; the last allowed hit deals 50%. Swept collision preserves physical hit order and prevents repeat hits/tunneling.
 - **Shotgun:** fires its entire three-pellet fan even at one target. Pellets stay straight and can hit a different alien crossing their path. Buckshot adds pellets.
@@ -38,7 +38,7 @@ Loadout/category changes and special/support research apply on the next deployme
 
 The first three missions teach the basics with $575/$560/$560, no paid crates or speed tiles, and a gradual two-species → armored-alien introduction. Later missions provide much larger starting funds, 50% more spawn entries, 20% higher health, and larger wave payouts. Weapon prices rise about35%; field upgrade multipliers are54% of their former values; kill credits rise60%. This funds and demands a larger army while preserving the opening learning curve.
 
-Later maps include removable cargo/ice/growth, permanent rocks, water, range pads (+18%), damage pads (+15%), frost slowdown (−25%) and amber overdrive (+35% alien speed). Pontoon research allows water placement for $35 extra. Ravagers accelerate after damage; Juggernauts resist slow; Broodmothers spawn hatchlings; Menders heal allies. Briefings show each mission's actual enemy roster.
+Later maps include removable cargo/ice/growth, permanent rocks, water, range pads (+18%), damage pads (+15%), sprite-based range/damage floor overlays, sprite-based researched exit mines, frost slowdown (−25%) and amber overdrive (+35% alien speed). Pontoon research allows water placement for $35 extra. Ravagers accelerate after damage; Juggernauts resist slow; Broodmothers spawn hatchlings; Menders heal allies. Briefings show each mission's actual enemy roster.
 
 Olive armor, distressed brass and cream text now extend through menus, HUD, inspector, loadout and background. The HUD retains native-alpha PixelForge icons and original metal plaques. Original firearm sprites are retained; RPG, Flamethrower and Laser now use512px art. PixelForge-generated full illustrated power cards use1024px source art. Dedicated alien, obstacle, water and energy-weapon art lives under `assets/frontier/`, with provenance and generation costs. Pointer placement previews show the actual weapon, range and destination tile.
 
@@ -63,6 +63,7 @@ GAME_URL=http://localhost:4173 npm run test:browser
 GAME_URL=http://localhost:4173 npm run test:controls
 GAME_URL=http://localhost:4173 npm run test:audio
 GAME_URL=http://localhost:4173 npm run test:arsenal
+GAME_URL=http://localhost:4173 npm run test:pads
 GAME_URL=http://localhost:4173 npm run test:tactics
 GAME_URL=http://localhost:4173 npm run test:expansion
 GAME_URL=http://localhost:4173 npm run test:support
@@ -96,3 +97,5 @@ PixelForge created32 individual talent symbols and four128px field sprites throu
 - Click an alien to inspect HP, shields, current speed and traits. Research **Priority Mark** in Training to mark it; eligible aiming weapons/drones override automatic priorities while it is alive and in range. Click again to cancel; defeat or escape automatically clears the mark. Fixed-point missiles and area/trap weapons keep their manual behavior.
 
 `assets/tactics/provenance.json` records PixelForge prompts, models, hashes and original dimensions. New field sprites retain256px per cell, weapons512px and power cards1024px; exported originals avoid the editor's128px reduction. All generated art uses the studio's CC0 export. [Tactical design notes](docs/tactical-design.md) explain the Bloons-inspired specialization and eight distinct future directions.
+
+Machine Pistol has no innate slow. Suppression ranks give25% for0.7s,35% for1.3s,45% for1.9s; damage-only upgrades never grant slow. Range/power pad overlays render below towers, and exit mines retain their existing damage, stock and trigger positions. PixelForge source provenance is in `assets/pads/`. Proposed future control identities are in [control-options](docs/control-options.md), pending player/user choice.

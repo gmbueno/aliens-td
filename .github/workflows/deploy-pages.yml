@@ -65,6 +65,11 @@ jobs:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:arsenal
 
+      - name: Validate terrain art and paid Suppression
+        env:
+          GAME_URL: http://127.0.0.1:4173
+        run: npm run test:pads
+
       - name: Validate tactical economy, specialists and enemy control
         env:
           GAME_URL: http://127.0.0.1:4173

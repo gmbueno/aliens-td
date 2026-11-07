@@ -47,6 +47,7 @@ function createAssetStore() {
     loaded: false,
   };
   Promise.all([
+    ...['range-pad','power-pad','exit-mine'].map(key=>loadImage(`assets/pads/${key}.png`).then(image=>store.world[key]=image)),
     ...['mine','infested'].map(key=>loadImage(`assets/tactics/${key}.png`).then(image=>store.world[key]=image)),
     ...['drone','uavBase'].map(key=>loadImage(`assets/command/${key}.png`).then(image=>store.world[key]=image)),
     ...['rock','ice','growth','cargo','barrels','water'].map(key=>loadImage(`assets/frontier/world/${key}.png`).then(image=>store.world[key]=image)),
@@ -1101,10 +1102,8 @@ function drawGame(ctx, state, assets) {
       }
       const pad = level.pads?.find(tile => tile.row === row && tile.col === col);
       if (pad) {
-        ctx.strokeStyle = pad.type === "power" ? "#ffd36a" : "#7ce1f7";
-        ctx.fillStyle = pad.type === "power" ? "#dc982433" : "#61c5f233";
-        ctx.lineWidth = 2; ctx.fillRect(x+9, y+9, board.tile-18, board.tile-18); ctx.strokeRect(x+9, y+9, board.tile-18, board.tile-18);
-        ctx.fillStyle = ctx.strokeStyle; ctx.font = "bold 24px monospace"; ctx.textAlign = "center"; ctx.fillText(pad.type === "power" ? "⚡" : "⊕", x+board.tile/2, y+board.tile/2+8);
+        const overlay=assets.world[pad.type==='power'?'power-pad':'range-pad'];
+        if(overlay)ctx.drawImage(overlay,x+3,y+3,board.tile-6,board.tile-6);
       }
       if (isBlocked) {
         const obstacle = level.blockers.find(tile => tile.row === row && tile.col === col);

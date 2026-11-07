@@ -39,7 +39,7 @@ const upgradePaths = {
  flamethrower:[path('power','Incinerator','Stronger direct damage and lingering burns'),path('tactical','Fuel & nozzle','More fuel, faster refill and a wider cone',.65)],
   handgun: [path('power','Stopping power','+40% damage · +3% critical chance per rank'),path('tactical','Quickdraw','Faster fire, reload and a larger magazine',.65)],
   assault_rifle: [path('power','Heavy rounds','+32% damage · +2 armor penetration points per rank'),path('tactical','Extended magazine','More ammo, faster reload and sustained fire',.65)],
-  machine_pistol: [path('power','Hot barrel','+35% damage per rank'),path('tactical','Suppression','Stronger slow and longer duration',.65)],
+  machine_pistol: [path('power','Hot barrel','+35% damage per rank'),path('tactical','Suppression','Unlock slow; later ranks strengthen and extend it',.65)],
   magnum: [path('power','Devastator','+50% damage · +25% critical damage per rank'),{...path('tactical','Penetrator','Pierce 1 → 2 → 3 aliens; the final hit deals 50% damage',.65),maxRank:2}],
   shotgun: [path('power','Buckshot','+1 pellet per shell per rank · +12% pellet damage'),path('tactical','Choke & pump','Tighter spread, longer reach, faster reload',.65)],
   sniper: [path('power','Anti-materiel','+50% damage · +5% critical chance per rank'),path('tactical','Long-range optics','+25% range per rank · faster follow-up',.65)],
@@ -68,7 +68,7 @@ export function applyTowerUpgrades(weapon,tower) {
   else if(weapon.key==='laser') {next.capacity+=c*12;next.reloadSpeed*=1-c*.15;next.range*=1+c*.08;}
   else if(weapon.key==='flamethrower') {next.burnDamage*=1+p*.35;next.capacity+=c*8;next.reloadSpeed*=1-c*.14;next.cone+=c*.1;next.range*=1+c*.06;}
   else if(weapon.key==='shotgun') { next.pelletCount=weapon.pelletCount+p;next.spread=weapon.spread*(1-c*.14);next.range*=1+c*.1;next.reloadSpeed*=1-c*.13;next.atkSpeed*=1+c*.1; }
-  else if(weapon.key==='machine_pistol') {next.slowStrength=Number(Math.min(.65,(weapon.slowStrength||.25)+c*.10).toFixed(2));next.slow=Number(((weapon.slow||.7)+c*.6).toFixed(1));next.atkSpeed*=1+c*.06;}
+  else if(weapon.key==='machine_pistol') {next.slowStrength=c?Number(Math.min(.65,.25+(c-1)*.10).toFixed(2)):0;next.slow=c?Number((.7+(c-1)*.6).toFixed(1)):0;next.atkSpeed*=1+c*.06;}
   else if(weapon.key==='sniper') {next.range*=1+c*.25;next.atkSpeed*=1+c*.08;}
   else if(weapon.key==='magnum') {next.armorPierce=Math.min(1,(weapon.armorPierce||0)+p*.08);next.pierce=Math.min(3,1+c);next.reloadSpeed*=1-c*.1;next.atkSpeed*=1+c*.06;}
   else if(weapon.key==='assault_rifle') {next.armorPierce=Math.min(1,(weapon.armorPierce||0)+p*.02);next.capacity+=c*15;next.reloadSpeed*=1-c*.12;next.atkSpeed*=1+c*.1;}
@@ -86,7 +86,7 @@ export function upgradePreview(current,next,key) {
   if(current.support)return key==='power'?`Aura damage +${Math.round((current.auraDamage||0)*100)}% → +${Math.round((next.auraDamage||0)*100)}%`:`Radius ${current.range} → ${next.range} · stronger range / rate boost`;
   if(current.key==='magnum'&&key==='tactical')return `Pierce ${current.pierce} → ${next.pierce} · ${next.pierce+1} hits, last at 50%`;
   if(current.key==='shotgun'&&key==='power')return `Pellets ${current.pelletCount} → ${next.pelletCount} · damage ${current.directDamage} → ${next.directDamage}`;
-  if(current.key==='machine_pistol'&&key==='tactical')return `Slow ${Math.round((current.slowStrength||.25)*100)}% → ${Math.round(next.slowStrength*100)}% · ${current.slow}s → ${next.slow}s`;
+  if(current.key==='machine_pistol'&&key==='tactical')return `Slow ${Math.round((current.slowStrength||0)*100)}% → ${Math.round(next.slowStrength*100)}% · ${current.slow}s → ${next.slow}s`;
   if(current.key==='sniper'&&key==='tactical')return `Range ${current.range} → ${next.range}`;
   if(current.key==='rocket_launcher'&&key==='power')return `Blast ${current.splashRadius} → ${next.splashRadius} · damage ${current.directDamage} → ${next.directDamage}`;
   if(current.key==='laser'&&key==='tactical')return `Beam ${(current.capacity/current.atkSpeed).toFixed(1)}s → ${(next.capacity/next.atkSpeed).toFixed(1)}s · cooling ${current.reloadSpeed}s → ${next.reloadSpeed}s`;

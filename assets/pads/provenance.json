@@ -1,0 +1,25 @@
+{
+  "studio": "https://codevon-com.github.io/pixelforge/",
+  "date": "2026-11-07",
+  "license": "CC0-1.0",
+  "batches": [
+    {
+      "name": "terrain-support",
+      "size": 128,
+      "count": 4,
+      "keys": [
+        "range-pad",
+        "power-pad",
+        "exit-mine",
+        "reserve-marker"
+      ],
+      "prompt": "A strict2 by2 sheet of four isolated TOP DOWN orthographic sci-fi tower defense game sprites on true transparent alpha. Sophisticated hand-painted realistic gunmetal and aged brass, olive military command art, crisp readable details, NOT pixel art. No letters, numbers, written symbols, plus signs, lightning glyphs or UI text. Center each object fully in its own cell. Top left: a square RANGE BOOST overlay for an existing metal floor tile, thin worn-metal corner brackets and cyan concentric radar sensor rings recessed at the tile edges, the middle is entirely transparent so a gun can stand there. Top right: a square DAMAGE BOOST overlay, matching the exact same shape, brass corners and warm amber power conduits along the edge, entirely transparent open middle. Bottom left: a detailed round EXIT DEFENSE PROXIMITY MINE, compact olive steel disk with raised brass trigger and small red armed lights, strong clear silhouette, centered, no floor or pedestal. Bottom right: matching small inactive olive mine supply module. Keep all backgrounds genuinely transparent.",
+      "model": "openai/gpt-image-2.5-flare",
+      "hash": "bfd750cea67fbf9ae0cf5eabe28e1fa42a83b3f99ca92d98622e74e336277ad8",
+      "originalSize": [
+        1024,
+        1024
+      ]
+    }
+  ]
+}
