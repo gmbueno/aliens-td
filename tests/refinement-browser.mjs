@@ -9,6 +9,7 @@ try{
   const p=await h.pageFor(complete,viewport);await decode(p);
   const menu=await p.locator('.menu-card').boundingBox();assert.ok(Math.abs(menu.x+menu.width/2-viewport.width/2)<2,'mission selection horizontally centered');
   const deploy=await p.locator('#menu-play-button').boundingBox();assert.ok(deploy.y+deploy.height<viewport.height,'initial deployment visible');
+  assert.ok((await p.locator('.level-tile .map-preview').first().boundingBox()).height>=20,'map thumbnails remain visible even in short landscape');
   await p.click('[data-level-id="level_2"]');assert.equal(await p.locator('[data-level-id="level_2"]').getAttribute('aria-pressed'),'true');
   assert.ok(await p.locator('[data-level-id="level_2"]').evaluate(e=>getComputedStyle(e,'::after').content.includes('✓')));
   if(viewport.width>760){const body=await p.locator('.campaign-body').boundingBox(),nav=await p.locator('.menu-loadout').boundingBox();assert.ok(body.y+body.height<=nav.y,'briefing and navigation never overlap');assert.ok(menu.y+menu.height<=viewport.height);}
