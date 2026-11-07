@@ -1,5 +1,5 @@
 const mobileQuery='(max-width:900px) and (orientation:portrait), (max-width:960px) and (max-height:580px) and (orientation:landscape)';
-export function createMobileBattlefield(ui){
+export function createMobileBattlefield(ui,onTap){
  const media=matchMedia(mobileQuery),viewport=document.getElementById('battlefield-viewport'),body=document.getElementById('mobile-deck-body'),toggle=document.getElementById('mobile-deck-toggle'),plus=document.getElementById('map-zoom-in'),minus=document.getElementById('map-zoom-out'),fit=document.getElementById('map-fit');
  let collapsed=false,zoom=1,pan={x:0,y:0},lastWeapon=null,lastInspection=null,currentState=null,frame=0,suppressUntil=0,gesture=null;
  const pointers=new Map(),clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
@@ -65,7 +65,12 @@ export function createMobileBattlefield(ui){
   const moved=gesture?.kind==='pinch'||gesture?.moved;pointers.delete(e.pointerId);
   if(moved)suppressUntil=performance.now()+400;
   if(ui.canvas.hasPointerCapture(e.pointerId))ui.canvas.releasePointerCapture(e.pointerId);
-  if(pointers.size){const p=[...pointers.values()][0];gesture={kind:'drag',start:p,pan:{...pan},moved:false};}else gesture=null;
+  if(pointers.size){const p=[...pointers.values()][0];gesture={kind:'drag',start:p,pan:{...pan},moved:true};}else gesture=null;
+  // Chrome can omit the compatibility click immediately after a touch drag.
+  // Deliver clean touch taps once at pointerup; swallow any later native click.
+  if(e.type==='pointerup'&&e.pointerType==='touch'&&!moved&&!pointers.size){
+   suppressUntil=performance.now()+400;onTap(e);
+  }
  }
  viewport.addEventListener('pointerup',end);viewport.addEventListener('pointercancel',end);
  ui.canvas.addEventListener('click',e=>{if(media.matches&&performance.now()<suppressUntil){e.preventDefault();e.stopImmediatePropagation();}},true);

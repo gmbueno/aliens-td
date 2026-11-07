@@ -1305,7 +1305,7 @@ function drawGame(ctx, state, assets) {
 }
 
 export function createGame({ ui, levels }) {
-  const mobileBattlefield=createMobileBattlefield(ui);
+  const mobileBattlefield=createMobileBattlefield(ui,handleBattlefieldTap);
   const ctx = ui.canvas.getContext("2d");
   const assets = createAssetStore();
   const audio = createWeaponAudio();
@@ -1942,7 +1942,7 @@ export function createGame({ ui, levels }) {
     }
   });
 
-  ui.canvas.addEventListener("click", (event) => {
+  function handleBattlefieldTap(event) {
     if (!state || state.result) return;
     const point = canvasPointFromEvent(event);
     if (state.selectedActiveKey === "artillery"||state.selectedActiveKey === "napalm") {
@@ -1976,7 +1976,8 @@ export function createGame({ ui, levels }) {
     if (obstacle) { state.selectedObstacle = obstacle; state.selectedWeaponKey = null; }
     else tryPlaceTower(tile.row, tile.col);
     syncHud();
-  });
+  }
+  ui.canvas.addEventListener("click", handleBattlefieldTap);
 
   ui.playPauseButton.addEventListener("click", () => {
     if (!state || state.result) return;
