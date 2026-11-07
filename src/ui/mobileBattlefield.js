@@ -24,7 +24,7 @@ export function createMobileBattlefield(ui){
  function setCollapsed(value){
   collapsed=value;ui.gameScreen.classList.toggle('mobile-deck-collapsed',collapsed);
   toggle.setAttribute('aria-expanded',String(!collapsed));toggle.setAttribute('aria-label',collapsed?'Open arsenal and upgrades':'Collapse arsenal');toggle.querySelector('i').textContent=collapsed?'⌄':'⌃';
-  body.inert=media.matches&&collapsed;schedule();
+  body.inert=media.matches&&collapsed;paint();
  }
  function setZoom(value,anchor){
   const old=zoom,{vw,vh}=geometry(),at=anchor||{x:vw/2,y:vh/2};
@@ -90,5 +90,5 @@ export function createMobileBattlefield(ui){
  let lastPortrait=portrait();
  window.addEventListener('resize',()=>{const next=portrait();if(next!==lastPortrait){lastPortrait=next;pointers.clear();gesture=null;zoom=1;pan={x:0,y:0};setCollapsed(false);}schedule();});
  new ResizeObserver(schedule).observe(viewport);
- return {sync,reset,diagnostics:()=>({mobile:media.matches,collapsed:media.matches&&collapsed,zoom:media.matches?Number(zoom.toFixed(2)):1,pan:{...pan}})};
+ return {sync,reset,diagnostics:()=>({mobile:media.matches,collapsed:media.matches&&collapsed,zoom:media.matches?Number(zoom.toFixed(2)):1,pan:{...pan},activePointers:pointers.size})};
 }
