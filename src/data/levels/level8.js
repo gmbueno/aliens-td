@@ -2,7 +2,7 @@
 const level8 = {
   "id": "level_8",
   "name": "Glacier Gate",
-  "description": "Ice columns restrict placement. Range platforms overlook the long lanes.",
+  "description": "Ice columns restrict placement. Long lanes reward overlapping fields of fire.",
   "sector": 2,
   "stage": 2,
   "biome": "frost",
@@ -114,18 +114,7 @@ const level8 = {
       "cost": 60
     }
   ],
-  "pads": [
-    {
-      "row": 7,
-      "col": 4,
-      "type": "range"
-    },
-    {
-      "row": 5,
-      "col": 6,
-      "type": "range"
-    }
-  ],
+  "pads": [],
   "track": [
     {
       "col": 0,

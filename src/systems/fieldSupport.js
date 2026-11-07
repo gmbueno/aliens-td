@@ -22,7 +22,7 @@ export function initializeSupport(state){
  const rank=skillRank(state.profile,'drone');state.drones=[];
  for(let i=0;i<(rank?1+Math.min(1,skillRank(state.profile,'extraDrone')):0);i++){
   const base=reservedTile(state);if(!base)break;
-  state.drones.push({id:`drone-${i}`,rank,base,x:base.x,y:base.y,time:i*8,cooldown:0,flash:0,lastTarget:null,kills:0,targeting:'first',upgrades:{power:0,tactical:0},specialization:null,specialRank:0,invested:0});
+  state.drones.push({id:`drone-${i}`,rank,base,x:base.x,y:base.y,time:i*8,cooldown:0,flash:0,lastTarget:null,kills:0,damageDealt:0,targeting:'first',upgrades:{power:0,tactical:0},specialization:null,specialRank:0,invested:0});
  }
  state.drone=state.drones[0]||null;
 }
@@ -42,7 +42,7 @@ export function updateDrone(state,dt,damageEnemy){
  const destination=target?{x:target.x+Math.cos(drone.time*1.2)*22,y:target.y-42}:{x:drone.base.x,y:drone.base.y-18};
  const dx=destination.x-drone.x,dy=destination.y-drone.y,distance=Math.hypot(dx,dy),travel=Math.min(distance,dt*240);
  if(distance>0){drone.x+=dx/distance*travel;drone.y+=dy/distance*travel;}
- if(target&&Math.hypot(target.x-drone.x,target.y-drone.y)<=stats.range&&drone.cooldown<=0){damageEnemy(target,stats.damage,.15,{weaponKey:'drone',ownerId:drone.id});if(drone.specialization==='slow'&&!target.immuneSlow){target.slowStrength=.25+drone.specialRank*.1;target.slowTimer=1.5+drone.specialRank*.5;}
+ if(target&&Math.hypot(target.x-drone.x,target.y-drone.y)<=stats.range&&drone.cooldown<=0){damageEnemy(target,stats.damage,.15,{weaponKey:'drone',ownerId:drone.id},state);if(drone.specialization==='slow'&&!target.immuneSlow){target.slowStrength=.25+drone.specialRank*.1;target.slowTimer=1.5+drone.specialRank*.5;}
  if(drone.specialization==='burn'){target.burnDamage=stats.damage*.35*drone.specialRank;target.burnTimer=2.5;target.burnSource={weaponKey:'drone',ownerId:drone.id};}
  drone.cooldown=stats.interval;drone.lastTarget={x:target.x,y:target.y};drone.flash=.09;state.audio?.play('drone',drone.x);}
  }
@@ -51,7 +51,7 @@ export function triggerMines(state,enemy,damageEnemy,addEffect){
  for(const mine of state.mines){
   if(mine.spent||enemy.flying||enemy.life<=0||Math.hypot(enemy.x-mine.x,enemy.y-mine.y)>24)continue;
   mine.spent=true;
-  for(const target of state.enemies)if(target.life>0&&!target.flying&&Math.hypot(target.x-mine.x,target.y-mine.y)<=48)damageEnemy(target,5500,.6,{weaponKey:'mines'});
+  for(const target of state.enemies)if(target.life>0&&!target.flying&&Math.hypot(target.x-mine.x,target.y-mine.y)<=48)damageEnemy(target,5500,.6,{weaponKey:'mines'},state);
   addEffect(state,'explosion',mine.x,mine.y,48,.6);state.audio?.play('impact',mine.x);
  }
 }
@@ -59,12 +59,12 @@ export function drawSupport(ctx,state,world={}){
  for(const mine of state.mines){if(mine.spent)continue;const sprite=world['exit-mine']||world.mine;if(sprite)ctx.drawImage(sprite,mine.x-15,mine.y-15,30,30);}
  if(!state.drone)return;
  for(const drone of state.drones){
- if(world.uavBase){ctx.drawImage(world.uavBase,drone.base.x-34,drone.base.y-34,68,68);}else {ctx.save();ctx.translate(drone.base.x,drone.base.y);ctx.fillStyle='#203c46';ctx.strokeStyle='#76b9cc';ctx.lineWidth=2;ctx.fillRect(-23,-23,46,46);ctx.strokeRect(-23,-23,46,46);ctx.beginPath();ctx.arc(0,0,17,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#b6d7d9';ctx.font='bold 15px monospace';ctx.textAlign='center';ctx.fillText('UAV',0,5);ctx.restore();}}
+ if(world.uavBase){ctx.drawImage(world.uavBase,drone.base.x-34,drone.base.y-34,68,68);}else {ctx.save();ctx.translate(drone.base.x,drone.base.y);ctx.fillStyle='#203c46';ctx.strokeStyle='#76b9cc';ctx.lineWidth=2;ctx.fillRect(-23,-23,46,46);ctx.strokeRect(-23,-23,46,46);ctx.beginPath();ctx.arc(0,0,17,0,Math.PI*2);ctx.stroke();ctx.restore();}}
  for(const drone of state.drones){
  if(drone.flash&&drone.lastTarget){ctx.strokeStyle='#9ae7f5aa';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(drone.x,drone.y);ctx.lineTo(drone.lastTarget.x,drone.lastTarget.y);ctx.stroke();}
  ctx.save();ctx.translate(drone.x,drone.y);ctx.fillStyle='#0005';ctx.beginPath();ctx.ellipse(7,35,20,8,0,0,Math.PI*2);ctx.fill();if(world.drone){ctx.drawImage(world.drone,-28,-28,56,56);}else {ctx.strokeStyle='#a8cbd1';ctx.lineWidth=4;
  ctx.beginPath();ctx.moveTo(-15,-11);ctx.lineTo(15,11);ctx.moveTo(15,-11);ctx.lineTo(-15,11);ctx.stroke();ctx.fillStyle='#365966';ctx.strokeStyle='#b8d9dc';ctx.lineWidth=1;
  for(const x of [-15,15])for(const y of [-11,11]){ctx.beginPath();ctx.ellipse(x,y,12,4,drone.time*28,0,Math.PI*2);ctx.stroke();}
- ctx.fillRect(-7,-10,14,20);ctx.strokeRect(-7,-10,14,20);ctx.fillStyle='#9ce2ef';ctx.fillRect(-3,6,6,3);}ctx.fillStyle='#deebd1';ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.fillText(`UAV ${state.drones.indexOf(drone)+1} · ${drone.kills} ×`,0,-24);ctx.restore();
+ ctx.fillRect(-7,-10,14,20);ctx.strokeRect(-7,-10,14,20);ctx.fillStyle='#9ce2ef';ctx.fillRect(-3,6,6,3);}ctx.restore();
  }
 }

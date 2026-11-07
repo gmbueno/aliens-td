@@ -42,18 +42,7 @@ const level2 = {
       "cost": 0
     }
   ],
-  "pads": [
-    {
-      "row": 3,
-      "col": 5,
-      "type": "range"
-    },
-    {
-      "row": 1,
-      "col": 7,
-      "type": "range"
-    }
-  ],
+  "pads": [],
   "track": [
     {
       "col": 0,

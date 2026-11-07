@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {levels} from '../src/data/levels/index.js';
-import {missionRecords} from './fixtures.mjs';
+import {missionRecords,placementTile} from './fixtures.mjs';
 const url=process.env.GAME_URL||'http://127.0.0.1:4182';
 const out=process.env.GAME_OUTPUT||'output/placement';await fs.mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--mute-audio'],...(process.env.GAME_BROWSER_EXECUTABLE?{executablePath:process.env.GAME_BROWSER_EXECUTABLE}:{})});
@@ -29,7 +29,7 @@ try{
   // not exercise this rendering path and previously missed the frozen frame.
   const invalid=await hover(p,level.track[0]);
   await p.mouse.click(invalid.x,invalid.y);assert.equal((await read(p)).towers.length,0);assert.equal((await read(p)).gold,start.gold);
-  const tile=start.pads[0],pos=await hover(p,tile);await p.screenshot({path:`${out}/${level.id}-preview.png`});
+  const tile=placementTile(start.level),pos=await hover(p,tile);await p.screenshot({path:`${out}/${level.id}-preview.png`});
   await p.mouse.down();await p.waitForTimeout(50);await p.mouse.up();
   const placed=await read(p);assert.equal(placed.towers.length,1,level.id);assert.equal(placed.gold,start.gold-weapons.find(w=>w.key==='handgun').price);assert.equal(placed.towers[0].row,tile.row);assert.equal(placed.towers[0].col,tile.col);
   await p.mouse.move(pos.x+3,pos.y+3);await p.screenshot({path:`${out}/${level.id}-placed.png`});
@@ -40,7 +40,7 @@ try{
   assert.deepEqual(errors,[],level.id);await p.context().close();
  }
  for(const [mode,viewport] of [['info',{width:1440,height:1000}],['keyboard',{width:1024,height:768}],['card',{width:390,height:844}]]){
-  const p=await pageFor(levels[2],mode,true,viewport),start=await read(p),pos=await hover(p,start.pads[0]);await p.mouse.click(pos.x,pos.y);
+  const p=await pageFor(levels[2],mode,true,viewport),start=await read(p),pos=await hover(p,placementTile(start.level));await p.mouse.click(pos.x,pos.y);
   assert.equal((await read(p)).towers.length,1);assert.equal((await read(p)).gold,start.gold-weapons.find(w=>w.key==='handgun').price);await p.context().close();
  }
  assert.deepEqual(errors,[]);

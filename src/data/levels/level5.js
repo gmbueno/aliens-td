@@ -90,18 +90,7 @@ const level5 = {
       "cost": 50
     }
   ],
-  "pads": [
-    {
-      "row": 5,
-      "col": 4,
-      "type": "range"
-    },
-    {
-      "row": 1,
-      "col": 6,
-      "type": "range"
-    }
-  ],
+  "pads": [],
   "track": [
     {
       "col": 0,

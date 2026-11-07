@@ -17,7 +17,7 @@ export function setMissileAim(state,tower,x,y){
 }
 export function updateTacticalDefense(state,dt,damageEnemy,addEffect){
  state.pathMines ||= [];state.missileStrikes ||= [];
- for(const strike of state.missileStrikes){strike.timer-=dt;if(strike.timer<=0){for(const e of state.enemies)if(e.life>0&&Math.hypot(e.x-strike.x,e.y-strike.y)<=strike.radius)damageEnemy(e,strike.damage,.5,strike.source);addEffect(state,'explosion',strike.x,strike.y,strike.radius,.6);state.audio?.play('impact',strike.x);}}
+ for(const strike of state.missileStrikes){strike.timer-=dt;if(strike.timer<=0){for(const e of state.enemies)if(e.life>0&&Math.hypot(e.x-strike.x,e.y-strike.y)<=strike.radius)damageEnemy(e,strike.damage,.5,strike.source,state);addEffect(state,'explosion',strike.x,strike.y,strike.radius,.6);state.audio?.play('impact',strike.x);}}
  state.missileStrikes=state.missileStrikes.filter(s=>s.timer>0);
  for(const t of state.towers){const w=t.weapon;
   if(w.economic){
@@ -35,11 +35,11 @@ export function updateTacticalDefense(state,dt,damageEnemy,addEffect){
    if(t.impactPoint&&threat){state.missileStrikes.push({...t.impactPoint,startX:t.x,startY:t.y,timer:1.1,duration:1.1,damage:w.directDamage,radius:w.splashRadius,source:{weaponKey:w.key,ownerId:t.id}});t.ammo--;t.cooldown=1/w.atkSpeed;state.audio?.play('rocket_launcher',t.x);}
   }else{
    const targets=state.enemies.filter(e=>e.life>0&&!e.flying&&inWeaponRange(t,e));
-   if(targets.length){for(const e of targets)damageEnemy(e,w.directDamage,.1,{weaponKey:w.key,ownerId:t.id});t.ammo--;t.cooldown=1/w.atkSpeed;t.gasActive=true;t.gasVisual=.65;}
+   if(targets.length){for(const e of targets)damageEnemy(e,w.directDamage,.1,{weaponKey:w.key,ownerId:t.id},state);t.ammo--;t.cooldown=1/w.atkSpeed;t.gasActive=true;t.gasVisual=.65;}
   }
  }
  for(const mine of state.pathMines){if(!state.enemies.some(e=>e.life>0&&!e.flying&&Math.hypot(e.x-mine.x,e.y-mine.y)<=24))continue;
-  for(const e of state.enemies)if(e.life>0&&!e.flying&&Math.hypot(e.x-mine.x,e.y-mine.y)<=mine.radius)damageEnemy(e,mine.damage,.5,{weaponKey:'minelayer',ownerId:mine.ownerId});mine.spent=true;addEffect(state,'explosion',mine.x,mine.y,mine.radius,.4);state.audio?.play('impact',mine.x);
+  for(const e of state.enemies)if(e.life>0&&!e.flying&&Math.hypot(e.x-mine.x,e.y-mine.y)<=mine.radius)damageEnemy(e,mine.damage,.5,{weaponKey:'minelayer',ownerId:mine.ownerId},state);mine.spent=true;addEffect(state,'explosion',mine.x,mine.y,mine.radius,.4);state.audio?.play('impact',mine.x);
  }
  state.pathMines=state.pathMines.filter(m=>!m.spent);
 }

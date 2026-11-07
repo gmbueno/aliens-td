@@ -114,18 +114,7 @@ const level12 = {
       "cost": 60
     }
   ],
-  "pads": [
-    {
-      "row": 6,
-      "col": 7,
-      "type": "range"
-    },
-    {
-      "row": 5,
-      "col": 5,
-      "type": "range"
-    }
-  ],
+  "pads": [],
   "track": [
     {
       "col": 0,

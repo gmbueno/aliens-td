@@ -1,3 +1,4 @@
+import {placementTile} from './fixtures.mjs';
 import {autoStart} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -31,7 +32,7 @@ try {
    assert.equal((await read(page)).audio.totalClips,20);assert.equal((await read(page)).audio.errors,0);
    await page.click(`.weapon-card[data-weapon-key="${key}"] .weapon-select`);
    if(key==='magnum'){await page.keyboard.press('r');await page.keyboard.press('r');await page.keyboard.press('r');}
-   const s=await read(page),rect=await page.locator('#game-canvas').boundingBox(),pad=s.pads[0];
+   const s=await read(page),rect=await page.locator('#game-canvas').boundingBox(),pad=placementTile(s.level);
    await page.mouse.click(rect.x+(s.board.x+(pad.col+.5)*s.board.tile)/1280*rect.width,rect.y+(s.board.y+(pad.row+.5)*s.board.tile)/720*rect.height);
    await autoStart(page);
    const events=[];

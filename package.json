@@ -1,7 +1,7 @@
 {
   "name": "alienstowerdefense",
   "private": true,
-  "version": "0.12.1",
+  "version": "0.13.0",
   "type": "module",
   "scripts": {
     "serve": "python3 -m http.server 4173",
@@ -22,7 +22,8 @@
     "test:tactics": "node tests/tactics-browser.mjs",
     "test:pads": "node tests/pads-browser.mjs",
     "test:refinement": "node tests/refinement-browser.mjs",
-    "test:mobile": "node tests/mobile-browser.mjs"
+    "test:mobile": "node tests/mobile-browser.mjs",
+    "test:contribution": "node tests/contribution-browser.mjs"
   },
   "devDependencies": {
     "playwright": "1.58.2"

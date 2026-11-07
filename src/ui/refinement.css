@@ -146,3 +146,7 @@
  .arsenal-restart-panel{bottom:-17px;margin:16px -17px -17px;padding:12px 17px;grid-template-columns:26px minmax(0,1fr);gap:8px}.arsenal-restart-panel>img{width:26px;height:26px}.arsenal-restart-panel .primary-button{grid-column:1/-1}
  .loadout-slots{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.loadout-slots button{padding:5px;min-height:78px}.loadout-slots strong{font-size:8px}.loadout-slots img{height:31px}.loadout-slots small{font-size:7px}
 }
+
+/* Per-unit combat totals stay with the selected weapon, never over the map. */
+#game-screen .tower-sidebar .weapon-stat-list.combat-overview{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:9px}
+#game-screen .tower-sidebar .combat-overview [data-stat="dmg-dealt"] strong{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}

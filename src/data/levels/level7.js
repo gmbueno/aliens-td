@@ -114,18 +114,7 @@ const level7 = {
       "cost": 60
     }
   ],
-  "pads": [
-    {
-      "row": 4,
-      "col": 3,
-      "type": "range"
-    },
-    {
-      "row": 2,
-      "col": 5,
-      "type": "range"
-    }
-  ],
+  "pads": [],
   "track": [
     {
       "col": 0,

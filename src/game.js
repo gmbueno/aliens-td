@@ -49,7 +49,7 @@ function createAssetStore() {
     loaded: false,
   };
   Promise.all([
-    ...['range-pad','power-pad','exit-mine'].map(key=>loadImage(`assets/pads/${key}.png`).then(image=>store.world[key]=image)),
+    ...['power-pad','exit-mine'].map(key=>loadImage(`assets/pads/${key}.png`).then(image=>store.world[key]=image)),
     ...['missile-flight','gas-cloud-a','gas-cloud-b','gas-cloud-c'].map(key=>loadImage(`assets/refinement/${key}.png`).then(image=>store.world[key]=image)),
     ...['mine','infested'].map(key=>loadImage(`assets/tactics/${key}.png`).then(image=>store.world[key]=image)),
     ...['drone','uavBase'].map(key=>loadImage(`assets/command/${key}.png`).then(image=>store.world[key]=image)),
@@ -274,7 +274,7 @@ export function addEffect(state, kind, x, y, radius, duration=.5) {
   if(state.effects.length>90)state.effects.shift();
 }
 function impact(state,x,y,radius,damage,armorPierce=1,source={weaponKey:'artillery'}) {
-  for(const enemy of state.enemies)if(enemy.life>0&&distance(enemy,{x,y})<=radius)damageEnemy(enemy,damage,armorPierce,source);
+  for(const enemy of state.enemies)if(enemy.life>0&&distance(enemy,{x,y})<=radius)damageEnemy(enemy,damage,armorPierce,source,state);
   addEffect(state,'explosion',x,y,radius,.7);
   state.audio?.play('impact',x);
 }
@@ -350,13 +350,20 @@ export function createInitialState(level, profile, canvas) {
   return state;
 }
 
-export function damageEnemy(enemy, damage, armorPierce = 0, source = null) {
-  if(enemy.life<=0)return;
-  if(source)enemy.lastDamageSource=source;
+export function damageEnemy(enemy, damage, armorPierce = 0, source = null, state = null) {
+  if(enemy.life<=0||!Number.isFinite(damage)||damage<=0)return 0;
   const shieldHit = Math.min(enemy.shield||0, damage);
-  enemy.shield -= shieldHit;
-  enemy.life -= (damage - shieldHit) * (1 - (enemy.armor||0) * (1 - armorPierce));
-  if (damage > 0 && enemy.rageMultiplier > 1) enemy.raged = true;
+  const healthHit = Math.min(enemy.life, (damage - shieldHit) * (1 - (enemy.armor||0) * (1 - armorPierce)));
+  const dealt = shieldHit + healthHit;
+  enemy.shield = (enemy.shield||0) - shieldHit;
+  enemy.life -= healthHit;
+  if(dealt>0){
+    if(source)enemy.lastDamageSource=source;
+    const owner=state&&source?.ownerId?state.towers.find(t=>t.id===source.ownerId)||state.drones.find(d=>d.id===source.ownerId):null;
+    if(owner)owner.damageDealt=(owner.damageDealt||0)+dealt;
+    if(enemy.rageMultiplier>1)enemy.raged=true;
+  }
+  return dealt;
 }
 
 function createProjectile(state, tower, target, angleOffset = 0, aimAngle = null) {
@@ -532,7 +539,7 @@ function collectKilledEnemies(state) {
   state.enemies=[...state.enemies.filter(enemy=>enemy.life>0),...children];
 }
 export function projectileHit(state,projectile,enemy) {
-  damageEnemy(enemy,projectile.damage,projectile.armorPierce,{weaponKey:projectile.weaponKey,ownerId:projectile.ownerId});
+  damageEnemy(enemy,projectile.damage,projectile.armorPierce,{weaponKey:projectile.weaponKey,ownerId:projectile.ownerId},state);
   if(projectile.critical)enemy.criticalFlash=.16;
   if(!enemy.immuneSlow && (projectile.slow || projectile.cryo)) {
     enemy.slowStrength=Math.max(enemy.slowTimer>0?enemy.slowStrength||0:0,projectile.slow?projectile.slowStrength||.25:.16);
@@ -540,7 +547,7 @@ export function projectileHit(state,projectile,enemy) {
   }
   const radius=projectile.splashRadius || 0;
   if(radius) {
-    for(const other of state.enemies)if(other!==enemy&&other.life>0&&distance(other,enemy)<=radius)damageEnemy(other,projectile.damage,projectile.armorPierce,{weaponKey:projectile.weaponKey,ownerId:projectile.ownerId});
+    for(const other of state.enemies)if(other!==enemy&&other.life>0&&distance(other,enemy)<=radius)damageEnemy(other,projectile.damage,projectile.armorPierce,{weaponKey:projectile.weaponKey,ownerId:projectile.ownerId},state);
     addEffect(state,projectile.splashRadius?'explosion':'spark',enemy.x,enemy.y,radius,.55);
     if(projectile.splashRadius)state.audio?.play('impact',enemy.x);
   }
@@ -602,7 +609,7 @@ export function updateProjectiles(state, dt) {
 function updateBurningEnemies(state, dt) {
   for (const enemy of state.enemies) {
     if (enemy.burnTimer <= 0) continue;
-    damageEnemy(enemy, enemy.burnDamage * Math.min(dt,enemy.burnTimer), 1, enemy.burnSource);
+    damageEnemy(enemy, enemy.burnDamage * Math.min(dt,enemy.burnTimer), 1, enemy.burnSource,state);
     enemy.burnTimer = Math.max(0, enemy.burnTimer - dt);
     if(!enemy.burnTimer){enemy.burnDamage=0;enemy.burnSource=null;}
   }
@@ -679,7 +686,7 @@ export function placeTower(state, weaponKey, row, col) {
     x: state.board.x + col * state.board.tile + state.board.tile / 2,
     y: state.board.y + row * state.board.tile + state.board.tile / 2,
     tile: state.board.tile, range: weapon.range, cooldown: 0, ammo: weapon.capacity, reloadTimer: 0, angle: weapon.directional?(state.buildAngle||0):0,
-    kills:0, upgrades: { power: 0, tactical: 0 }, invested: weapon.price+platform, platform, targeting: "first",
+    kills:0, damageDealt:0, upgrades: { power: 0, tactical: 0 }, invested: weapon.price+platform, platform, targeting: "first",
     pad: state.level.pads?.find(pad => pad.row === row && pad.col === col)?.type,
   };
   tower.weapon = applyTowerUpgrades(weapon, tower);
@@ -963,7 +970,7 @@ function drawPlacementIndicator(ctx, board, row, col, isValid = true) {
   ctx.restore();
 }
 
-function drawObstacle(ctx, x, y, size, obstacle, selected, cost=obstacle.cost, image=null) {
+function drawObstacle(ctx, x, y, size, obstacle, selected, image=null) {
   ctx.save();
   ctx.translate(x + size / 2, y + size / 2);
   ctx.shadowColor = "#0009"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 6;
@@ -991,10 +998,6 @@ function drawObstacle(ctx, x, y, size, obstacle, selected, cost=obstacle.cost, i
     ctx.beginPath(); ctx.moveTo(-size*.25,-size*.1); ctx.lineTo(0,-size*.27); ctx.lineTo(size*.15,0); ctx.stroke();
   }
   ctx.shadowColor = "transparent";
-  if (obstacle.cost) {
-    ctx.fillStyle = "#141c24"; ctx.fillRect(-18, size*.22, 36, 17);
-    ctx.fillStyle = "#efd6a3"; ctx.font = "bold 12px monospace"; ctx.textAlign = "center"; ctx.fillText(`$${cost}`, 0, size*.22 + 13);
-  }
   if (selected) { ctx.strokeStyle = "#ffdd88"; ctx.lineWidth = 3; ctx.strokeRect(-size*.4,-size*.4,size*.8,size*.8); }
   ctx.restore();
 }
@@ -1091,13 +1094,12 @@ function drawGame(ctx, state, assets) {
       }
       const pad = level.pads?.find(tile => tile.row === row && tile.col === col);
       if (pad) {
-        const overlay=assets.world[pad.type==='power'?'power-pad':'range-pad'];
+        const overlay=pad.type==='power'?assets.world['power-pad']:null;
         if(overlay)ctx.drawImage(overlay,x+3,y+3,board.tile-6,board.tile-6);
       }
       if (isBlocked) {
         const obstacle = level.blockers.find(tile => tile.row === row && tile.col === col);
-        drawObstacle(ctx, x, y, board.tile, obstacle, state.selectedObstacle === obstacle,obstacleCost(state,obstacle),assets.world[obstacle.kind]);
-        if(obstacle.encounter){ctx.fillStyle='#e8c776';ctx.font='bold 12px monospace';ctx.textAlign='center';ctx.fillText('FREE ⚠',x+board.tile/2,y+board.tile-7);}
+        drawObstacle(ctx, x, y, board.tile, obstacle, state.selectedObstacle === obstacle,assets.world[obstacle.kind]);
       }
     }
   }
@@ -1152,9 +1154,8 @@ function drawGame(ctx, state, assets) {
       const canPlace = state.towers.filter(t=>t.weapon.key===selected.key).length<placementLimit(state.profile) && !state.drones.some(d=>d.base.row===state.hoverTile.row&&d.base.col===state.hoverTile.col) && state.gold >= selected.price+(tileSets.water.has(key)?PONTOON_COST:0) && (!tileSets.water.has(key)||skillRank(state.profile,'pontoons')) && !tileSets.path.has(key) && !tileSets.blockers.has(key) && !occupied;
       const x = board.x + state.hoverTile.col * board.tile + board.tile / 2;
       const y = board.y + state.hoverTile.row * board.tile + board.tile / 2;
-      const pad = level.pads?.find(tile => tile.row === state.hoverTile.row && tile.col === state.hoverTile.col);
       const aura=selected.support?0:Math.max(0,...state.towers.filter(t=>t.weapon.support&&Math.hypot(t.x-x,t.y-y)<=t.range).map(t=>.1+t.upgrades.tactical*.04));
-      drawWeaponRange(ctx, {x,y,weapon:selected,angle:state.buildAngle,tile:board.tile,range:selected.range*(!selected.minelayer&&pad?.type === "range" ? 1.18 : 1)*(selected.minelayer?1:1+aura)}, canPlace ? "rgba(116, 224, 108, 0.88)" : "rgba(255, 103, 125, 0.82)");
+      drawWeaponRange(ctx, {x,y,weapon:selected,angle:state.buildAngle,tile:board.tile,range:selected.range*(selected.minelayer?1:1+aura)}, canPlace ? "rgba(116, 224, 108, 0.88)" : "rgba(255, 103, 125, 0.82)");
       drawPlacementIndicator(ctx, board, state.hoverTile.row, state.hoverTile.col, canPlace);
       ctx.save();
       ctx.globalAlpha = canPlace ? .65 : .35;
@@ -1191,7 +1192,6 @@ function drawGame(ctx, state, assets) {
       ctx.fillStyle = "#fff3b5"; ctx.shadowColor = "#ffbb48"; ctx.shadowBlur = 12;
       ctx.beginPath(); ctx.moveTo(26,-5); ctx.lineTo(43,0); ctx.lineTo(26,5); ctx.closePath(); ctx.fill(); ctx.restore();
     }
-    ctx.save();ctx.fillStyle='#14252cdd';ctx.fillRect(tower.x+15,tower.y-31,34,15);ctx.fillStyle='#e4e7c4';ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.fillText(`${tower.kills||0} ×`,tower.x+32,tower.y-20);ctx.restore();
     const ranks = (tower.upgrades?.power || 0) + (tower.upgrades?.tactical || 0);
     for (let i = 0; i < ranks; i++) {
       ctx.fillStyle = i < tower.upgrades.power ? "#ffc24c" : "#7ce1f7";
@@ -1340,7 +1340,7 @@ export function createGame({ ui, levels }) {
       ${(level.water||[]).map(tile=>`<rect x="${tile.col*10+1}" y="${tile.row*10+1}" width="8" height="8" fill="#4eabc2" opacity=".6"/>`).join("")}
       ${level.blockers.map(tile => `<rect x="${tile.col * 10 + 2}" y="${tile.row * 10 + 2}" width="6" height="6" rx="1" fill="${color}" opacity=".25"/>`).join("")}
       <polyline points="${level.track.map(tile => `${tile.col * 10 + 5},${tile.row * 10 + 5}`).join(" ")}" fill="none" stroke="${color}" stroke-width="5" stroke-linejoin="round" opacity=".85"/>
-      ${level.pads.map(tile => `<circle cx="${tile.col * 10 + 5}" cy="${tile.row * 10 + 5}" r="2.8" fill="${tile.type === "power" ? "#ffc24c" : "#78e9ff"}"/>`).join("")}
+      ${level.pads.map(tile => `<circle cx="${tile.col * 10 + 5}" cy="${tile.row * 10 + 5}" r="2.8" fill="#ffc24c"/>`).join("")}
       <circle cx="${level.track[0].col * 10 + 5}" cy="${level.track[0].row * 10 + 5}" r="4" fill="#ff806f"/>
       <circle cx="${level.track.at(-1).col * 10 + 5}" cy="${level.track.at(-1).row * 10 + 5}" r="4" fill="#d0f7b0"/>
     </svg>`;
@@ -1518,7 +1518,7 @@ export function createGame({ ui, levels }) {
     const stats=droneStats(drone),total=drone.upgrades.power+drone.upgrades.tactical;
     ui.towerSidebar.classList.remove('hidden');ui.towerSidebar.classList.add('inspecting-tower');ui.towerSidebarCloseButton.classList.remove('hidden');
     ui.towerSidebarTitle.textContent=`Hunter UAV ${state.drones.indexOf(drone)+1}`;
-    setMarkup(ui.towerStatList,[['Damage',stats.damage],['Rate',(1/stats.interval).toFixed(1)+'/s'],['Kills',drone.kills]].map(([k,v])=>`<div class="weapon-stat-row"><span>${k}</span><strong>${v}</strong></div>`).join(''));
+    setMarkup(ui.towerStatList,[['Damage',stats.damage],['Rate',(1/stats.interval).toFixed(1)+'/s'],['Kills',drone.kills],['Dmg dealt',Math.floor(drone.damageDealt||0).toLocaleString('en-US')]].map(([k,v])=>`<div class="weapon-stat-row" data-stat="${k.toLowerCase().replaceAll(' ','-')}"><span>${k}</span><strong>${v}</strong></div>`).join(''));
     mountActions(`drone:${drone.id}`,`<div class="drone-tabs">${state.drones.map((d,i)=>`<button type="button" data-select-drone="${d.id}">UAV ${i+1}</button>`).join('')}</div><div class="panel-section-label">Core upgrades <span data-drone-total></span></div>${['power','tactical'].map(key=>`<button type="button" class="upgrade-button" data-drone-upgrade="${key}"><span class="upgrade-topline"><strong>${key==='power'?'High-caliber UAV':'Motors'}</strong><small data-drone-rank></small></span><span class="upgrade-preview">${key==='power'?'+60% base damage per rank':'+20% attack speed per rank'}</span><span class="upgrade-purchase" data-drone-status></span></button>`).join('')}<div class="panel-section-label">Specialization <span>Choose one</span></div><div class="drone-paths">${['slow','burn'].map(key=>`<button type="button" class="upgrade-button" data-drone-upgrade="${key}"><img src="assets/tactics/${key==='slow'?'cryo':'burn'}.png" alt=""><strong>${key==='slow'?'Cryo rounds':'Incendiary'}</strong><small data-drone-rank></small><span class="upgrade-preview">${key==='slow'?'Slow targets':'Burn targets'}</span><span data-drone-status></span></button>`).join('')}</div><p class="upgrade-limit" data-drone-budget></p><div class="panel-section-label">Target priority</div><div class="target-buttons" role="group" aria-label="Drone target priority">${targetModes.map(m=>`<button type="button" data-target="${m.key}" title="${m.hint}"><span>${m.name}</span></button>`).join('')}</div><p class="target-description" data-target-description></p>`);
     ui.towerActions.querySelectorAll('[data-select-drone]').forEach(b=>{b.classList.toggle('selected',b.dataset.selectDrone===drone.id);b.setAttribute('aria-pressed',String(b.dataset.selectDrone===drone.id));});
     ui.towerActions.querySelectorAll('[data-target]').forEach(b=>{b.disabled=Boolean(state.result)||!targetingUnlocked(profile,b.dataset.target);b.classList.toggle('selected',b.dataset.target===drone.targeting);b.setAttribute('aria-pressed',String(b.dataset.target===drone.targeting));});
@@ -1529,12 +1529,13 @@ export function createGame({ ui, levels }) {
   }
 
   function syncTowerSidebar() {
+    ui.towerStatList.classList.toggle('combat-overview',Boolean(state.selectedDroneId||state.selectedTowerId&&state.towers.some(t=>t.id===state.selectedTowerId&&!t.weapon.support&&!t.weapon.economic)));
     const inspecting=Boolean(state.selectedTowerId||state.selectedDroneId||state.selectedObstacle||state.selectedEnemyId);
     document.getElementById('tower-inspector').classList.toggle('hidden',!inspecting);
     document.getElementById('deployment-panel').classList.toggle('hidden',inspecting);
 
     if(state.selectedEnemyId){
-      const e=state.enemies.find(e=>e.id===state.selectedEnemyId);if(e){ui.towerSidebarCloseButton.classList.remove('hidden');ui.towerSidebarTitle.textContent=e.label;setMarkup(ui.towerStatList,`<div class="alien-portrait"><img src="${e.asset}" alt=""></div>${[['HP',Math.ceil(e.life)],['Shield',Math.ceil(e.shield||0)],['Speed',Math.round(enemySpeed(e))]].map(([k,v])=>`<div class="weapon-stat-row"><span>${k}</span><strong>${v}</strong></div>`).join('')}`);mountActions(`enemy:${e.id}`,`<p class="alien-traits">${[e.flying?'Flying · direct route · ignores mines and gas':'Ground · follows path',e.immuneSlow?'Slow immune':'',e.brood?'Spawns hatchlings':'',e.healer?'Heals nearby allies':'',e.armor?`${Math.round(e.armor*100)}% armor`:''].filter(Boolean).join('<br>')}</p><button type="button" class="rotate-tower" data-focus-alien>Mark priority target</button>`);const b=ui.towerActions.querySelector('[data-focus-alien]');b.disabled=!skillRank(profile,'focusTarget');b.textContent=state.focusEnemyId===e.id?'✓ Priority marked · cancel':skillRank(profile,'focusTarget')?'Mark priority target':'Unlock Priority Mark in Training';b.setAttribute('aria-pressed',String(state.focusEnemyId===e.id));return;}
+      const e=state.enemies.find(e=>e.id===state.selectedEnemyId);if(e){ui.towerSidebarCloseButton.classList.remove('hidden');ui.towerSidebarTitle.textContent=e.label;setMarkup(ui.towerStatList,`<div class="alien-portrait"><img src="${e.asset}" alt=""></div>${[['HP',Math.ceil(e.life)],['Shield',Math.ceil(e.shield||0)],['Speed',Math.round(enemySpeed(e))]].map(([k,v])=>`<div class="weapon-stat-row" data-stat="${k.toLowerCase().replaceAll(' ','-')}"><span>${k}</span><strong>${v}</strong></div>`).join('')}`);mountActions(`enemy:${e.id}`,`<p class="alien-traits">${[e.flying?'Flying · direct route · ignores mines and gas':'Ground · follows path',e.immuneSlow?'Slow immune':'',e.brood?'Spawns hatchlings':'',e.healer?'Heals nearby allies':'',e.armor?`${Math.round(e.armor*100)}% armor`:''].filter(Boolean).join('<br>')}</p><button type="button" class="rotate-tower" data-focus-alien>Mark priority target</button>`);const b=ui.towerActions.querySelector('[data-focus-alien]');b.disabled=!skillRank(profile,'focusTarget');b.textContent=state.focusEnemyId===e.id?'✓ Priority marked · cancel':skillRank(profile,'focusTarget')?'Mark priority target':'Unlock Priority Mark in Training';b.setAttribute('aria-pressed',String(state.focusEnemyId===e.id));return;}
     }
     if(state.selectedDroneId){syncDroneSidebar();return;}
     const tower = state?.towers.find(item => item.id === state.selectedTowerId);
@@ -1543,8 +1544,8 @@ export function createGame({ ui, levels }) {
     ui.towerSidebarCloseButton.classList.toggle("hidden", !tower && !state.selectedObstacle);
     if (tower) {
       ui.towerSidebarTitle.textContent = tower.weapon.name;
-      const overview = tower.weapon.economic?[["Earned",`$${tower.cashGenerated||0}`],["Payout",`$${tower.weapon.income}`],["Wave cap",`${tower.payouts||0}/${tower.weapon.payoutLimit}`]]:tower.weapon.support?[["Radius",tower.range],["Allies",state.towers.filter(t=>!t.weapon.support&&distance(t,tower)<=tower.range).length],["Damage boost",`+${Math.round((tower.weapon.auraDamage||0)*100)}%`]]:[["Damage",tower.weapon.directDamage.toLocaleString("en-US")],["Range",tower.weapon.minelayer?"8 SQMs":tower.range],["Kills",tower.kills||0]];
-      setMarkup(ui.towerStatList,overview.map(([label,value])=>`<div class="weapon-stat-row"><span>${label}</span><strong>${value}</strong></div>`).join(''));
+      const overview = tower.weapon.economic?[["Earned",`$${tower.cashGenerated||0}`],["Payout",`$${tower.weapon.income}`],["Wave cap",`${tower.payouts||0}/${tower.weapon.payoutLimit}`]]:tower.weapon.support?[["Radius",tower.range],["Allies",state.towers.filter(t=>!t.weapon.support&&distance(t,tower)<=tower.range).length],["Damage boost",`+${Math.round((tower.weapon.auraDamage||0)*100)}%`]]:[["Damage",tower.weapon.directDamage.toLocaleString("en-US")],["Range",tower.weapon.minelayer?"8 SQMs":tower.range],["Kills",tower.kills||0],["Dmg dealt",Math.floor(tower.damageDealt||0).toLocaleString("en-US")]];
+      setMarkup(ui.towerStatList,overview.map(([label,value])=>`<div class="weapon-stat-row" data-stat="${label.toLowerCase().replaceAll(' ','-')}"><span>${label}</span><strong>${value}</strong></div>`).join(''));
       // Keep controls mounted for the selected tower, including when gold/ammo changes
       // between pointerdown and pointerup. Only patch their text and availability.
       const paths = towerUpgradePathsFor(tower.weapon.key);
@@ -2184,7 +2185,7 @@ export function createGame({ ui, levels }) {
       pelletCount: tower.weapon.pelletCount,
       slowStrength: tower.weapon.slowStrength,
       slowDuration: tower.weapon.slow,
-      impactPoint:tower.impactPoint,cashGenerated:tower.cashGenerated,payouts:tower.payouts,minesProduced:tower.minesProduced,gasActive:tower.gasActive,gasVisual:tower.gasVisual,angle:tower.angle,aura:tower.aura,kills:tower.kills,pierce:tower.weapon.pierce,
+      impactPoint:tower.impactPoint,cashGenerated:tower.cashGenerated,payouts:tower.payouts,minesProduced:tower.minesProduced,gasActive:tower.gasActive,gasVisual:tower.gasVisual,angle:tower.angle,aura:tower.aura,kills:tower.kills,damageDealt:tower.damageDealt,pierce:tower.weapon.pierce,
       upgrades: tower.upgrades,
       invested: tower.invested,
       targeting: tower.targeting,

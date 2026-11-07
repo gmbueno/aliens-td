@@ -1,3 +1,4 @@
+import {placementTile} from './fixtures.mjs';
 import {weapons} from '../src/data/weapons.js';
 import {levels} from '../src/data/levels/index.js';
 import {towerUpgradeCost} from '../src/systems/weaponStats.js';
@@ -27,7 +28,7 @@ async function tile(page,row,col) {
  await page.mouse.click(rect.x+(board.x+(col+.5)*board.tile)/1280*rect.width,rect.y+(board.y+(row+.5)*board.tile)/720*rect.height);
 }
 async function place(page,key='handgun') {
- const {pads}=await state(page);const pad=pads[0];
+ const current=await state(page);const pad=placementTile(current.level);
  await page.click(`.weapon-card[data-weapon-key="${key}"] .weapon-select`);await tile(page,pad.row,pad.col);await tile(page,pad.row,pad.col);
 }
 async function heldClick(page,selector,duringPress) {

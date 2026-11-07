@@ -70,6 +70,11 @@ jobs:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:pads
 
+      - name: Validate quiet battlefield and actual per-unit damage contribution
+        env:
+          GAME_URL: http://127.0.0.1:4173
+        run: npm run test:contribution
+
       - name: Validate stable command UI, mixed progression and preparation mines
         env:
           GAME_URL: http://127.0.0.1:4173
@@ -147,6 +152,7 @@ jobs:
             output/browser
             output/refinement
             output/mobile
+            output/contribution
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

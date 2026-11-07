@@ -1,3 +1,4 @@
+import {placementTile} from './fixtures.mjs';
 import {weapons} from '../src/data/weapons.js';
 import {autoStart} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
@@ -102,7 +103,7 @@ try {
     await page.screenshot({path:`${out}/six-slots-${viewport.width}.png`,fullPage:true});await page.context().close();
   }
   const page=await pageFor({width:1280,height:720});
-  const state=await read(page),pad=state.pads[0],rect=await page.locator('#game-canvas').boundingBox();
+  const state=await read(page),pad=placementTile(state.level),rect=await page.locator('#game-canvas').boundingBox();
   await page.click('[data-weapon-key="handgun"] .weapon-select');
   await page.mouse.click(rect.x+(state.board.x+(pad.col+.5)*state.board.tile)*rect.width/1280,
     rect.y+(state.board.y+(pad.row+.5)*state.board.tile)*rect.height/720);

@@ -20,7 +20,7 @@ test('range perimeter contains only exterior cell edges, preserving the exact ci
 });
 test('Mine Foundry builds before the first alien, pauses, caps stock and ignores every range source',()=>{
  const p=normalizeProfile({schemaVersion:8,level:10,skillPoints:500,skills:{range:5,reload:1},discoveredCategories:['minelayer','beacon'],arsenal:{loadout:['minelayer','beacon']}});
- const level={...levels[0],pads:[...levels[0].pads,{row:3,col:3,type:'range'}]},s=createInitialState(level,p,{width:1280,height:720});s.gold=10000;
+ const s=createInitialState(levels[0],p,{width:1280,height:720});s.gold=10000;
  const t=placeTower(s,'minelayer',3,3),range=t.range;assert.equal(range,109);assert.equal(weaponRangeCells(t).length,8);
  const radar=placeTower(s,'beacon',3,2);assert.ok(radar);upgradeTower(s,radar,'tactical');assert.equal(t.range,range);
  tick(s,10);assert.equal(s.phase,'prepare');assert.equal(s.enemies.length,0);assert.ok(s.pathMines.length>=3);
