@@ -1,3 +1,4 @@
+import {inWeaponRange} from '../src/systems/targeting.js';
 import { pathToFileURL } from 'node:url';
 import { createInitialState, stepState, placeTower, launchWave, upgradeTower } from '../src/game.js';
 import { levels } from '../src/data/levels/index.js';
@@ -9,7 +10,7 @@ import { applySkillBonuses, towerUpgradeCost, applyTowerUpgrades, towerUpgradePa
 globalThis.localStorage = { setItem() {}, getItem() { return null; } };
 
 export function makeProfile(ranks = 0) {
-  return normalizeProfile({ schemaVersion:5, level: 1 + ranks * 4, skills: { damage: ranks, range: ranks, fireRate: ranks, reload: ranks, loadoutSlots:Math.min(2,ranks), duplicates:ranks>=2?1:0 }, settings: { muted: true } });
+  return normalizeProfile({ schemaVersion:5, level: 1 + ranks * 4, skills: { damage: ranks, range: ranks, fireRate: ranks, reload: ranks, loadoutSlots:Math.min(2,ranks), duplicates:Math.min(2,ranks) }, settings: { muted: true } });
 }
 
 // A repeatable, modest strategy: build at covered bends; reinvest between waves.
@@ -30,26 +31,27 @@ export function invest(state) {
         const point={x:state.board.x+(col+.5)*state.board.tile,y:state.board.y+(row+.5)*state.board.tile};
         const pad=state.level.pads.find(p=>p.row===row&&p.col===col);
         const range=effective.range*(pad?.type==='range'?1.18:1);
-        const covered=path.reduce((sum,p,i)=>sum+(Math.hypot(point.x-p.x,point.y-p.y)<range?importance[i]:0),0);
+        const angles=weapon.directional?[0,Math.PI/2,Math.PI,Math.PI*1.5]:[0];
+        const scored=angles.map(angle=>({angle,covered:path.reduce((sum,p,i)=>sum+(inWeaponRange({...point,range,weapon,angle},p)?importance[i]:0),0)})).sort((a,b)=>b.covered-a.covered)[0];const {covered,angle}=scored;
         const dps=effective.directDamage*effective.atkSpeed*(effective.pelletCount||1)/(1+effective.atkSpeed*effective.reloadSpeed/effective.capacity);
         const score=covered*dps/weapon.price*(pad?.type==='power'?1.15:1)*(weapon.armorPierce?1.12:1);
-        if(!best||score>best.score) best={score,weapon,row,col};
+        if(!best||score>best.score) best={score,weapon,row,col,angle};
       }
     }
     for(const tower of state.towers) for(const key of ['power','tactical']) {
       const cost=towerUpgradeCost(tower,key);
       if(cost>state.gold||tower.upgrades[key]>=(towerUpgradePathsFor(tower.weapon.key).find(p=>p.key===key)?.maxRank||3)||tower.upgrades.power+tower.upgrades.tactical>=4)continue;
-      const covered=path.reduce((sum,p,i)=>sum+(Math.hypot(tower.x-p.x,tower.y-p.y)<tower.range?importance[i]:0),0);
+      const covered=path.reduce((sum,p,i)=>sum+(inWeaponRange(tower,p)?importance[i]:0),0);
       const baseline=applySkillBonuses(weapons.find(w=>w.key===tower.weapon.key),state.profile);
       const next=applyTowerUpgrades(baseline,{...tower,upgrades:{...tower.upgrades,[key]:tower.upgrades[key]+1}});
       const output=w=>w.directDamage*w.atkSpeed*(w.pelletCount||1)*(1+(w.pierce||0)*.2)/(1+w.atkSpeed*w.reloadSpeed/w.capacity);
-      const newCovered=path.reduce((sum,p,i)=>sum+(Math.hypot(tower.x-p.x,tower.y-p.y)<next.range?importance[i]:0),0);
+      const newCovered=path.reduce((sum,p,i)=>sum+(inWeaponRange({...tower,weapon:next,range:next.range},p)?importance[i]:0),0);
       const score=Math.max(0,newCovered*output(next)-covered*output(tower.weapon))/cost;
       if(!best||score>best.score) best={score,tower,key};
     }
     if(!best)break;
     if(best.tower)upgradeTower(state,best.tower,best.key);
-    else { const tower=placeTower(state,best.weapon.key,best.row,best.col); if(!tower)throw Error('Invalid policy placement'); if(tower.weapon.key==='sniper'||tower.weapon.key==='magnum')tower.targeting='strongest'; }
+    else { state.buildAngle=best.angle||0;const tower=placeTower(state,best.weapon.key,best.row,best.col); if(!tower)throw Error('Invalid policy placement'); if(tower.weapon.key==='sniper'||tower.weapon.key==='magnum')tower.targeting='strongest'; }
   }
 }
 

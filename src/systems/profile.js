@@ -37,7 +37,8 @@ export function normalizeProfile(rawProfile = {}) {
   profile.caches=Object.fromEntries(Object.entries(rawProfile.caches||{}).filter(([key,value])=>/^level_\d+$/.test(key)&&value).map(([key])=>[key,true]));
   profile.arsenal = normalizeArsenal(rawProfile.arsenal, profile);
   const previousSchema=profile.schemaVersion;
-  profile.schemaVersion=6;
+  profile.schemaVersion=7;
+  if(previousSchema<7&&skills.chronoBreak>0&&rawProfile.skills.chronoCooldown===undefined)skills.chronoCooldown=skills.chronoBreak;
   profile.slotRewards=Object.fromEntries(SLOT_REWARD_LEVELS.filter(k=>rawProfile.slotRewards?.[k]||profile.caches[k]||(previousSchema<6&&profile.missions[k]?.clears)).map(k=>[k,true]));
   delete profile.caches;
   const hints=rawProfile.onboarding||{};

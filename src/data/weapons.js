@@ -71,7 +71,7 @@ export const weapons = [
     description: "Heavy rounds pierce one alien and hit the next for 50% damage. Upgrade Penetrator for more hits.",
     role: "Anti-armor",
     armorPierce: 0.75,
-    ballistic: true, spread: 0, pierce: 1,
+    ballistic: true, directional: true, laneWidth: 77, spread: 0, pierce: 1,
     price: 150,
     level: 1,
     range: 190,
@@ -140,9 +140,13 @@ export const weapons = [
     slotCardAsset: assets.slots.cards[1], hudAsset: "assets/towers/rpg.svg",
   } ,
   {key:'flamethrower',name:'Flamethrower',nickname:'Flamer',description:'A short-range flame cone hits every alien inside it and leaves a lingering burn. Refills its fuel tank.',role:'Close-range crowd burn',price:240,level:1,range:130,atkSpeed:8,capacity:32,reloadSpeed:2.8,directDamage:140,burnDamage:420,cone:.5,continuous:'flame',projectileSpeed:0,armorPierce:.15,accent:'#ff973d',asset:'assets/frontier/weapons/flamethrower-common.png',placedAsset:'assets/frontier/weapons/flamethrower-common.png',hudAsset:'assets/frontier/weapons/flamethrower-common.png',slotCardAsset:assets.slots.cards[2]},
-  {key:'laser',name:'Laser Array',nickname:'Laser',description:'A continuous energy beam strips shields. Overheats after five seconds and must cool down.',role:'Sustained anti-shield beam',price:270,level:1,range:245,atkSpeed:8,capacity:40,reloadSpeed:3,directDamage:480,continuous:'laser',shieldBonus:1.35,projectileSpeed:0,accent:'#4bf0e0',asset:'assets/frontier/weapons/laser-common.png',placedAsset:'assets/frontier/weapons/laser-common.png',hudAsset:'assets/frontier/weapons/laser-common.png',slotCardAsset:assets.slots.cards[1]}
+  {key:'laser',name:'Laser Array',nickname:'Laser',description:'A continuous energy beam strips shields. Overheats after five seconds and must cool down.',role:'Sustained anti-shield beam',price:270,level:1,range:245,atkSpeed:8,capacity:40,reloadSpeed:3,directDamage:624,continuous:'laser',shieldBonus:1.35,projectileSpeed:0,accent:'#4bf0e0',asset:'assets/frontier/weapons/laser-common.png',placedAsset:'assets/frontier/weapons/laser-common.png',hudAsset:'assets/frontier/weapons/laser-common.png',slotCardAsset:assets.slots.cards[1]}
 
 ];
+
+// Higher placement commitment; upgrades remain a cheaper way to strengthen a position.
+for(const weapon of weapons)weapon.price=Math.round(weapon.price*1.35/5)*5;
+weapons.push({key:'beacon',name:'Radar Beacon',nickname:'Radar',description:'Boosts nearby weapons: +10% range and attack speed. Upgrade damage or coverage. Overlapping beacons do not stack.',role:'Support aura',support:true,price:190,level:1,range:250,atkSpeed:0,capacity:1,reloadSpeed:0,directDamage:0,projectileSpeed:0,accent:'#e0bf70',asset:'assets/command/beacon-common.png',placedAsset:'assets/command/beacon-common.png',hudAsset:'assets/command/beacon-common.png',slotCardAsset:assets.slots.cards[0]});
 
 export function getWeapon(key) {
   return weapons.find((weapon) => weapon.key === key);

@@ -8,7 +8,7 @@ globalThis.localStorage={getItem(){return null;},setItem(){}};
 test('second support slot requires research, costs SP once, and keeps legacy primary selection',()=>{
  const p=normalizeProfile({schemaVersion:6,skillPoints:20,equippedActiveKey:'napalm'});
  assert.deepEqual(equippedPowerKeys(p),['napalm']);assert.equal(equipPower(p,'artillery',1),false);
- assert.equal(buySkill(p,'powerSlots'),false);assert.equal(buySkill(p,'chronoBreak'),true);assert.equal(buySkill(p,'powerSlots'),true);assert.equal(p.skillPoints,3);assert.equal(buySkill(p,'powerSlots'),false);
+ assert.equal(buySkill(p,'powerSlots'),false);assert.equal(buySkill(p,'mines'),true);assert.equal(buySkill(p,'powerSlots'),true);assert.equal(p.skillPoints,2);assert.equal(buySkill(p,'powerSlots'),false);
  assert.deepEqual(equippedPowerKeys(p),['napalm','chronoBreak']);
 });
 test('power choices swap without duplicates, persist and remove only the extra slot on refund',()=>{

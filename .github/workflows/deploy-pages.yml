@@ -65,6 +65,11 @@ jobs:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:arsenal
 
+      - name: Validate endless defense, directional fire and illustrated command UI
+        env:
+          GAME_URL: http://127.0.0.1:4173
+        run: npm run test:expansion
+
       - name: Validate dual powers and integrated equipment deck
         env:
           GAME_URL: http://127.0.0.1:4173

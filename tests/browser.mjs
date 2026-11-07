@@ -33,7 +33,7 @@ try{
  assert.ok(await p.locator('[data-upgrade="power"]').evaluate(e=>e.classList.contains('learn-pulse')));
  await p.click('[data-upgrade="power"]');assert.equal((await read(p)).onboarding.towerUpgraded,true);
  assert.equal(await p.locator('[data-upgrade].learn-pulse').count(),0);await h.shot(p,'first-upgrade');
- await p.click('[data-sell]');assert.equal((await read(p)).gold,360);assert.ok(await p.locator('#deployment-panel').isVisible());
+ await p.click('[data-sell]');assert.equal((await read(p)).gold,levels[0].startGold);assert.ok(await p.locator('#deployment-panel').isVisible());
  await investViaUI(p,levels[0]);await autoStart(p);await advance(p,800);
  assert.ok(await p.locator('[data-active-key].learn-pulse').count());await p.keyboard.press('q');assert.ok((await read(p)).activeAbilities.chronoBreak.timer>0);assert.equal((await read(p)).onboarding.powerUsed,true);
  await p.keyboard.press('Space');const before=await read(p);await advance(p,3000);assert.equal((await read(p)).activeAbilities.chronoBreak.cooldown,before.activeAbilities.chronoBreak.cooldown);await p.keyboard.press('Space');

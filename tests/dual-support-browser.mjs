@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {harness,read,advance,tile,autoStart,research,branch} from './browser-helpers.mjs';
 const h=await harness('dual-support');
 try {
- const p=await h.pageFor({level:5,skills:{chronoBreak:1}},{width:1280,height:720});
+ const p=await h.pageFor({level:5,skills:{chronoBreak:1,mines:1}},{width:1280,height:720});
  await p.click('#menu-play-button');assert.equal(await p.locator('[data-active-key]').count(),1);
  assert.equal(await p.locator('#weapon-bar kbd,#ability-bar kbd').count(),0);
  await autoStart(p);await p.keyboard.press('q');let s=await read(p);assert.ok(s.activeAbilities.chronoBreak.cooldown>0);

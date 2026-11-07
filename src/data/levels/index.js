@@ -18,3 +18,10 @@ import level17 from "./level17.js";
 import level18 from "./level18.js";
 
 export const levels = [level1, level2, level3, level4, level5, level6, level7, level8, level9, level10, level11, level12, level13, level14, level15, level16, level17, level18];
+
+// The opening teaches placement; later missions fund and demand a larger army.
+for(const [index,level] of levels.entries()){
+ level.startGold=Math.round(level.startGold*(index<3?1.6:4.2)/5)*5;
+ level.threat*=index<3?1.08:1.2;
+ level.waves=level.waves.map(w=>({...w,reward:Math.round(w.reward*(index<3?1.25:1.9)),spawns:w.spawns.flatMap((s,i)=>index>=3&&i%2===0?[{...s},{...s,at:s.at+.25}]:index<3&&i%6===5?[{...s},{...s,at:s.at+.3}]:[{...s}]).sort((a,b)=>a.at-b.at)}));
+}

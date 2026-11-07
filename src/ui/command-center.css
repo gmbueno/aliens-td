@@ -1,0 +1,83 @@
+/* Frontier command: worn brass, olive armor and clear diamond talent paths. */
+#skill-tree-modal .skill-tree-card{width:min(1360px,97vw);max-height:96dvh;padding:24px 28px;background:radial-gradient(ellipse at 26% 70%,#42483966,transparent 65%),repeating-linear-gradient(113deg,#fff1 0 1px,transparent 1px 5px),#191e1a;border:1px solid #766d48;border-radius:3px;box-shadow:0 20px 100px #000c;position:relative}
+#skill-tree-modal .skill-tree-head{padding:0 0 12px;border-bottom:1px solid #8a7a4b70;position:static}
+#skill-tree-modal .skill-tree-head p{display:none}
+#skill-tree-modal .skill-tree-head h2{font:900 italic 33px/1 'Trebuchet MS',sans-serif;letter-spacing:2px;color:#e5d8b3}
+#skill-tree-modal .skill-tree-summary{margin:12px 0 16px;gap:24px}
+#skill-tree-modal .skill-tree-summary>div:nth-child(2){padding:7px 12px;background:#b48027;border:1px solid #dfac48;border-radius:1px}
+#skill-tree-modal .skill-tree-summary>div:nth-child(2) span,#skill-tree-modal .skill-tree-summary>div:nth-child(2) strong{color:#fff0ba}
+#skill-tree-modal .skill-tree-summary strong{font-size:20px;color:#ead9ac}#skill-tree-modal .skill-explainer{display:none}
+#skill-tree-nodes{grid-template-columns:minmax(0,1fr) 310px;gap:28px;align-items:stretch}
+.talent-workspace{background:radial-gradient(ellipse at 10% 100%,#a0853826,transparent 70%),linear-gradient(#151b16d9,#151b16ed),url('../../assets/command/radar-dish.png') left bottom / 55% auto no-repeat;border:0;overflow:visible}
+#skill-tree-modal .doctrine-branches{grid-template-columns:repeat(6,minmax(0,1fr));background:#151a16;border:0;border-bottom:1px solid #84734b70}
+#skill-tree-modal .doctrine-branches button{min-height:72px;border:0;gap:6px;color:#c5b996;text-transform:uppercase;font-weight:700;font-size:11px}
+#skill-tree-modal .doctrine-branches button .talent-art{width:30px;height:30px;object-fit:contain}
+#skill-tree-modal .doctrine-branches button.selected{background:linear-gradient(135deg,#a96c1d,#e0a840);color:#181e16;box-shadow:inset 0 0 0 1px #ffe295}
+#skill-tree-modal .doctrine-branches button.selected img{filter:brightness(.35)}
+.talent-section{padding:18px 18px 10px}.talent-section-title{margin-bottom:14px}.talent-section-title h3{color:#dccca1;font-size:19px;text-transform:uppercase;letter-spacing:2px}.talent-section-title span{color:#b5b298}
+.talent-graph{grid-template-rows:repeat(var(--rows),148px);row-gap:30px;column-gap:14px;max-width:680px;margin:0 auto}
+.talent-connections path{stroke:#8a805a;stroke-width:3;stroke-dasharray:5 7}.talent-connections path.open{stroke:#e2b85b;filter:drop-shadow(0 0 3px #e8ae48);stroke-dasharray:none}
+#skill-tree-modal .talent-node{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;width:100%;height:148px;padding:0 3px 3px;background:none;border:0;box-shadow:none;outline:0;opacity:1;filter:none;text-align:center;isolation:isolate}
+#skill-tree-modal .talent-node::before{content:'';position:absolute;top:14px;left:calc(50% - 36px);width:72px;height:72px;transform:rotate(45deg);border-radius:8px;border:2px solid #6e7159;background:linear-gradient(135deg,#343c2e,#1a241d);z-index:-1;box-shadow:0 4px 12px #0008}
+#skill-tree-modal .talent-node .talent-symbol{position:absolute;top:21px;left:calc(50% - 29px);width:58px;height:58px;margin:0}
+.talent-symbol .talent-art{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3px 2px #0008)}
+#skill-tree-modal .talent-node strong{font:700 12px/1.1 'Trebuchet MS',sans-serif;color:#d5c8a4;max-width:150px;min-height:25px;display:flex;align-items:center}
+#skill-tree-modal .talent-rank{position:absolute;top:0;right:calc(50% - 57px);font:700 12px monospace;background:#1a231b;border:1px solid #7a805a;border-radius:4px;padding:3px 5px;color:#d0d4ae;z-index:1}
+#skill-tree-modal .talent-cost{display:flex;justify-content:center;width:100%;font:10px monospace;color:#d5bd83;gap:4px;height:17px}.talent-cost b{font-size:12px}.talent-cost i{display:none}
+#skill-tree-modal .talent-progress{display:none}
+.talent-status{position:absolute;top:-9px;left:45px;width:19px;height:19px;display:grid;place-items:center;border:2px solid #d9b662;background:#293422;border-radius:50%;font:bold 15px monospace;color:#f4cb6e}
+#skill-tree-modal .talent-node.available::before{border-color:#c6a355;background:linear-gradient(135deg,#4b4b2c,#262f20)}
+#skill-tree-modal .talent-node.selected::before{border:3px solid #ffcd6c;background:linear-gradient(135deg,#68502a,#333b21);box-shadow:0 0 15px #ffb13177,inset 0 0 12px #ffd36c44}
+#skill-tree-modal .talent-node.selected strong{color:#ffe19f}
+#skill-tree-modal .talent-node.mastered::before{border-color:#a1b75c;background:#364726}.talent-node.mastered .talent-status{color:#b7d577;border-color:#a1b75c}
+#skill-tree-modal .talent-node.locked .talent-art,#skill-tree-modal .talent-node.unfunded .talent-art{opacity:.45;filter:grayscale(.7)}
+#skill-tree-modal .talent-node.locked::before,#skill-tree-modal .talent-node.unfunded::before{background:#21271f;border-color:#515845}
+#skill-tree-modal .talent-node:focus-visible::before{outline:2px solid #fff3be;outline-offset:5px}
+.talent-legend{font-size:9px;justify-content:center;color:#b6b596;margin-top:18px}
+#skill-tree-modal .node-inspector{padding:24px;background:linear-gradient(150deg,#42452c,#1b231a 60%);border:1px solid #948151;border-radius:3px;box-shadow:inset 0 0 0 4px #8e794b16}
+#skill-tree-modal .inspector-kicker{color:#d3c59e;font-size:10px}#skill-tree-modal .inspector-icon{width:66px;height:66px;margin:16px 0 12px}#skill-tree-modal .inspector-icon .talent-art{width:100%;height:100%;object-fit:contain}
+#skill-tree-modal .node-inspector h3{font:800 27px/1.05 'Trebuchet MS',sans-serif;text-transform:uppercase;color:#efe4c1}
+#skill-tree-modal .node-inspector>p{color:#cecfb4;font-size:12px;line-height:1.5;margin:12px 0}
+#skill-tree-modal .skill-preview{border-top:1px solid #a8945c55;border-bottom:1px solid #a8945c55;padding:15px 0}#skill-tree-modal .skill-preview strong{color:#efbb56;font-size:18px}
+#skill-tree-modal .skill-purchase{background:linear-gradient(135deg,#b87820,#e3ad42);border-color:#e7ba63;border-radius:1px;color:#22281a;text-transform:uppercase;font-weight:800;min-height:46px}
+#skill-tree-modal .skill-purchase:disabled{background:#343d2d;color:#abae92;border-color:#6c7255}
+#skill-tree-modal .skill-equip{background:#293724;border-color:#9c9a66;color:#e9daae}
+#skill-tree-modal .checkout-total strong{color:#f4ce7d}
+/* Compact armor tiles keep the original weapon sprites and make room for the army. */
+#deployment-panel{min-height:0;gap:8px}
+#deployment-panel .weapon-bar{--card-height:96px;gap:7px}
+#deployment-panel .weapon-card{background:#25363c;border:1px solid #5a7174;border-radius:5px;box-shadow:inset 0 1px #ffffff19;height:96px}
+#deployment-panel .weapon-card::before,#deployment-panel .weapon-card::after{display:none}
+#deployment-panel .weapon-card.selected{background:#46533b;border-color:#e4c078;box-shadow:inset 0 0 0 1px #efd999}
+#deployment-panel .weapon-select{padding:5px;grid-template-rows:16px minmax(0,1fr) 23px}
+#deployment-panel .weapon-art{height:47px;max-height:100%;max-width:100%}
+#deployment-panel .weapon-nickname{font-size:11px}
+#deployment-panel .power-section{margin-top:8px}
+#game-screen .rotate-tower{padding:8px;border:1px solid #c1a867;background:#3d452d;color:#f7df9f;border-radius:4px;cursor:pointer}
+@keyframes command-beacon{0%,100%{filter:brightness(1);box-shadow:inset 0 0 0 2px #e9c277,0 0 4px #ffc44955}50%{filter:brightness(1.32);box-shadow:inset 0 0 0 3px #ffe5a3,0 0 23px 4px #fbb63799}}
+.learn-pulse,.hud-top .player-chip.learn-pulse,#deployment-panel .ability-card.learn-pulse{animation:command-beacon 1.3s ease-in-out infinite}
+/* Mission selection starts above the fold, with deployment always at hand. */
+.main-menu{padding:16px}.menu-card{max-width:1260px;padding:22px 26px}
+.menu-head{margin:0 0 12px;padding:0 0 12px}.menu-head h1{font-size:44px;line-height:1;margin:0;letter-spacing:-1px}
+.menu-loadout{position:absolute;right:28px;bottom:16px;gap:8px;margin:0;padding:0;border:0;background:none}.menu-loadout>div{display:none}.menu-loadout button{min-width:0!important;padding:8px 12px;font-size:11px}
+.menu-card{position:relative;padding-bottom:55px}.menu-foot{display:none}.campaign-topline{display:none}.sector-tabs{margin:0 0 12px}.campaign-body{gap:20px}
+.level-grid{gap:10px}.level-tile{padding:10px;gap:6px}.level-tile .map-preview{max-height:110px}
+.mission-briefing{position:relative;min-width:0}.mission-briefing #menu-play-button{position:sticky;bottom:0;z-index:2;min-height:44px}
+@media(min-width:761px) and (max-height:800px){.main-menu{padding:10px}.menu-card{padding:16px 20px 48px}.menu-head h1{font-size:34px}.menu-head{margin-bottom:8px;padding-bottom:8px}.level-tile svg{max-height:90px}.mission-briefing{padding:16px}.mission-briefing p{font-size:11px}.mission-briefing h2{font-size:23px}.mission-briefing .enemy-roster{margin:8px 0}.level-tile{padding:8px;gap:4px}.sector-tabs button{min-height:36px}}
+@container(max-height:460px){#deployment-panel .weapon-bar{--card-height:76px}#deployment-panel .weapon-card{height:76px}#deployment-panel .weapon-art{height:30px}}
+@media(max-width:900px){#skill-tree-nodes{grid-template-columns:minmax(0,1fr) 250px;gap:14px}#skill-tree-modal .skill-tree-card{padding:18px}#skill-tree-modal .node-inspector{padding:18px}#skill-tree-modal .doctrine-branches button{font-size:9px}.talent-section{padding:16px 6px}#skill-tree-modal .talent-node strong{font-size:11px}}
+@media(max-width:700px){#skill-tree-nodes{grid-template-columns:1fr}.talent-graph{column-gap:4px}.talent-section{padding:16px 0}.talent-section-title span{display:none}#skill-tree-modal .skill-tree-head{position:sticky;top:-18px;z-index:6;background:#191e1a}#skill-tree-modal .skill-tree-head h2{font-size:23px}#skill-tree-modal .doctrine-branches{grid-template-columns:repeat(3,1fr)}#skill-tree-modal .doctrine-branches button{min-height:50px;flex-direction:row;gap:6px}#skill-tree-modal .doctrine-branches button .talent-art{width:25px;height:25px}#skill-tree-modal .talent-node strong{font-size:10px}#skill-tree-modal .talent-node::before{width:58px;height:58px;left:calc(50% - 29px);top:22px}#skill-tree-modal .talent-node .talent-symbol{width:46px;height:46px;left:calc(50% - 23px);top:28px}#skill-tree-modal .talent-rank{font-size:10px;right:calc(50% - 46px);top:7px}.talent-status{left:34px}#skill-tree-modal .node-inspector .inspector-icon{display:block;width:45px;height:45px;margin:8px 0}.menu-head h1{font-size:31px}.menu-card{padding:14px 12px 64px}.menu-head{flex-wrap:wrap;gap:12px}.menu-head .commander-button{max-width:190px;min-height:40px}.menu-loadout{right:12px;bottom:14px;flex-direction:row}.campaign-body{display:flex;flex-direction:column-reverse;gap:12px}.mission-briefing{padding:14px}.mission-briefing p:not(.eyebrow),.mission-briefing .enemy-roster,.mission-briefing .briefing-legend{display:none}.mission-briefing h2{font-size:21px}.main-menu{padding:8px}.level-grid{gap:7px}#deployment-panel .weapon-bar{--card-height:96px}}
+@media(prefers-reduced-motion:reduce){.learn-pulse,.hud-top .player-chip.learn-pulse,#deployment-panel .ability-card.learn-pulse{animation:none;outline:3px solid #ffe5a3}}
+#skill-tree-modal .talent-node.available,#skill-tree-modal .talent-node.locked,#skill-tree-modal .talent-node.unfunded,#skill-tree-modal .talent-node.mastered,#skill-tree-modal .talent-node.selected{background:none;box-shadow:none;outline:0;opacity:1;filter:none;border:0}
+#skill-tree-modal .talent-node strong{background:#1b2419e8;padding:2px 5px;border-radius:3px}
+#skill-tree-modal .talent-node:hover::before{filter:brightness(1.2)}
+#skill-tree-modal .skill-tree-card{background:radial-gradient(ellipse at 26% 70%,#42483966,transparent 65%),#191e1a}
+.mission-briefing #menu-play-button{position:static;margin:0 0 14px;order:0;flex-shrink:0;width:100%}
+@media(min-width:761px){.level-tile .enemy-roster img{width:25px;height:25px}.level-tile .enemy-roster{margin:3px 0}.level-tile .map-preview{height:90px}.main-menu{align-items:flex-start}.menu-head .commander-button{min-height:62px;padding:10px 16px}.menu-head h1{font-size:36px}.menu-card{margin-top:0}}
+#deployment-panel .power-section{margin-top:0}
+@container(max-height:460px){#deployment-panel{gap:6px}#deployment-panel .weapon-bar{gap:5px}}
+@media(min-width:701px){#skill-tree-nodes{min-height:0;max-height:calc(96dvh - 165px)}#skill-tree-nodes>.talent-workspace,#skill-tree-modal .node-inspector{min-height:0;max-height:100%;overflow:auto;scrollbar-width:thin;scrollbar-color:#8a8055 #20271d}#skill-tree-modal .node-inspector{padding:18px}#skill-tree-modal .inspector-icon{width:48px;height:48px;margin:8px 0}#skill-tree-modal .node-inspector h3{font-size:24px}#skill-tree-modal .node-inspector>p{margin:8px 0}#skill-tree-modal .talent-checkout{padding-top:12px}.talent-graph{grid-template-rows:repeat(var(--rows),128px);row-gap:18px}#skill-tree-modal .talent-node{height:128px}}
+.talent-graph{grid-template-rows:repeat(var(--rows),128px);row-gap:18px}
+#skill-tree-modal .talent-node{height:128px}
+#skill-tree-modal .talent-node.unfunded{opacity:.7}
+#skill-tree-modal .talent-node.locked{opacity:.75}

@@ -1,3 +1,4 @@
+import {weapons} from '../src/data/weapons.js';
 import {autoStart} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -105,7 +106,7 @@ try {
   await page.mouse.click(rect.x+(state.board.x+(pad.col+.5)*state.board.tile)*rect.width/1280,
     rect.y+(state.board.y+(pad.row+.5)*state.board.tile)*rect.height/720);
   await verifyCounters(page);
-  assert.equal((await read(page)).gold,state.gold-70);
+  assert.equal((await read(page)).gold,state.gold-weapons.find(w=>w.key==='handgun').price);
   await autoStart(page);
   assert.equal(await page.locator('#hud-wave-track .current').count(),1);
   const speed=await page.locator('#speed-toggle-button').elementHandle();

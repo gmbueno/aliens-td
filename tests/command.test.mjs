@@ -31,7 +31,7 @@ test('specific mission victories grant permanent slots once; overflow refunds tr
 });
 test('old models and attachments are removed and model-license SP returns exactly once',()=>{
  const old={schemaVersion:4,level:5,skillPoints:27,skills:{damage:1},arsenal:{spSpent:8,heavy:'laser',blueprints:{handgun:'legendary'},attachments:{handgun:['incendiary']}}};
- const p=normalizeProfile(old);assert.equal(p.schemaVersion,6);assert.deepEqual(Object.keys(p.arsenal),['loadout']);assert.ok(p.skillPoints>=35);
+ const p=normalizeProfile(old);assert.equal(p.schemaVersion,7);assert.deepEqual(Object.keys(p.arsenal),['loadout']);assert.ok(p.skillPoints>=35);
  const again=normalizeProfile(JSON.parse(JSON.stringify(p)));assert.equal(again.skillPoints,p.skillPoints);assert.equal(again.skills.damage,1);
 });
 test('one tower per category initially, two after research, and selling restores placement availability',()=>{

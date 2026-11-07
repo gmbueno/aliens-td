@@ -1,3 +1,4 @@
+import {weapons} from '../src/data/weapons.js';
 import {autoStart} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -30,7 +31,7 @@ try{
   await p.mouse.click(invalid.x,invalid.y);assert.equal((await read(p)).towers.length,0);assert.equal((await read(p)).gold,start.gold);
   const tile=start.pads[0],pos=await hover(p,tile);await p.screenshot({path:`${out}/${level.id}-preview.png`});
   await p.mouse.down();await p.waitForTimeout(50);await p.mouse.up();
-  const placed=await read(p);assert.equal(placed.towers.length,1,level.id);assert.equal(placed.gold,start.gold-70);assert.equal(placed.towers[0].row,tile.row);assert.equal(placed.towers[0].col,tile.col);
+  const placed=await read(p);assert.equal(placed.towers.length,1,level.id);assert.equal(placed.gold,start.gold-weapons.find(w=>w.key==='handgun').price);assert.equal(placed.towers[0].row,tile.row);assert.equal(placed.towers[0].col,tile.col);
   await p.mouse.move(pos.x+3,pos.y+3);await p.screenshot({path:`${out}/${level.id}-placed.png`});
   await p.evaluate(()=>{const s=JSON.parse(window.render_game_to_text());window.advanceTime(Math.max(0,s.waveDelay-.3)*1000);});
   // Native RAF must still animate, without a time-step hook reviving a loop
@@ -40,7 +41,7 @@ try{
  }
  for(const [mode,viewport] of [['info',{width:1440,height:1000}],['keyboard',{width:1024,height:768}],['card',{width:390,height:844}]]){
   const p=await pageFor(levels[2],mode,true,viewport),start=await read(p),pos=await hover(p,start.pads[0]);await p.mouse.click(pos.x,pos.y);
-  assert.equal((await read(p)).towers.length,1);assert.equal((await read(p)).gold,start.gold-70);await p.context().close();
+  assert.equal((await read(p)).towers.length,1);assert.equal((await read(p)).gold,start.gold-weapons.find(w=>w.key==='handgun').price);await p.context().close();
  }
  assert.deepEqual(errors,[]);
  console.log('PASS: real mouse hover, rejected path placement, held click purchase and live RAF/wave continuation on all 18 missions; fresh-profile card, info/build, keyboard and phone placement.');

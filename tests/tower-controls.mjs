@@ -1,3 +1,6 @@
+import {weapons} from '../src/data/weapons.js';
+import {levels} from '../src/data/levels/index.js';
+import {towerUpgradeCost} from '../src/systems/weaponStats.js';
 import {autoStart} from './browser-helpers.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -52,14 +55,14 @@ try {
  assert.ok((await state(page)).gold>0);assert.equal(await page.locator('[data-upgrade="power"]').isDisabled(),true);
  assert.match(await page.locator('[data-upgrade-limit]').textContent(),/All 4 upgrades/);
  await page.screenshot({path:`${out}/upgrade-limit.png`,fullPage:true});
- await page.click('[data-sell]');assert.equal((await state(page)).gold,630);
+ await page.click('[data-sell]');assert.equal((await state(page)).gold,levels.at(-1).startGold);
  await place(page);
  for(let rank=1;rank<=3;rank++) {await heldClick(page,'[data-upgrade="power"]');assert.equal((await state(page)).towers[0].upgrades.power,rank);}
  assert.equal(await page.locator('[data-upgrade="power"]').isDisabled(),true);
  assert.match(await page.locator('[data-upgrade="power"] [data-upgrade-status]').textContent(),/Fully upgraded/);
  assert.equal(await page.locator('[data-upgrade="tactical"]').isDisabled(),false);
  await heldClick(page,'[data-upgrade="tactical"]');assert.equal((await state(page)).towers[0].upgrades.tactical,1);
- await page.click('[data-sell]');assert.equal((await state(page)).gold,630);
+ await page.click('[data-sell]');assert.equal((await state(page)).gold,levels.at(-1).startGold);
  await page.click('#gear-button');await page.click('#change-level-button');await page.click('[data-sector="1"]');await page.click('[data-level-id="level_1"]');await page.click('#menu-play-button');
  // Live combat: kills change gold and ammo while the pointer remains held.
  await place(page,'assault_rifle');await autoStart(page);
@@ -72,7 +75,7 @@ try {
  await heldClick(page,'[data-target="nearest"]');assert.equal((await state(page)).towers[0].targeting,'nearest');
  await page.screenshot({path:`${out}/live-combat.png`,fullPage:true});
  await page.click('#gear-button');await page.click('#restart-button');await place(page,'sniper');await page.click('[data-upgrade="tactical"]');
- assert.equal((await state(page)).gold,13);assert.equal(await page.locator('[data-upgrade="power"]').isDisabled(),true);
+ await page.click('[data-upgrade="tactical"]');const remaining=(await state(page)).gold;assert.ok(remaining<towerUpgradeCost({weapon:weapons.find(w=>w.key==='sniper'),upgrades:{power:0,tactical:3}},'power'));assert.equal(await page.locator('[data-upgrade="power"]').isDisabled(),true);
  assert.match(await page.locator('[data-upgrade="power"] [data-upgrade-status]').textContent(),/Need \$\d+ more/);
  await page.screenshot({path:`${out}/insufficient-funds.png`,fullPage:true});
  await page.click('[data-sell]');const select=page.locator('[data-weapon-key="handgun"] .weapon-select');await select.focus();await page.keyboard.press('Space');

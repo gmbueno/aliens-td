@@ -1,3 +1,4 @@
+import {currentWave,endlessWave,beginFreeplay} from './systems/endless.js';
 import { targetForTower, targetModes, targetingUnlocked } from './systems/targeting.js';
 export { targetForTower } from './systems/targeting.js';
 import {criticalShot,energyHit,drawEnergy} from './systems/energyWeapons.js';
@@ -45,6 +46,7 @@ function createAssetStore() {
     loaded: false,
   };
   Promise.all([
+    ...['drone','uavBase'].map(key=>loadImage(`assets/command/${key}.png`).then(image=>store.world[key]=image)),
     ...['rock','ice','growth','cargo','barrels','water'].map(key=>loadImage(`assets/frontier/world/${key}.png`).then(image=>store.world[key]=image)),
     loadImage(assetPaths.board.tile).then((image) => {
       store.tile = image;
@@ -157,7 +159,7 @@ function missionLabel(level) {
 
 function makeEnemy(spawn, state) {
   const definition = getEnemy(spawn.enemy);
-  const healthScale = state.level.threat * (state.level.waves[state.waveIndex].healthScale || 1);
+  const healthScale = state.level.threat * (currentWave(state).healthScale || 1);
   const life = Math.round(definition.life * healthScale);
   return {
     armor: definition.armor || 0,
@@ -184,7 +186,7 @@ function makeEnemy(spawn, state) {
     maxLife: life,
     speed: definition.speed,
     damage: definition.damage,
-    gold: definition.gold,
+    gold: Math.round(definition.gold*1.6),
     asset: definition.asset,
     visualSize: definition.visualSize,
     radius: definition.key === "alien_hatchling" ? 9 : definition.shape === "pentagon" ? 19 : definition.shape === "square" ? 17 : 15,
@@ -296,7 +298,7 @@ export function createInitialState(level, profile, canvas) {
     visualTime: 0,
     gold: level.startGold+skillRank(profile,'supplies')*25,
     lives: level.lives,
-    selectedWeaponKey: null,
+    selectedWeaponKey: null, buildAngle:0, freeplay:false, endlessRound:0,
     selectedTowerId: null, selectedDroneId:null,
     wasPausedBeforeWeaponInfo: false,
     hoverPoint: null,
@@ -392,7 +394,7 @@ export function fireTower(state, tower, target, continuing=false) {
     const movement = activeStatus(state, "chronoBreak").timer > 0 ? 0 : target.speed * terrain * (target.stunTimer>0?0:1) * (target.raged?target.rageMultiplier:1) * (target.slowTimer>0&&!target.immuneSlow?1-(target.slowStrength||.25):1);
     const aimX = target.x + Math.cos(target.angle || 0) * movement * flight;
     const aimY = target.y + Math.sin(target.angle || 0) * movement * flight;
-    const angle = Math.atan2(aimY - tower.y, aimX - tower.x);
+    const angle = tower.weapon.directional?tower.angle:Math.atan2(aimY - tower.y, aimX - tower.x);
     for (let i = 0; i < pelletCount; i += 1) {
       createProjectile(state, tower, target, (i - (pelletCount - 1) / 2) * tower.weapon.spread, angle);
     }
@@ -410,6 +412,7 @@ export function fireTower(state, tower, target, continuing=false) {
 
 function updateTowers(state, dt) {
   for (const tower of state.towers) {
+    if(tower.weapon.support)continue;
     tower.beamEnd=null;
     tower.muzzleFlash = Math.max(0, (tower.muzzleFlash || 0) - dt);
     if (tower.reloadTimer > 0) {
@@ -604,18 +607,18 @@ export function launchWave(state) {
   state.phase = "combat";
   state.waveDelay = 0;
   state.waveLeaks = 0;
-  notify(state, `Wave ${state.waveIndex + 1} · ${state.level.waves[state.waveIndex].name}`);
+  notify(state, `Wave ${state.waveIndex + 1} · ${currentWave(state).name}`);
   return true;
 }
 
 function updateWaves(state, dt) {
-  if (state.waveIndex >= state.level.waves.length) return;
+  if (!state.freeplay && state.waveIndex >= state.level.waves.length) return;
   if (state.phase === "prepare") {
     state.waveDelay = Math.max(0, state.waveDelay - dt);
     if (state.waveDelay <= 0) launchWave(state);
     return;
   }
-  const wave = state.level.waves[state.waveIndex];
+  const wave = currentWave(state);
   state.waveTime += dt;
   wave.spawns.forEach((spawn, index) => {
     if (state.waveTime >= spawn.at && !state.spawnedInWave.has(index)) {
@@ -630,6 +633,7 @@ function updateWaves(state, dt) {
     saveProfile(state.profile);
     notify(state, `Wave cleared · +$${wave.reward} supplies${cleanBonus ? " · +$15 flawless defense" : ""}`);
     state.waveIndex += 1;
+    if(state.freeplay){state.endlessRound++;state.endlessWave=endlessWave(state.level,state.endlessRound);state.totalEnemies+=state.endlessWave.spawns.length;}
     state.waveTime = 0;
     state.spawnedInWave = new Set();
     state.waveDelay = NEXT_WAVE_DELAY;
@@ -645,7 +649,7 @@ function updateResult(state) {
     state.result = "defeat";
     state.isPaused = true;
     saveProfile(state.profile);
-  } else if (state.waveIndex >= state.level.waves.length && state.enemies.length === 0) {
+  } else if (!state.freeplay && state.waveIndex >= state.level.waves.length && state.enemies.length === 0) {
     state.result = "victory";
     state.isPaused = true;
     state.reward = recordVictory(state.profile, state.level, state.lives);
@@ -667,7 +671,7 @@ export function placeTower(state, weaponKey, row, col) {
     id: `tower-${state.nextTowerId++}`, weapon, row, col,
     x: state.board.x + col * state.board.tile + state.board.tile / 2,
     y: state.board.y + row * state.board.tile + state.board.tile / 2,
-    tile: state.board.tile, range: weapon.range, cooldown: 0, ammo: weapon.capacity, reloadTimer: 0, angle: 0,
+    tile: state.board.tile, range: weapon.range, cooldown: 0, ammo: weapon.capacity, reloadTimer: 0, angle: weapon.directional?(state.buildAngle||0):0,
     kills:0, upgrades: { power: 0, tactical: 0 }, invested: weapon.price+platform, platform, targeting: "first",
     pad: state.level.pads?.find(pad => pad.row === row && pad.col === col)?.type,
   };
@@ -675,6 +679,7 @@ export function placeTower(state, weaponKey, row, col) {
   tower.range = tower.weapon.range;
   state.gold -= weapon.price+platform;
   state.towers.push(tower);
+  refreshTowersWithSkills(state.towers,weapons,{...state.profile,arsenal:state.arsenalProfile.arsenal});
   return tower;
 }
 
@@ -699,6 +704,7 @@ export function sellTower(state, tower) {
   if (!tower || state.result || !state.towers.includes(tower)) return false;
   state.gold += sellValue(state, tower);
   state.towers = state.towers.filter(item => item !== tower);
+  refreshTowersWithSkills(state.towers,weapons,{...state.profile,arsenal:state.arsenalProfile.arsenal});
   state.selectedTowerId = null;
   return true;
 }
@@ -856,6 +862,10 @@ function drawTower(ctx, tower, assets) {
   ctx.restore();
 }
 
+function drawWeaponRange(ctx,tower,color){
+ if(!tower.weapon.directional){drawRangeCircle(ctx,tower.x,tower.y,tower.range,color);return;}
+ ctx.save();ctx.translate(tower.x,tower.y);ctx.rotate(tower.angle||0);ctx.fillStyle='#6fcfe71c';ctx.strokeStyle=color;ctx.lineWidth=3;ctx.setLineDash([8,5]);ctx.fillRect(0,-tower.weapon.laneWidth/2,tower.range,tower.weapon.laneWidth);ctx.strokeRect(0,-tower.weapon.laneWidth/2,tower.range,tower.weapon.laneWidth);ctx.restore();
+}
 function drawRangeCircle(ctx, x, y, range, color = "rgba(116, 224, 108, 0.82)") {
   ctx.save();
   ctx.fillStyle = "rgba(116, 224, 108, 0.08)";
@@ -1111,6 +1121,12 @@ function drawGame(ctx, state, assets) {
   ctx.restore();
 
   drawSupport(ctx,state,assets.world);
+  if(!state.result){
+    const wave=currentWave(state),first=wave?.spawns.find((spawn,i)=>!state.spawnedInWave.has(i)),remaining=state.phase==='prepare'?state.waveDelay+(wave?.spawns[0]?.at||0):first?Math.max(0,first.at-state.waveTime):0;
+    if(remaining>0&&(state.phase==='prepare'||state.enemies.length===0)){
+      const p=state.path[0];ctx.save();ctx.fillStyle='#142329ed';ctx.strokeStyle='#f4c16c';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(p.x-42,p.y-53,84,29,6);ctx.fill();ctx.stroke();ctx.fillStyle='#ffdc97';ctx.textAlign='center';ctx.font='bold 14px monospace';ctx.fillText(`${state.isPaused?'Ⅱ ':''}${remaining.toFixed(1)}s`,p.x,p.y-33);ctx.restore();
+    }
+  }
 
   const selected = findEffectiveWeaponByKey(weapons, state.selectedWeaponKey, { ...state.profile, arsenal: state.arsenalProfile.arsenal });
   if (selected) {
@@ -1131,11 +1147,12 @@ function drawGame(ctx, state, assets) {
       const x = board.x + state.hoverTile.col * board.tile + board.tile / 2;
       const y = board.y + state.hoverTile.row * board.tile + board.tile / 2;
       const pad = level.pads?.find(tile => tile.row === state.hoverTile.row && tile.col === state.hoverTile.col);
-      drawRangeCircle(ctx, x, y, selected.range * (pad?.type === "range" ? 1.18 : 1), canPlace ? "rgba(116, 224, 108, 0.88)" : "rgba(255, 103, 125, 0.82)");
+      const aura=selected.support?0:Math.max(0,...state.towers.filter(t=>t.weapon.support&&Math.hypot(t.x-x,t.y-y)<=t.range).map(t=>.1+t.upgrades.tactical*.04));
+      drawWeaponRange(ctx, {x,y,weapon:selected,angle:state.buildAngle,range:selected.range*(pad?.type === "range" ? 1.18 : 1)*(1+aura)}, canPlace ? "rgba(116, 224, 108, 0.88)" : "rgba(255, 103, 125, 0.82)");
       drawPlacementIndicator(ctx, board, state.hoverTile.row, state.hoverTile.col, canPlace);
       ctx.save();
       ctx.globalAlpha = canPlace ? .65 : .35;
-      drawTower(ctx, { weapon: selected, x, y, tile: board.tile, angle: 0,
+      drawTower(ctx, { weapon: selected, x, y, tile: board.tile, angle: state.buildAngle,
         platform: tileSets.water.has(key) ? PONTOON_COST : 0 }, assets);
       ctx.restore();
     }
@@ -1153,11 +1170,11 @@ function drawGame(ctx, state, assets) {
   }
   state.towers.forEach((tower) => {
     const target = targetForTower(tower, state.enemies);
-    if (target && !(tower.muzzleFlash > 0)) tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
+    if (target && !tower.weapon.directional && !tower.weapon.support && !(tower.muzzleFlash > 0)) tower.angle = Math.atan2(target.y - tower.y, target.x - tower.x);
     if(tower.platform){ctx.save();ctx.translate(tower.x,tower.y);ctx.fillStyle='#b4955b';ctx.strokeStyle='#edcf8c';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(-32,-29,64,58,10);ctx.fill();ctx.stroke();ctx.fillStyle='#536b62';ctx.fillRect(-34,-23,8,46);ctx.fillRect(26,-23,8,46);ctx.restore();}
     if(!state.profile.onboarding?.towerUpgraded && tower===state.towers.find(t=>state.gold>=Math.min(towerUpgradeCost(t,'power'),towerUpgradeCost(t,'tactical')))){
       const reduced=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-      ctx.save();ctx.strokeStyle=`rgba(255,220,132,${reduced ? .85 : .55+Math.sin(state.visualTime*3)*.3})`;ctx.lineWidth=3;ctx.beginPath();ctx.arc(tower.x,tower.y,36,0,TWO_PI);ctx.stroke();
+      ctx.save();ctx.strokeStyle=`rgba(255,220,132,${reduced ? .85 : .72+Math.sin(state.visualTime*5)*.28})`;ctx.shadowColor='#ffd168';ctx.shadowBlur=20;ctx.lineWidth=5;ctx.beginPath();ctx.arc(tower.x,tower.y,38,0,TWO_PI);ctx.stroke();
       ctx.fillStyle='#18282f';ctx.strokeStyle='#ffe099';ctx.beginPath();ctx.roundRect(tower.x-17,tower.y-52,34,20,6);ctx.fill();ctx.stroke();ctx.fillStyle='#ffe099';ctx.font='bold 16px sans-serif';ctx.textAlign='center';ctx.fillText('↑',tower.x,tower.y-37);ctx.restore();
     }
     drawTower(ctx, tower, assets);
@@ -1185,7 +1202,11 @@ function drawGame(ctx, state, assets) {
 
   const inspectedTower = state.towers.find((tower) => tower.id === state.selectedTowerId);
   if (inspectedTower) {
-    drawRangeCircle(ctx, inspectedTower.x, inspectedTower.y, inspectedTower.range, "rgba(91, 206, 255, 0.88)");
+    drawWeaponRange(ctx, inspectedTower, "rgba(91, 206, 255, 0.88)");
+    if(inspectedTower.weapon.support){
+      ctx.save();ctx.strokeStyle='#e0bf7466';ctx.lineWidth=2;
+      for(const ally of state.towers.filter(t=>!t.weapon.support&&distance(t,inspectedTower)<=inspectedTower.range)){ctx.beginPath();ctx.moveTo(inspectedTower.x,inspectedTower.y);ctx.lineTo(ally.x,ally.y);ctx.stroke();ctx.beginPath();ctx.arc(ally.x,ally.y,31,0,TWO_PI);ctx.stroke();}ctx.restore();
+    }
     drawPlacementIndicator(ctx, board, inspectedTower.row, inspectedTower.col, true);
   }
 
@@ -1371,7 +1392,7 @@ export function createGame({ ui, levels }) {
   }
 
   function wavePreview() {
-    const wave = state.level.waves[state.waveIndex];
+    const wave = currentWave(state);
     if (!wave) return "All waves cleared";
     const counts = {};
     wave.spawns.forEach(spawn => { counts[spawn.enemy] = (counts[spawn.enemy] || 0) + 1; });
@@ -1392,7 +1413,7 @@ export function createGame({ ui, levels }) {
     ui.playerXpBar.style.setProperty("--xp-progress", `${Math.round((profile.xp / xpNeeded(profile.level)) * 100)}%`);
     ui.missionValue.textContent = missionLabel(state.level);
     for (const [element, current, total, label] of [
-      [ui.waveValue, Math.min(state.waveIndex + 1, state.level.waves.length), state.level.waves.length, "Wave"],
+      [ui.waveValue, state.freeplay?state.endlessRound:Math.min(state.waveIndex + 1,state.level.waves.length),state.freeplay?"∞":state.level.waves.length, "Wave"],
       [ui.killsValue, state.kills, state.totalEnemies, "Eliminated"],
     ]) {
       element.querySelector("[data-count-current]").textContent = current;
@@ -1477,9 +1498,9 @@ export function createGame({ ui, levels }) {
     const drone=state.drones.find(d=>d.id===state.selectedDroneId);if(!drone){state.selectedDroneId=null;return;}
     const stats=droneStats(drone),total=drone.upgrades.power+drone.upgrades.tactical;
     ui.towerSidebar.classList.remove('hidden');ui.towerSidebar.classList.add('inspecting-tower');ui.towerSidebarCloseButton.classList.remove('hidden');
-    ui.towerSidebarTitle.textContent=`Patrol Drone ${state.drones.indexOf(drone)+1}`;
+    ui.towerSidebarTitle.textContent=`Hunter UAV ${state.drones.indexOf(drone)+1}`;
     setMarkup(ui.towerStatList,`<p class="tower-role">Route patrol · click the UAV or its landing pad</p>${[['Damage',stats.damage],['Range',stats.range],['Kills',drone.kills]].map(([k,v])=>`<div class="weapon-stat-row"><span>${k}</span><strong>${v}</strong></div>`).join('')}`);
-    mountActions(`drone:${drone.id}`,`<div class="drone-tabs">${state.drones.map((d,i)=>`<button type="button" data-select-drone="${d.id}">UAV ${i+1}</button>`).join('')}</div><div class="panel-section-label">Upgrades <span data-drone-total></span></div>${['power','tactical'].map(key=>`<button type="button" class="upgrade-button" data-drone-upgrade="${key}"><span class="upgrade-topline"><strong>${key==='power'?'High-caliber UAV':'Sensors & motors'}</strong><small data-drone-rank></small></span><span class="upgrade-preview">${key==='power'?'+60% base damage per rank':'+20% range and fire rate per rank'}</span><span class="upgrade-purchase" data-drone-status></span></button>`).join('')}<p class="upgrade-limit" data-drone-budget></p><div class="panel-section-label">Target priority</div><div class="target-buttons" role="group" aria-label="Drone target priority">${targetModes.map(m=>`<button type="button" data-target="${m.key}" title="${m.key==='weakest'&&!targetingUnlocked(profile,m.key)?'Unlock Finish the Weak in Training':m.hint}"><span>${m.name}</span></button>`).join('')}</div><p class="target-description" data-target-description></p>`);
+    mountActions(`drone:${drone.id}`,`<div class="drone-tabs">${state.drones.map((d,i)=>`<button type="button" data-select-drone="${d.id}">UAV ${i+1}</button>`).join('')}</div><div class="panel-section-label">Upgrades <span data-drone-total></span></div>${['power','tactical'].map(key=>`<button type="button" class="upgrade-button" data-drone-upgrade="${key}"><span class="upgrade-topline"><strong>${key==='power'?'High-caliber UAV':'Sensors & motors'}</strong><small data-drone-rank></small></span><span class="upgrade-preview">${key==='power'?'+60% base damage per rank':'+20% range and fire rate per rank'}</span><span class="upgrade-purchase" data-drone-status></span></button>`).join('')}<p class="upgrade-limit" data-drone-budget></p><div class="panel-section-label" data-target-label>Target priority</div><div class="target-buttons" role="group" aria-label="Drone target priority">${targetModes.map(m=>`<button type="button" data-target="${m.key}" title="${m.key==='weakest'&&!targetingUnlocked(profile,m.key)?'Unlock Finish the Weak in Training':m.hint}"><span>${m.name}</span></button>`).join('')}</div><p class="target-description" data-target-description></p>`);
     ui.towerActions.querySelectorAll('[data-select-drone]').forEach(b=>{b.classList.toggle('selected',b.dataset.selectDrone===drone.id);b.setAttribute('aria-pressed',String(b.dataset.selectDrone===drone.id));});
     ui.towerActions.querySelectorAll('[data-target]').forEach(b=>{b.disabled=Boolean(state.result)||!targetingUnlocked(profile,b.dataset.target);b.classList.toggle('selected',b.dataset.target===drone.targeting);b.setAttribute('aria-pressed',String(b.dataset.target===drone.targeting));});
     ui.towerActions.querySelector('[data-target-description]').textContent=targetModes.find(m=>m.key===drone.targeting).hint;
@@ -1500,12 +1521,13 @@ export function createGame({ ui, levels }) {
     ui.towerSidebarCloseButton.classList.toggle("hidden", !tower && !state.selectedObstacle);
     if (tower) {
       ui.towerSidebarTitle.textContent = tower.weapon.name;
-      const overview = [["Damage",tower.weapon.directDamage.toLocaleString("en-US")],["Range",tower.range],["Kills",tower.kills||0]];
+      const overview = tower.weapon.support?[["Radius",tower.range],["Allies",state.towers.filter(t=>!t.weapon.support&&distance(t,tower)<=tower.range).length],["Damage boost",`+${Math.round((tower.weapon.auraDamage||0)*100)}%`]]:[["Damage",tower.weapon.directDamage.toLocaleString("en-US")],["Range",tower.range],["Kills",tower.kills||0]];
       setMarkup(ui.towerStatList,overview.map(([label,value])=>`<div class="weapon-stat-row"><span>${label}</span><strong>${value}</strong></div>`).join(''));
       // Keep controls mounted for the selected tower, including when gold/ammo changes
       // between pointerdown and pointerup. Only patch their text and availability.
       const paths = towerUpgradePathsFor(tower.weapon.key);
       mountActions(`tower:${tower.id}`, `
+        ${tower.weapon.directional?'<button class="rotate-tower" type="button" data-rotate="true">↻ Rotate 90°</button>':''}
         <div class="panel-section-label upgrade-heading">Upgrades <span data-upgrade-budget></span></div>
         ${paths.map(path => `<button type="button" class="upgrade-button upgrade-${path.key}" data-upgrade="${path.key}">
           <span class="upgrade-topline"><strong>${path.name}</strong><span class="upgrade-ranks" aria-hidden="true">${Array.from({length:path.maxRank||3},(_,i)=>i).map(rank => `<i data-rank="${rank}"></i>`).join("")}</span></span>
@@ -1513,11 +1535,13 @@ export function createGame({ ui, levels }) {
           <span class="upgrade-purchase"><span data-upgrade-status></span><b data-cost></b></span>
         </button>`).join("")}
         <p class="upgrade-limit" data-upgrade-limit></p>
-        <div class="panel-section-label">Target priority</div>
+        <div class="panel-section-label" data-target-label>Target priority</div>
         <div class="target-buttons" role="group" aria-label="Target priority">${targetModes.map(mode => `<button type="button" data-target="${mode.key}" title="${mode.key==='weakest'&&!targetingUnlocked(profile,mode.key)?'Unlock Finish the Weak in Training':mode.hint}"><span>${mode.name}</span></button>`).join("")}</div>
         <p class="target-description" data-target-description></p>
         <button type="button" class="secondary-button sell-button" data-sell="true"><span>Sell tower</span><strong data-sell-value></strong></button>
         <p class="upgrade-limit" data-refund-note></p>`);
+      ui.towerActions.querySelector('.target-buttons').classList.toggle('hidden',Boolean(tower.weapon.support));
+      ui.towerActions.querySelector('[data-target-label]')?.classList.toggle('hidden',Boolean(tower.weapon.support));
       const total = tower.upgrades.power + tower.upgrades.tactical;
       ui.towerActions.querySelectorAll("[data-target]").forEach(button => {
         const selected = tower.targeting === button.dataset.target;
@@ -1540,6 +1564,7 @@ export function createGame({ ui, levels }) {
         button.classList.toggle("needs-gold", !branchMaxed && !limitReached && state.gold < cost);
         button.querySelectorAll("[data-rank]").forEach(pip => pip.classList.toggle("filled", Number(pip.dataset.rank) < rank));
         const next = applyTowerUpgrades(effectiveWeaponByKey(tower.weapon.key), { ...tower, upgrades: { ...tower.upgrades, [path.key]: rank + 1 } });
+        if(!tower.weapon.support&&tower.aura){next.directDamage=Math.round(next.directDamage*(1+tower.aura.damage));next.atkSpeed=Number((next.atkSpeed*(1+tower.aura.boost)).toFixed(2));next.range=Math.round(next.range*(1+tower.aura.boost));}
         const preview = branchMaxed || limitReached ? path.detail : upgradePreview(tower.weapon,next,path.key);
         setMarkup(button.querySelector("[data-preview]"),preview.split(' · ').map(part=>`<span>${part.replace(/→ (.*)/,'→ <b>$1</b>')}</span>`).join(''));
         button.querySelector("[data-upgrade-status]").textContent = branchMaxed ? "Fully upgraded" : limitReached ? "Tower limit reached" : state.gold < cost ? `Need $${cost - state.gold} more` : "Upgrade";
@@ -1749,10 +1774,11 @@ export function createGame({ ui, levels }) {
     if (!state?.result || state.resultShown) return;
     state.resultShown = true;
     const won = state.result === "victory";
-    ui.resultTitle.textContent = won ? (state.level.stage === 6 ? "Sector secured" : "Mission complete") : "Regroup. Rebuild. Return.";
+    ui.resultTitle.textContent = state.freeplay ? "Free play complete" : won ? (state.level.stage === 6 ? "Sector secured" : "Mission complete") : "Regroup. Rebuild. Return.";
     ui.resultStars.textContent = won ? "★".repeat(state.reward.stars) + "☆".repeat(3 - state.reward.stars) : "↻";
     ui.resultCopy.textContent = won ? `${state.level.name} · ${state.lives}/${state.level.lives} lives protected.` : `${state.level.name} · ${state.waveIndex} waves completed. Your earned XP is safe.`;
     ui.resultRewards.innerHTML = `${state.reward?.unlockedClasses?.map(key=>`<div class="next-discovery">NEW WEAPON TYPE / <strong>${weapons.find(w=>w.key===key).name}</strong><br>${loadoutKeys(profile).includes(key)?"Added to your loadout.":"Available in Change loadout."}</div>`).join('')||''}${state.reward?.slotReward?`<div class="next-discovery">+1 LOADOUT SLOT${state.reward.slotReward.refund?` · ${state.reward.slotReward.refund} SP returned`:""}</div>`:""}<span>${state.kills} kills recorded · ${loadoutCapacity(profile)}/6 category slots</span><strong>+${state.runXp} XP earned</strong><span>Commander Lv ${profile.level} · ${profile.skillPoints} SP available</span>${state.reward?.firstClear ? `<span>First-clear bonus included: +${state.level.firstClearXp} XP</span>` : ""}<p>${won ? "Replay for more stars, or advance to the next mission." : "Try crossfire at bends, upgrade key towers, and spend your skill points."}</p><span>${nextArsenalUnlock(profile)}</span>`;
+    document.getElementById("result-freeplay-button").classList.toggle("hidden",!won||state.freeplay);
     ui.resultNextButton.classList.toggle("hidden", !won || levels.indexOf(state.level) === levels.length - 1);
     ui.resultSkillsButton.textContent = `Commander skills · ${profile.skillPoints} SP`;
     ui.resultModal.classList.remove("hidden");
@@ -1766,6 +1792,7 @@ export function createGame({ ui, levels }) {
     syncMenu();
   });
 
+  document.getElementById('result-freeplay-button').addEventListener('click',()=>{if(beginFreeplay(state)){renderWeaponBar();renderAbilityBar();ui.resultModal.classList.add('hidden');syncHud();}});
   ui.menuPlayButton.addEventListener("click", () => startLevel(selectedLevel));
 
   ui.weaponBar.addEventListener("click", (event) => {
@@ -1998,6 +2025,7 @@ export function createGame({ ui, levels }) {
       syncHud();return;
     }
     const tower = state.towers.find(item => item.id === state.selectedTowerId);
+    if(button.dataset.rotate&&tower?.weapon.directional){tower.angle=(tower.angle+Math.PI/2)%(Math.PI*2);syncHud();return;}
     if (button.dataset.upgrade && upgradeTower(state, tower, button.dataset.upgrade)) notify(state, `${tower.weapon.name} upgraded.`);
     if (button.dataset.target && tower && targetingUnlocked(profile,button.dataset.target)) {
       tower.targeting = button.dataset.target;
@@ -2035,6 +2063,12 @@ export function createGame({ ui, levels }) {
       else document.documentElement.requestFullscreen?.().catch(() => {});
     }
     if (!state || state.result) return;
+    if(event.key.toLowerCase()==='r'){
+      const tower=state.towers.find(t=>t.id===state.selectedTowerId);
+      if(tower?.weapon.directional)tower.angle=(tower.angle+Math.PI/2)%(Math.PI*2);
+      else state.buildAngle=(state.buildAngle+Math.PI/2)%(Math.PI*2);
+      syncHud();
+    }
     if (/^[1-6]$/.test(event.key)) ui.weaponBar.querySelectorAll(".weapon-card")[Number(event.key) - 1]?.click();
     if (event.code === "Space") {
       event.preventDefault();
@@ -2061,7 +2095,7 @@ export function createGame({ ui, levels }) {
     coordinateSystem: "canvas origin top-left, x right, y down",
     audio: audio.diagnostics(),
     board: state?.board,
-    phase: state?.phase,
+    phase: state?.phase, freeplay:state?.freeplay,endlessRound:state?.endlessRound,entranceCountdown:state?Math.max(0,state.phase==='prepare'?state.waveDelay+(currentWave(state)?.spawns[0]?.at||0):(currentWave(state)?.spawns.find((s,i)=>!state.spawnedInWave.has(i))?.at||0)-state.waveTime):0,
     paused: state?.isPaused,
     gameSpeed: state?.gameSpeed,
     waveDelay: state?.waveDelay,
@@ -2084,7 +2118,7 @@ export function createGame({ ui, levels }) {
     fieldMines:state?.mines, drone:state?.drone,drones:state?.drones,selectedDrone:state?.selectedDroneId,napalmField:state?.napalm,  water:state?.level.water||[],
     skillTreeOpen: !ui.skillTreeModal.classList.contains("hidden"),
     arsenalOpen: !ui.arsenalModal.classList.contains("hidden"),
-    wave: state ? `${Math.min(state.waveIndex + 1, state.level.waves.length)}/${state.level.waves.length}` : null,
+    wave: state ? state.freeplay?`${state.endlessRound}/∞`:`${Math.min(state.waveIndex + 1, state.level.waves.length)}/${state.level.waves.length}` : null,
     kills: state ? `${state.kills}/${state.totalEnemies}` : null,
     selectedWeapon: state?.selectedWeaponKey,
     selectedTower: state?.selectedTowerId,
@@ -2115,7 +2149,7 @@ export function createGame({ ui, levels }) {
       pelletCount: tower.weapon.pelletCount,
       slowStrength: tower.weapon.slowStrength,
       slowDuration: tower.weapon.slow,
-      kills:tower.kills,pierce:tower.weapon.pierce,
+      angle:tower.angle,aura:tower.aura,kills:tower.kills,pierce:tower.weapon.pierce,
       upgrades: tower.upgrades,
       invested: tower.invested,
       targeting: tower.targeting,

@@ -11,23 +11,24 @@
     <link rel="stylesheet" href="./src/ui/skillTree.css" />
     <link rel="stylesheet" href="./src/ui/hud.css" /><link rel="stylesheet" href="./src/ui/frontier.css" /><link rel="stylesheet" href="./src/ui/command.css" />
   <link rel="stylesheet" href="./src/ui/deck.css" />
+  <link rel="stylesheet" href="./src/ui/command-center.css" />
   </head>
   <body>
     <main class="app-shell">
       <section class="main-menu" id="main-menu">
         <div class="menu-card">
           <div class="menu-head">
-            <div><p class="eyebrow">ALIENS / FRONTIER COMMAND</p><h1>HOLD THE LINE<span>.</span></h1><p class="menu-subtitle">Build. Adapt. Push back the invasion.</p></div>
+            <div><h1>HOLD THE LINE<span>.</span></h1></div>
             <button class="commander-button" id="menu-skills-button" type="button"></button>
           </div>
-          <div class="menu-loadout"><div><strong>YOUR ARSENAL / UNLOCK AS YOU PLAY</strong><p id="arsenal-next-unlock"></p></div><button class="secondary-button" id="menu-arsenal-button" type="button">Choose categories →</button><button class="secondary-button" id="menu-stats-button" type="button">Combat records ↗</button></div>
+          <div class="menu-loadout"><div><p id="arsenal-next-unlock" class="hidden"></p></div><button class="secondary-button" id="menu-arsenal-button" type="button">Loadout</button><button class="secondary-button" id="menu-stats-button" type="button">Records</button></div>
           <div class="campaign-topline"><span id="campaign-progress"></span><span>18 missions · 3 sectors</span></div>
           <nav class="sector-tabs" id="sector-tabs" aria-label="Campaign sector"></nav>
           <div class="campaign-body">
             <div class="level-grid" id="level-grid"></div>
-            <aside class="mission-briefing"><div id="mission-briefing"></div><button class="primary-button" id="menu-play-button" type="button">Deploy squad →</button></aside>
+            <aside class="mission-briefing"><button class="primary-button" id="menu-play-button" type="button">Deploy squad →</button><div id="mission-briefing"></div></aside>
           </div>
-          <div class="menu-foot"><span>Permanent skills. New tactics. One more try.</span><a class="jam-link" href="https://vibejam.com/" target="_blank" rel="noopener noreferrer">Vibe Jam 2026 ↗</a><span>DUAL SUPPORT / 08</span></div>
+          <div class="menu-foot"><span>Permanent skills. New tactics. One more try.</span><a class="jam-link" href="https://vibejam.com/" target="_blank" rel="noopener noreferrer">Vibe Jam 2026 ↗</a><span>ENDLESS DEFENSE / 09</span></div>
         </div>
       </section>
 
@@ -99,7 +100,7 @@
           <button class="secondary-button" id="restart-button" type="button">Restart</button>
           <button class="secondary-button" id="change-level-button" type="button">Mission select</button>
           <button class="secondary-button" id="sound-button" type="button">Sound on</button>
-          <details class="shortcuts"><summary>Shortcuts</summary><dl><div><dt><kbd>1</kbd> – <kbd>6</kbd></dt><dd>Choose weapon</dd></div><div><dt><kbd>Q</kbd></dt><dd>Primary power</dd></div><div><dt><kbd>E</kbd></dt><dd>Secondary power</dd></div><div><dt><kbd>Space</kbd></dt><dd>Pause / resume</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Cancel / menu</dd></div><div><dt><kbd>F</kbd></dt><dd>Fullscreen</dd></div></dl></details>
+          <details class="shortcuts"><summary>Shortcuts</summary><dl><div><dt><kbd>1</kbd> – <kbd>6</kbd></dt><dd>Choose weapon</dd></div><div><dt><kbd>Q</kbd></dt><dd>Primary power</dd></div><div><dt><kbd>E</kbd></dt><dd>Secondary power</dd></div><div><dt><kbd>Space</kbd></dt><dd>Pause / resume</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Cancel / menu</dd></div><div><dt><kbd>R</kbd></dt><dd>Rotate Magnum</dd></div><div><dt><kbd>F</kbd></dt><dd>Fullscreen</dd></div></dl></details>
         </div>
       </section>
 
@@ -109,6 +110,7 @@
           <div id="result-stars" class="result-stars"></div>
           <span id="result-copy"></span>
           <div id="result-rewards" class="result-rewards"></div>
+          <button class="primary-button" id="result-freeplay-button" type="button">Free play · keep defending ∞</button>
           <button class="primary-button" id="result-next-button" type="button">Next mission →</button>
           <button class="secondary-button" id="result-arsenal-button" type="button">Choose categories</button>
           <button class="secondary-button" id="result-skills-button" type="button">Spend skill points</button>
@@ -146,7 +148,7 @@
           <div class="skill-tree-head">
             <div>
               <p>COMMANDER</p>
-              <h2>Make your next move.</h2>
+              <h2>SKILL TREE //</h2>
             </div>
             <div class="doctrine-head-actions"><button class="secondary-button" id="reset-skills-button" type="button" title="Refund commander nodes for free. Combat records stay saved.">Refund nodes</button><button class="icon-button" id="skill-tree-close-button" type="button" aria-label="Close skill tree">×</button></div>
           </div>

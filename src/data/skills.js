@@ -8,15 +8,16 @@ export const skillTree=[
  node('range','Sensor Sweep','+6% tower range per rank.',5,5,'armament',310,295,'reload',{type:'passive',weaponEffect:{stat:'range',perRank:.06}}),
  node('weakest','Finish the Weak','Unlock Weakest targeting: aim at the alien with the least health and shields.',1,7,'armament',210,445,'fireRate'),
  node('loadoutSlots','Extra Loadout Slot','+1 weapon slot per rank, up to 6 total. Missions 1-4 and 2-4 also award a slot.',2,8,'logistics',110,145),
- node('duplicates','Twin Emplacements','Raise the limit from 1 to 2 deployed towers of each category.',1,10,'logistics',110,295,'loadoutSlots'),
+ node('duplicates','Extra Emplacements','Deploy 2, then 3 towers of each category.',2,10,'logistics',110,295,'loadoutSlots'),
  node('salvage','Clearance Crew','Clearing obstacles costs 15% less per rank.',3,4,'logistics',310,145),
  node('supplies','Supply Lines','Start each mission with $25 extra per rank.',3,5,'logistics',310,295,'salvage'),
  node('pontoons','Pontoon Engineering','Build weapons on water. A raft costs $35 extra.',1,6,'logistics',310,445,'supplies'),
  node('mines','Last Line','Start with 2 more exit mines per rank. Each deals 5,500 area damage.',5,6,'support',110,145),
- node('drone','Patrol Drone','An automatic patrol drone. More ranks improve its damage and range.',3,8,'support',310,145),
+ node('drone','Hunter Drone','A UAV follows its priority target across the map. Ranks improve damage and range.',3,8,'support',310,145),
  node('extraDrone','Wingman','Add a second drone with its own upgrades and targeting.',1,12,'support',310,295,'drone'),
- node('chronoBreak','Chrono Break','Each rank extends the freeze by 0.2s and reduces cooldown by 2s.',10,5,'support',110,295,null,{type:'active',active:'chronoBreak'}),
- node('powerSlots','Dual Support','Equip a second, different power. Each has its own cooldown.',1,12,'support',110,445,'chronoBreak'),
+ node('chronoBreak','Chrono Break','Extend Stasis by 0.25 seconds per rank.',10,5,'stasis',110,295,null,{type:'active',active:'chronoBreak'}),
+ node('chronoCooldown','Temporal Recovery','Reduce Stasis cooldown by 2 seconds per rank.',10,4,'stasis',110,445,'chronoBreak'),
+ node('powerSlots','Dual Support','Equip a second, different power. Each has its own cooldown.',1,12,'support',110,445,'mines'),
  node('artillery','Artillery Strike','+180 damage per shell. Starts with 10 shells in 5 seconds.',10,5,'artillery',310,145,null,{type:'active',active:'artillery'}),
  node('artilleryCooldown','Rapid Artillery','Reduce Artillery cooldown by 4s per rank, from 45s to 25s.',5,4,'artillery',110,325,'artillery'),
  node('artilleryArea','Wide Barrage','Increase Artillery blast radius by 15% per rank.',5,4,'artillery',310,325,'artillery'),
@@ -47,7 +48,7 @@ export function canBuySkill(profile,skill){
 export function buySkill(profile,key){const s=skillTree.find(s=>s.key===key);if(!s||!canBuySkill(profile,s))return false;profile.skills[key]=skillRank(profile,key)+1;profile.skillPoints-=s.cost;if(s.active&&!profile.equippedActiveKey)profile.equippedActiveKey=s.active;return true;}
 export function activeAbilityStats(ability,profile){
  const key=ability.key,rank=skillRank(profile,key),r=k=>skillRank(profile,k);
- if(key==='chronoBreak')return {rank,cooldown:50-2*rank,duration:3+.2*rank,damage:0,area:0};
+ if(key==='chronoBreak')return {rank,cooldown:50-2*r('chronoCooldown'),duration:3+.25*rank,damage:0,area:0};
  if(key==='artillery')return {rank,cooldown:45-4*r('artilleryCooldown'),duration:5+r('artilleryDuration'),shots:10+2*r('artilleryDuration'),damage:1800+180*rank,area:130*(1+.15*r('artilleryArea'))};
  return {rank,cooldown:50-4*r('napalmCooldown'),duration:6+r('napalmDuration'),damage:1000+50*rank,area:180*(1+.18*r('napalmArea'))};
 }

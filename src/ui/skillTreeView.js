@@ -1,7 +1,7 @@
 import {loadoutCapacity} from '../data/arsenal.js';
 import { equippedPowerKeys, activeAbilities, activeAbilityStats, activeUnlocked, canBuySkill, prerequisiteMet, skillRank, skillTree, spentSkillPoints } from '../data/skills.js';
 
-const branches={armament:{name:'Training',color:'#ffbb57'},logistics:{name:'Deployment',color:'#49d9ee'},support:{name:'Support',color:'#bca3ff'},artillery:{name:'Artillery',color:'#f2c478'},napalm:{name:'Napalm',color:'#ff9970'}};
+const branches={armament:{name:'Training',color:'#ffbb57'},logistics:{name:'Deployment',color:'#49d9ee'},support:{name:'Support',color:'#bca3ff'},artillery:{name:'Artillery',color:'#f2c478'},napalm:{name:'Napalm',color:'#ff9970'},stasis:{name:'Time Stop',color:'#ddbd73'}};
 const paths={
  locked:'M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5Zm7 4v3',
  damage:'M5 12h14M12 5v14M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20',
@@ -17,15 +17,16 @@ const paths={
  artillery:'M3 19h18M5 16Q7 2 19 6m-3-4 4 4-5 2M4 21v-4m15 4v-4',
  napalm:'M13 2c2 7 8 9 7 14a8 8 0 0 1-16 0c0-4 3-7 4-8 0 4 2 5 3 4s3-5 2-10Z',
 };
-const icon=key=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[key]||paths[key.startsWith('artillery')?'artillery':key.startsWith('napalm')?'napalm':key==='extraDrone'?'drone':key==='weakest'?'range':'supplies']}"/></svg>`;
+const icon=key=>`<img class="talent-art" src="assets/command/${key}.png" alt="" draggable="false">`;
 function preview(skill,profile){
  const rank=skillRank(profile,skill.key),next=Math.min(rank+1,skill.maxRank);
  if(skill.weaponEffect)return `${Math.round(skill.weaponEffect.perRank*rank*100)}% → ${Math.round(skill.weaponEffect.perRank*next*100)}% ${skill.key==='damage'?'damage':skill.key==='reload'?'reload time':skill.key==='range'?'range':'fire rate'}`;
  if(skill.key==='salvage')return `${rank*15}% → ${next*15}% lower clearance cost`;
  if(skill.key==='supplies')return `+$${rank*25} → +$${next*25} starting funds`;
  if(skill.key==='loadoutSlots')return `${loadoutCapacity(profile)} → ${Math.min(6,loadoutCapacity(profile)+1)} weapon slots`;
+ if(skill.key==='chronoCooldown')return `${50-rank*2}s → ${50-next*2}s cooldown`;
  if(skill.key==='powerSlots')return '1 → 2 powers · separate cooldowns';
- if(skill.key==='duplicates')return '1 → 2 towers per category';
+ if(skill.key==='duplicates')return `${1+rank} → ${1+next} towers per category`;
  if(skill.key==='weakest')return 'Unlock Weakest targeting for guns and UAVs';
  if(skill.key==='extraDrone')return '1 → 2 independent patrol drones';
  if(skill.key==='pontoons')return 'Land only → land + water';
@@ -43,6 +44,7 @@ function preview(skill,profile){
 function graphLayout(branch){
  const visible=skillTree.filter(s=>s.branch===branch),roots=visible.filter(s=>!s.requires);
  const positions=new Map();
+ if(roots.length===1&&visible.length===2){positions.set(roots[0].key,{col:0,row:0});positions.set(visible.find(s=>s.requires).key,{col:0,row:1});return {positions,columns:1,rows:2};}
  if(roots.length===1){positions.set(roots[0].key,{col:1,row:0});visible.filter(s=>s.requires).forEach((s,i)=>positions.set(s.key,{col:i,row:1}));return {positions,columns:3,rows:2};}
  roots.forEach((root,col)=>{let n=root,row=0;while(n){positions.set(n.key,{col,row:row++});n=visible.find(s=>s.requires?.key===n.key);}});
  return {positions,columns:roots.length,rows:Math.max(...[...positions.values()].map(p=>p.row))+1};
@@ -58,12 +60,12 @@ export function renderSkillTree(ui,profile,selectedKey){
  const parent=skillTree.find(s=>s.key===selected.requires?.key),branch=selected.branch,visible=skillTree.filter(s=>s.branch===branch);
  const {positions,columns,rows}=graphLayout(branch);
  const state=maxed?'Complete':!met&&!rank?'Locked':canBuy?'Upgrade available':'More SP needed';
- const x=p=>(p.col+.5)/columns*1000,y=p=>64+p.row*160;
- ui.skillTreeNodes.innerHTML=`<div class="talent-workspace"><nav class="doctrine-branches" aria-label="Skill branches">${Object.entries(branches).map(([key,b])=>`<button type="button" data-skill-branch="${key}" class="${key===branch?'selected':''}" aria-pressed="${key===branch}">${icon(key==='armament'?'damage':key==='logistics'?'supplies':key==='support'?'drone':key)}<span>${b.name}</span></button>`).join('')}</nav>
+ const x=p=>(p.col+.5)/columns*1000,y=p=>50+p.row*146;
+ ui.skillTreeNodes.innerHTML=`<div class="talent-workspace"><nav class="doctrine-branches" aria-label="Skill branches">${Object.entries(branches).map(([key,b])=>`<button type="button" data-skill-branch="${key}" class="${key===branch?'selected':''}" aria-pressed="${key===branch}">${icon(key)}<span>${b.name}</span></button>`).join('')}</nav>
  <div class="talent-section"><div class="talent-section-title"><h3>${branches[branch].name}</h3><span>${visible.reduce((n,s)=>n+skillRank(profile,s.key),0)} ranks trained</span></div>
  <div class="command-board" aria-label="${branches[branch].name} talent paths"><div class="talent-graph" style="--columns:${columns};--rows:${rows}">
- <svg class="talent-connections" viewBox="0 0 1000 ${rows*160-32}" preserveAspectRatio="none" aria-hidden="true">${visible.filter(s=>s.requires).map(s=>{const p=positions.get(s.requires.key),n=positions.get(s.key);return `<path d="M${x(p)} ${y(p)+64} V${y(p)+80} H${x(n)} V${y(n)-64}" class="${prerequisiteMet(profile,s)?'open':''}"/>`;}).join('')}</svg>
- ${visible.map(s=>{const r=skillRank(profile,s.key),p=positions.get(s.key),ready=canBuySkill(profile,s),locked=!prerequisiteMet(profile,s)&&!r,complete=r>=s.maxRank;return `<button type="button" class="talent-node graph-node ${complete?'mastered':locked?'locked':ready?'available':'unfunded'} ${r?'owned':''} ${s.key===selected.key?'selected':''}" data-select-skill="${s.key}" style="grid-column:${p.col+1};grid-row:${p.row+1}" aria-pressed="${s.key===selected.key}" aria-label="${s.name}, rank ${r} of ${s.maxRank}, ${locked?'prerequisite required':complete?'complete':`${s.cost} SP per rank`}"><span class="talent-symbol">${icon(locked?'locked':s.key)}</span><strong>${s.name}</strong><span class="talent-rank">${r}<small> / ${s.maxRank}</small></span><span class="talent-cost">${complete?'✓ Complete':`<b>${s.cost}</b> SP <i>${locked?'·':'+'}</i>`}</span><span class="talent-progress" aria-hidden="true">${Array.from({length:s.maxRank},(_,i)=>`<i class="${i<r?'on':''}"></i>`).join('')}</span></button>`;}).join('')}</div></div>
+ <svg class="talent-connections" viewBox="0 0 1000 ${rows*146-18}" preserveAspectRatio="none" aria-hidden="true">${visible.filter(s=>s.requires).map(s=>{const p=positions.get(s.requires.key),n=positions.get(s.key);return `<path d="M${x(p)} ${y(p)+49} V${y(p)+65} H${x(n)} V${y(n)-49}" class="${prerequisiteMet(profile,s)?'open':''}"/>`;}).join('')}</svg>
+ ${visible.map(s=>{const r=skillRank(profile,s.key),p=positions.get(s.key),ready=canBuySkill(profile,s),locked=!prerequisiteMet(profile,s)&&!r,complete=r>=s.maxRank;return `<button type="button" class="talent-node graph-node ${complete?'mastered':locked?'locked':ready?'available':'unfunded'} ${r?'owned':''} ${s.key===selected.key?'selected':''}" data-select-skill="${s.key}" style="grid-column:${p.col+1};grid-row:${p.row+1}" aria-pressed="${s.key===selected.key}" aria-label="${s.name}, rank ${r} of ${s.maxRank}, ${locked?'prerequisite required':complete?'complete':`${s.cost} SP per rank`}"><span class="talent-symbol">${icon(s.key)}<i class="talent-status">${locked?'▣':complete?'✓':ready?'+':''}</i></span><strong>${s.name}</strong><span class="talent-rank">${r}<small> / ${s.maxRank}</small></span><span class="talent-cost">${complete?'✓ Complete':`<b>${s.cost}</b> SP <i>${locked?'·':'+'}</i>`}</span><span class="talent-progress" aria-hidden="true">${Array.from({length:s.maxRank},(_,i)=>`<i class="${i<r?'on':''}"></i>`).join('')}</span></button>`;}).join('')}</div></div>
  <div class="talent-legend"><span><i class="ready"></i>Can upgrade</span><span><i class="complete"></i>Complete</span><span><i></i>Unavailable</span></div></div></div>
  <aside class="node-inspector"><div class="inspector-kicker">${branches[branch].name} <span>${rank} / ${selected.maxRank}</span></div><div class="inspector-icon">${icon(selected.key)}</div><h3>${selected.name}</h3><span class="inspector-state">${state}</span><p>${selected.description}</p><div class="skill-preview"><small>${maxed?'MASTERED':'NEXT RANK'}</small><strong>${maxed?'All ranks completed':preview(selected,profile)}</strong></div>${parent?`<button class="prerequisite-link" type="button" data-select-skill="${parent.key}"><span>${met?'✓':'🔒'} ${parent.name} · rank 1</span><b>→</b></button>`:''}
  <div class="talent-checkout"><div class="checkout-total"><span>${maxed?'Total invested':'Cost per rank'}</span><strong>${maxed?rank*selected.cost:selected.cost} <small>SP</small></strong></div><button class="skill-purchase" data-skill-key="${selected.key}" type="button" ${canBuy?'':'disabled'}>${maxed?'Completed':!met&&!rank?'Train prerequisite first':selected.key==='loadoutSlots'&&!canBuy&&profile.skillPoints>=selected.cost?'All six slots available':profile.skillPoints<selected.cost?`Need ${selected.cost-profile.skillPoints} more SP`:`${rank?'Upgrade to rank '+(rank+1):'Train first rank'} →`}</button><span class="checkout-balance">${canBuy?`${profile.skillPoints} → ${profile.skillPoints-selected.cost} SP remaining`:`${profile.skillPoints} SP available`}</span></div>

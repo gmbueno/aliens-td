@@ -87,7 +87,7 @@ test('tower upgrades, meta skills and pad bonuses compose; refund preserves acco
 
 test('selling during combat refunds 70%, never produces profit',()=>{
   const state=make();const tile=freeTile(state),tower=placeTower(state,'handgun',tile.row,tile.col);
-  launchWave(state);assert.equal(sellValue(state,tower),49);sellTower(state,tower);assert.equal(state.gold,state.level.startGold-21);
+  launchWave(state);assert.equal(sellValue(state,tower),Math.floor(tower.invested*.7));sellTower(state,tower);assert.equal(state.gold,state.level.startGold-Math.ceil(tower.invested*.3));
 });
 
 test('armor and shields have distinct counters',()=>{

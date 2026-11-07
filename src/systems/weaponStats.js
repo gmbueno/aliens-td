@@ -18,9 +18,19 @@ export function refreshTowerSkillBonuses(towers,weapons,profile) {
     const w=effectiveWeaponByKey(weapons,t.weapon.key,profile);if(!w)return;
     t.weapon=applyTowerUpgrades(w,t);t.range=t.weapon.range;t.ammo=Math.min(t.ammo,t.weapon.capacity);
   });
+  applySupportBuffs(towers);
+}
+export function applySupportBuffs(towers){
+ for(const tower of towers){
+  if(tower.weapon.support)continue;
+  const nearby=towers.filter(b=>b.weapon.support&&Math.hypot(b.x-tower.x,b.y-tower.y)<=b.range);
+  const damage=Math.max(0,...nearby.map(b=>(b.upgrades.power||0)*.15)),boost=Math.max(0,...nearby.map(b=>.1+(b.upgrades.tactical||0)*.04));
+  tower.aura={damage,boost};tower.weapon.directDamage=Math.round(tower.weapon.directDamage*(1+damage));tower.weapon.atkSpeed=Number((tower.weapon.atkSpeed*(1+boost)).toFixed(2));tower.range=tower.weapon.range=Math.round(tower.weapon.range*(1+boost));
+ }
 }
 const path = (key,name,detail,multiplier=.75) => ({key,name,detail,multiplier});
 const upgradePaths = {
+  beacon:[path('power','Fire Control','+15% damage for nearby weapons per rank'),path('tactical','Signal Amplifier','Larger aura; +4% range and fire-rate bonus per rank',.65)],
  laser:[path('power','Focused prism','+30% beam damage · stronger critical hits'),path('tactical','Cryo cooling','Longer heat window, faster cooling and more range',.65)],
  flamethrower:[path('power','Incinerator','Stronger direct damage and lingering burns'),path('tactical','Fuel & nozzle','More fuel, faster refill and a wider cone',.65)],
   handgun: [path('power','Stopping power','+40% damage · +3% critical chance per rank'),path('tactical','Quickdraw','Faster fire, reload and a larger magazine',.65)],
@@ -36,16 +46,18 @@ export const towerUpgradePaths = upgradePaths.handgun;
 export function towerUpgradePathsFor(key) { return upgradePaths[key] || upgradePaths.handgun; }
 export function towerUpgradeCost(tower,key) {
   const p=towerUpgradePathsFor(tower.weapon.key).find(p=>p.key===key);
-  return p?Math.round(tower.weapon.price*p.multiplier*(1+(tower.upgrades?.[key]||0)*.9)):Infinity;
+  return p?Math.round(tower.weapon.price*p.multiplier*.54*(1+(tower.upgrades?.[key]||0)*.9)):Infinity;
 }
 export function applyTowerUpgrades(weapon,tower) {
   const p=tower.upgrades?.power||0,c=tower.upgrades?.tactical||0;
   const next={...weapon};
+  if(weapon.support)next.auraDamage=p*.15;
   const damagePerRank={handgun:.4,assault_rifle:.32,machine_pistol:.35,magnum:.5,shotgun:.12,sniper:.5,rocket_launcher:.35,laser:.3,flamethrower:.3}[weapon.key] ?? .4;
   next.directDamage*=1+p*damagePerRank;
   next.critChance=Math.min(.5,(weapon.critChance||0)+p*(weapon.key==='sniper'?.05:weapon.key==='handgun'?.03:0));
   next.critDamage=(weapon.critDamage||1.6)+p*(['magnum','laser'].includes(weapon.key)?.25:0);
-  if(weapon.key==='laser') {next.capacity+=c*12;next.reloadSpeed*=1-c*.15;next.range*=1+c*.08;}
+  if(weapon.support)next.range*=1+c*.18;
+  else if(weapon.key==='laser') {next.capacity+=c*12;next.reloadSpeed*=1-c*.15;next.range*=1+c*.08;}
   else if(weapon.key==='flamethrower') {next.burnDamage*=1+p*.35;next.capacity+=c*8;next.reloadSpeed*=1-c*.14;next.cone+=c*.1;next.range*=1+c*.06;}
   else if(weapon.key==='shotgun') { next.pelletCount=weapon.pelletCount+p;next.spread=weapon.spread*(1-c*.14);next.range*=1+c*.1;next.reloadSpeed*=1-c*.13;next.atkSpeed*=1+c*.1; }
   else if(weapon.key==='machine_pistol') {next.slowStrength=Number(Math.min(.65,(weapon.slowStrength||.25)+c*.10).toFixed(2));next.slow=Number(((weapon.slow||.7)+c*.6).toFixed(1));next.atkSpeed*=1+c*.06;}
@@ -60,6 +72,7 @@ export function applyTowerUpgrades(weapon,tower) {
   return next;
 }
 export function upgradePreview(current,next,key) {
+  if(current.support)return key==='power'?`Aura damage +${Math.round((current.auraDamage||0)*100)}% → +${Math.round((next.auraDamage||0)*100)}%`:`Radius ${current.range} → ${next.range} · stronger range / rate boost`;
   if(current.key==='magnum'&&key==='tactical')return `Pierce ${current.pierce} → ${next.pierce} · ${next.pierce+1} hits, last at 50%`;
   if(current.key==='shotgun'&&key==='power')return `Pellets ${current.pelletCount} → ${next.pelletCount} · damage ${current.directDamage} → ${next.directDamage}`;
   if(current.key==='machine_pistol'&&key==='tactical')return `Slow ${Math.round((current.slowStrength||.25)*100)}% → ${Math.round(next.slowStrength*100)}% · ${current.slow}s → ${next.slow}s`;

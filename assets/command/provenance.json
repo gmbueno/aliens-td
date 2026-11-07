@@ -1,0 +1,76 @@
+{
+  "studio": "https://codevon-com.github.io/pixelforge/",
+  "date": "2026-11-07",
+  "license": "CC0-1.0",
+  "batches": [
+    {
+      "name": "talents-a",
+      "size": 64,
+      "count": 16,
+      "keys": [
+        "damage",
+        "reload",
+        "fireRate",
+        "range",
+        "weakest",
+        "loadoutSlots",
+        "duplicates",
+        "salvage",
+        "supplies",
+        "pontoons",
+        "mines",
+        "drone",
+        "extraDrone",
+        "powerSlots",
+        "chronoBreak",
+        "chronoCooldown"
+      ],
+      "objects": "three rifle cartridges; circular reload arrow; rapid fire lightning bolt; crosshair; cracked alien skull; equipment crate with plus; three gun emplacements; wrench; supply box; floating pontoon; mine; quadcopter; two quadcopters; two power cards; hourglass; clock with circular arrow",
+      "prompt": "Exactly 16 distinct military talent icons in a strict 4 by 4 grid. Consistent cream and aged brass symbols with olive metal shading, bold clean silhouette, slightly distressed painted game UI art, readable at 48px. No text, no numbers, no diamond frames, no card backgrounds. True alpha transparent background. Each centered symbol occupies 76 percent cell. The EXACT row-major order is: three rifle cartridges; circular reload arrow; rapid fire lightning bolt; crosshair; cracked alien skull; equipment crate with plus; three gun emplacements; wrench; supply box; floating pontoon; mine; quadcopter; two quadcopters; two power cards; hourglass; clock with circular arrow. Keep each object entirely inside its cell with generous transparent margins.",
+      "model": "openai/gpt-image-2.5-flare",
+      "hash": "9f7ffb8425cd0c77e7fbae070fc02c18c318e2f76462480e0d440e9040e9a55a"
+    },
+    {
+      "name": "talents-b",
+      "size": 64,
+      "count": 16,
+      "keys": [
+        "artillery",
+        "artilleryCooldown",
+        "artilleryArea",
+        "artilleryDuration",
+        "napalm",
+        "napalmCooldown",
+        "napalmArea",
+        "napalmDuration",
+        "stasis",
+        "armament",
+        "logistics",
+        "support",
+        "locked",
+        "beacon",
+        "critical",
+        "command"
+      ],
+      "objects": "artillery shell; shell with clock; shell with blast circle; three falling shells; flame; flame with clock; spreading fire circle; flame with hourglass; frozen time hourglass; three military chevrons; equipment crate; medical cross in a shield; padlock; radar dish; critical hit star; commander medal",
+      "prompt": "Exactly 16 distinct military talent icons in a strict 4 by 4 grid. Consistent cream and aged brass symbols with olive metal shading, bold clean silhouette, slightly distressed painted game UI art, readable at 48px. No text, no numbers, no diamond frames, no card backgrounds. True alpha transparent background. Each centered symbol occupies 76 percent cell. The EXACT row-major order is: artillery shell; shell with clock; shell with blast circle; three falling shells; flame; flame with clock; spreading fire circle; flame with hourglass; frozen time hourglass; three military chevrons; equipment crate; medical cross in a shield; padlock; radar dish; critical hit star; commander medal. Keep each object entirely inside its cell with generous transparent margins.",
+      "model": "openai/gpt-image-2.5-flare",
+      "hash": "9b34060439e808dbadfb27f05d6a38276688cff10d3fa1dc56c3c32c3e66550b"
+    },
+    {
+      "name": "field-support",
+      "size": 128,
+      "count": 4,
+      "keys": [
+        "drone",
+        "uavBase",
+        "beacon-common",
+        "radar-dish"
+      ],
+      "objects": "combat quadcopter UAV with four rotors and cyan sensor, strict top down; UAV landing pad, square gunmetal platform, amber landing stripes and cyan central circle, strict top down; radar beacon tower, steel antenna dish on compact round emplacement, strict top down; large army radar dish and rocky base, three quarter view, painted environment prop",
+      "prompt": "Exactly 4 highly detailed hand painted sci fi tower defense sprites in a strict 2 by 2 grid, all separate on real transparent alpha. Worn gunmetal steel, brass bolts, amber and cyan tiny lights, sculpted realistic industrial game art, clear silhouette, no text or card frames. Order top left to bottom right: combat quadcopter UAV with four rotors and cyan sensor, strict top down; UAV landing pad, square gunmetal platform, amber landing stripes and cyan central circle, strict top down; radar beacon tower, steel antenna dish on compact round emplacement, strict top down; large army radar dish and rocky base, three quarter view, painted environment prop. Keep each object entirely inside its cell with generous transparent margins.",
+      "model": "openai/gpt-image-2.5-flare",
+      "hash": "bcfebe24a311a051b35f07b1d38ebaef6eb75c824ea7cde60a1aad836ea64061"
+    }
+  ]
+}

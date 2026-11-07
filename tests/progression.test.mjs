@@ -16,7 +16,7 @@ function encounter(p=profile(),spawns=[{enemy:'alien_steadfast',at:0}]){
  const s=make(p,level);launchWave(s);tick(s,.02);return s;
 }
 test('command graph is acyclic with valid prerequisites, and locks purchases until trained',()=>{
- const keys=new Set(skillTree.map(s=>s.key));assert.equal(keys.size,23);
+ const keys=new Set(skillTree.map(s=>s.key));assert.equal(keys.size,24);
  for(const skill of skillTree){let current=skill,seen=new Set();while(current.requires){assert.ok(keys.has(current.requires.key));assert.ok(!seen.has(current.key));seen.add(current.key);current=skillTree.find(s=>s.key===current.requires.key);}}
  const p=profile();assert.equal(buySkill(p,'pontoons'),false);assert.equal(buySkill(p,'extraDrone'),false);
  assert.ok(buySkill(p,'salvage'));assert.ok(buySkill(p,'supplies'));assert.ok(buySkill(p,'pontoons'));assert.equal(buySkill(p,'pontoons'),false);
@@ -40,7 +40,7 @@ test('water terrain is valid and a raft requires research and exactly 35 extra c
  assert.equal(levels.filter(l=>l.water?.length).length,5);
  const p=profile(),s=make(p,levels[3]),water=s.level.water[0];assert.equal(placeTower(s,'handgun',water.row,water.col),null);
  buySkill(p,'salvage');buySkill(p,'supplies');buySkill(p,'pontoons');const before=s.gold;
- const tower=placeTower(s,'handgun',water.row,water.col);assert.ok(tower);assert.equal(tower.platform,35);assert.equal(s.gold,before-105);assert.equal(tower.invested,105);
+ const tower=placeTower(s,'handgun',water.row,water.col);assert.ok(tower);assert.equal(tower.platform,35);assert.equal(s.gold,before-weapons.find(w=>w.key==='handgun').price-35);assert.equal(tower.invested,weapons.find(w=>w.key==='handgun').price+35);
 });
 test('automatic exit mines damage aliens once, are finite, and are not replenished by a respec',()=>{
  const p=profile({skills:{mines:2}}),s=encounter(p);assert.equal(s.mines.length,4);
@@ -52,7 +52,7 @@ test('UAV patrol attacks automatically, reserves a visible base, and freezes on 
  const s=encounter(profile({skills:{mines:1,drone:1}}));const drone=s.drone;assert.ok(drone);
  assert.equal(placeTower(s,'handgun',drone.base.row,drone.base.col),null);
  const enemy=s.enemies[0];enemy.speed=0;const hp=enemy.life;tick(s,1);assert.ok(enemy.life<hp);assert.ok(drone.time>0);
- drone.time=(s.path.length-1)/.9-.01;tick(s,.02);const end=s.path.at(-1);assert.ok(Math.hypot(drone.x-end.x,drone.y-end.y)<80,"UAV turns back at the exit instead of teleporting to the entrance");
+ tick(s,2);assert.equal(drone.targetId,enemy.id);assert.ok(Math.hypot(drone.x-enemy.x,drone.y-enemy.y)<80,'UAV follows its selected alien');
  s.isPaused=true;const time=drone.time;tick(s,3);assert.equal(drone.time,time);
 });
 test('Menders heal other live aliens, respect maximum HP, and do not revive killed aliens',()=>{
