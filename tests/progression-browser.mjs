@@ -14,7 +14,7 @@ try{
   await h.shot(p,`research-${viewport.width}`);await p.context().close();
  }
  const p=await h.pageFor({level:20,missions:missionRecords()});await p.click('#menu-skills-button');await branch(p,'logistics');
- await research(p,'loadoutSlots');await research(p,'loadoutSlots');await research(p,'duplicates');assert.equal((await read(p)).loadoutSlots,5);assert.equal((await read(p)).placementLimit,3);
+ await research(p,'loadoutSlots');await research(p,'loadoutSlots');await research(p,'duplicates');assert.equal((await read(p)).loadoutSlots,8);assert.equal((await read(p)).placementLimit,3);
  await branch(p,'support');await research(p,'drone');await research(p,'extraDrone');await research(p,'mines');await research(p,'mines');
  await p.click('#skill-tree-close-button');await p.click('[data-sector="3"]');await p.click('[data-level-id="level_18"]');await p.click('#menu-play-button');
  let s=await read(p);assert.equal(s.drones.length,2);assert.equal(s.fieldMines.length,4);const base=s.drone.base;

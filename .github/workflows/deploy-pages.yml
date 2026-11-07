@@ -70,6 +70,11 @@ jobs:
           GAME_URL: http://127.0.0.1:4173
         run: npm run test:pads
 
+      - name: Validate stable command UI, mixed progression and preparation mines
+        env:
+          GAME_URL: http://127.0.0.1:4173
+        run: npm run test:refinement
+
       - name: Validate tactical economy, specialists and enemy control
         env:
           GAME_URL: http://127.0.0.1:4173
@@ -135,6 +140,7 @@ jobs:
             output/frontier
             output/placement
             output/browser
+            output/refinement
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

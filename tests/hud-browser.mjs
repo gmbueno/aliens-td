@@ -61,10 +61,10 @@ try {
     await verifyCounters(page);
     const sprites = await page.locator('.hud-top img').evaluateAll(images => images.map(img => {
       const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;
-      const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);
+      const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,64,64);
       const data=ctx.getImageData(0,0,64,64).data;
-      return {loaded:img.complete&&img.naturalWidth===64&&img.naturalHeight===64,
-        alpha:data.some((v,i)=>i%4===3&&v===0), opaque:data.some((v,i)=>i%4===3&&v===255)};
+      return {loaded:img.complete&&img.naturalWidth>=64&&img.naturalHeight>=64,
+        alpha:data.some((v,i)=>i%4===3&&v<8), opaque:data.some((v,i)=>i%4===3&&v>=245)};
     }));
     assert.equal(sprites.length,10);
     assert.ok(sprites.every(s=>s.loaded&&s.alpha&&s.opaque), 'Native-alpha sprites must load');
@@ -95,8 +95,8 @@ try {
   for(const viewport of [{width:1024,height:768},{width:1280,height:720},{width:1920,height:1080}]){
     const page=await pageFor(viewport,false,{schemaVersion:6,level:12,skills:{loadoutSlots:1,powerSlots:1},slotRewards:{level_4:true,level_10:true},missions:Object.fromEntries(Array.from({length:10},(_,i)=>['level_'+(i+1),{clears:1}])),arsenal:{loadout:['flamethrower','rocket_launcher','machine_pistol','assault_rifle','magnum','laser']},equippedActiveKey:'napalm',equippedSecondaryActiveKey:'artillery',settings:{muted:true}});
     const deck=await page.locator('#tower-sidebar').boundingBox(),powers=await page.locator('.ability-full-art').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return {y:r.y,height:r.height}}));
-    assert.equal(await page.locator('.weapon-card').count(),6);
-    assert.equal(powers.length,2);assert.ok(powers.every(power=>power.y>=deck.y&&power.y+power.height<=deck.y+deck.height),'both full power images visible beside six categories, without scrolling');
+    assert.equal(await page.locator('.weapon-card').count(),7);
+    assert.equal(powers.length,2);assert.ok(powers.every(power=>power.y>=deck.y&&power.y+power.height<=deck.y+deck.height),'both full power images visible beside seven categories, without scrolling');
     assert.equal(await page.locator('.weapon-nickname').evaluateAll(es=>es.some(e=>e.scrollWidth>e.clientWidth+1)),false,'weapon names fit');
     await page.screenshot({path:`${out}/six-slots-${viewport.width}.png`,fullPage:true});await page.context().close();
   }

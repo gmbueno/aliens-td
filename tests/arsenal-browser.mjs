@@ -11,7 +11,7 @@ try{
   assert.equal(await p.locator('.arsenal-card').evaluate(e=>e.scrollWidth>e.clientWidth+1),false);await h.shot(p,`categories-${viewport.width}`);await p.keyboard.press('Escape');assert.equal((await read(p)).arsenalOpen,false);await p.context().close();
  }
  const p=await h.pageFor({schemaVersion:4,level:12,missions:missionRecords(),skills:{loadoutSlots:2},caches:{level_4:true},arsenal:{spSpent:8,blueprints:{handgun:'legendary'},attachments:{handgun:['incendiary']}}});
- await p.click('[data-sector="1"]');await p.click('[data-level-id="level_1"]');await p.click('#menu-play-button');assert.equal((await read(p)).loadout.length,6);
+ await p.click('[data-sector="1"]');await p.click('[data-level-id="level_1"]');await p.click('#menu-play-button');assert.equal((await read(p)).loadout.length,10);
  await p.click('[data-weapon-key="handgun"] .weapon-select');await tile(p,5,3,250);assert.equal((await read(p)).towers.length,1);await p.click('[data-weapon-key="handgun"] .weapon-select');await tile(p,1,1);assert.equal((await read(p)).towers.length,2);
  assert.ok(await p.locator('[data-weapon-key="handgun"] .weapon-select').isDisabled());
  await p.click('[data-info-weapon-key="handgun"]');assert.ok(await p.locator('#weapon-equip-button').isDisabled());await p.click('#weapon-customize-button');assert.equal((await read(p)).paused,true);
@@ -20,9 +20,9 @@ try{
  assert.equal(await p.locator('[data-weapon-key="rocket_launcher"]').evaluate(e=>e.classList.contains('unaffordable')),false);
  await p.click('[data-info-weapon-key="rocket_launcher"]');assert.equal(await p.locator('#weapon-equip-button').isDisabled(),false);await p.click('#weapon-info-close-button');
  await p.click('#gear-button');await p.click('#change-level-button');await p.reload();assert.equal((await read(p)).arsenal.loadout[0],'rocket_launcher');await p.context().close();
- const expand=await h.pageFor({level:10,missions:missionRecords()});await expand.click('#menu-play-button');assert.equal((await read(expand)).loadout.length,3);
+ const expand=await h.pageFor({level:10,missions:missionRecords()});await expand.click('#menu-play-button');assert.equal((await read(expand)).loadout.length,6);
  await expand.click('#player-level-button');await expand.click('[data-skill-branch="logistics"]');await expand.click('[data-select-skill="loadoutSlots"]');await expand.click('[data-skill-key="loadoutSlots"]');await expand.click('#skill-tree-close-button');
- assert.equal((await read(expand)).loadout.length,4);await expand.click('#field-loadout-button');assert.equal(await expand.locator('[data-loadout-slot]:enabled').count(),4);assert.equal(await expand.locator('#arsenal-restart-button').isDisabled(),true);await expand.click('#arsenal-close-button');assert.equal((await read(expand)).loadout.length,4);await expand.context().close();
+ assert.equal((await read(expand)).loadout.length,7);await expand.click('#field-loadout-button');assert.equal(await expand.locator('[data-loadout-slot]:enabled').count(),7);assert.equal(await expand.locator('#arsenal-restart-button').isDisabled(),true);await expand.click('#arsenal-close-button');assert.equal((await read(expand)).loadout.length,7);await expand.context().close();
  // Powers are genuinely aimed and active in live gameplay; cooldown and pause freeze.
  for(const active of ['artillery','napalm','chronoBreak']){
   const p=await h.pageFor({level:10,skills:{[active]:1},equippedActiveKey:active});await p.click('[data-level-id="level_1"]');await p.click('#menu-play-button');await autoStart(p);await advance(p,1400);await p.keyboard.press('q');
@@ -31,5 +31,5 @@ try{
   if(active==='napalm')assert.ok(s.napalmField&&s.enemies.some(e=>e.burnTimer>0));if(active==='artillery')assert.ok(s.artillery.strikes>0);if(active==='chronoBreak')assert.ok(s.activeAbilities.chronoBreak.timer>0);
   await p.click('#play-pause-button');s=await read(p);await advance(p,2000);assert.equal((await read(p)).activeAbilities[active].cooldown,s.activeAbilities[active].cooldown);await h.shot(p,`power-${active}`);await p.context().close();
  }
- h.finish();console.log('PASS: categories only, 3→6 slots, responsive loadout, caps, inspect access, live category restart, save migration, and aimed powers.');
+ h.finish();console.log('PASS: categories only, 3→10 slots, responsive loadout, caps, inspect access, live category restart, save migration, and aimed powers.');
 }finally{await h.browser.close();}

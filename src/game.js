@@ -1,4 +1,5 @@
-import {setMissileAim,updateTacticalDefense,drawTacticalDefense} from './systems/tacticalDefense.js';
+import {setMissileAim,updateTacticalDefense,drawTacticalDefense,producePathMines} from './systems/tacticalDefense.js';
+import {weaponRangeCells,rangePerimeter} from './systems/rangeGeometry.js';
 import {currentWave,endlessWave,beginFreeplay} from './systems/endless.js';
 import { targetForTower, targetModes, targetingUnlocked, enemySpeed } from './systems/targeting.js';
 export { targetForTower } from './systems/targeting.js';
@@ -6,8 +7,8 @@ import {criticalShot,energyHit,drawEnergy} from './systems/energyWeapons.js';
 import { PONTOON_COST, initializeSupport, updateDrone, triggerMines, drawSupport, droneStats, droneUpgradeCost, upgradeDrone } from './systems/fieldSupport.js';
 import { createWeaponAudio } from "./systems/weaponAudio.js";
 import { enemies, getEnemy } from "./data/enemies.js";
-import { equippedWeapons, classUnlocked, classRequirement, nextClassUnlock, campaignClears, equipCategory, weaponArt, loadoutCapacity, loadoutKeys, placementLimit, SLOT_REWARD_LEVELS } from "./data/arsenal.js";
-import { renderArsenal, nextArsenalUnlock } from "./ui/arsenalView.js";
+import { equippedWeapons, classUnlocked, classRequirement, campaignClears, equipCategory, weaponArt, loadoutCapacity, loadoutKeys, placementLimit, SLOT_REWARD_LEVELS,MAX_LOADOUT_SLOTS } from "./data/arsenal.js";
+import {renderProgressionGoals, renderArsenal, nextArsenalUnlock } from "./ui/arsenalView.js";
 import { weapons } from "./data/weapons.js";
 import { xpNeeded } from "./data/player.js";
 import { equippedPowerKeys, equipPower, activeAbilities, activeAbilityStats, buySkill, isActiveAbilityKey, activeUnlocked, skillRank, skillTree } from "./data/skills.js";
@@ -48,6 +49,7 @@ function createAssetStore() {
   };
   Promise.all([
     ...['range-pad','power-pad','exit-mine'].map(key=>loadImage(`assets/pads/${key}.png`).then(image=>store.world[key]=image)),
+    ...['missile-flight','frost-path','haste-path','gas-cloud-a','gas-cloud-b','gas-cloud-c'].map(key=>loadImage(`assets/refinement/${key}.png`).then(image=>store.world[key]=image)),
     ...['mine','infested'].map(key=>loadImage(`assets/tactics/${key}.png`).then(image=>store.world[key]=image)),
     ...['drone','uavBase'].map(key=>loadImage(`assets/command/${key}.png`).then(image=>store.world[key]=image)),
     ...['rock','ice','growth','cargo','barrels','water'].map(key=>loadImage(`assets/frontier/world/${key}.png`).then(image=>store.world[key]=image)),
@@ -106,10 +108,11 @@ function distance(a, b) {
 
 function awardRunXp(state, amount) {
   const before = state.profile.level;
+  const beforeSlots=loadoutCapacity(state.profile);
   addXp(state.profile, amount);
   state.runXp += amount;
   if (state.profile.level > before) {
-    state.message = `LEVEL ${state.profile.level} · +${(state.profile.level - before) * 10} SP.`;
+    state.message = `LEVEL ${state.profile.level} · +${(state.profile.level - before) * 10} SP${loadoutCapacity(state.profile)>beforeSlots?' · +1 WEAPON SLOT':''}.`;
     state.messageTimer = 7;
   }
 }
@@ -736,6 +739,8 @@ export function stepState(state, dt) {
   if (state.isPaused || state.result) return;
   const scaledDt = dt * state.gameSpeed;
   state.visualTime += scaledDt;
+  producePathMines(state,scaledDt);
+  for(const tower of state.towers)tower.gasVisual=Math.max(0,(tower.gasVisual||0)-scaledDt);
   state.effects = state.effects.map(effect=>({...effect,timer:effect.timer-scaledDt})).filter(effect=>effect.timer>0);
   state.messageTimer = Math.max(0, state.messageTimer - scaledDt);
   // Cooldowns only recover in combat: waiting between waves cannot recharge abilities for free.
@@ -878,8 +883,9 @@ function drawTower(ctx, tower, assets) {
 function drawWeaponRange(ctx,tower,color){
  if(tower.range<=0)return;
  if(!tower.weapon.directional){
-  const tile=tower.tile||77,n=Math.ceil(tower.range/tile);ctx.save();ctx.fillStyle='#e7bf6440';ctx.strokeStyle=color;ctx.lineWidth=2;
-  for(let r=-n;r<=n;r++)for(let c=-n;c<=n;c++)if(Math.hypot(r*tile,c*tile)<=tower.range){const x=tower.x+(c-.5)*tile,y=tower.y+(r-.5)*tile;ctx.fillRect(x,y,tile,tile);ctx.strokeRect(x+3,y+3,tile-6,tile-6);}ctx.restore();return;
+  const tile=tower.tile||77,cells=weaponRangeCells(tower);ctx.save();ctx.fillStyle='#e7bf6418';ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin='miter';
+  ctx.beginPath();for(const c of cells)ctx.rect(tower.x+(c.col-.5)*tile,tower.y+(c.row-.5)*tile,tile,tile);ctx.fill();
+  ctx.beginPath();for(const [x1,y1,x2,y2] of rangePerimeter(cells)){ctx.moveTo(tower.x+x1*tile,tower.y+y1*tile);ctx.lineTo(tower.x+x2*tile,tower.y+y2*tile);}ctx.stroke();ctx.restore();return;
  }
  ctx.save();ctx.translate(tower.x,tower.y);ctx.rotate(tower.angle||0);ctx.fillStyle='#6fcfe71c';ctx.strokeStyle=color;ctx.lineWidth=3;ctx.setLineDash([8,5]);ctx.fillRect(0,-tower.weapon.laneWidth/2,tower.range,tower.weapon.laneWidth);ctx.strokeRect(0,-tower.weapon.laneWidth/2,tower.range,tower.weapon.laneWidth);ctx.restore();
 }
@@ -1040,15 +1046,15 @@ function drawGame(ctx, state, assets) {
   const { board, level, tileSets } = state;
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   const bg = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
-  bg.addColorStop(0, "#15242c");
-  bg.addColorStop(1, "#070b10");
+  bg.addColorStop(0, "#30392a");
+  bg.addColorStop(1, "#1b241b");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-  ctx.fillStyle = "#0d151b";
-  ctx.strokeStyle = "rgba(91, 206, 255, 0.22)";
-  ctx.lineWidth = 4;
-  drawRoundedRect(ctx, board.x - 14, board.y - 14, board.w + 28, board.h + 28, 18);
+  ctx.fillStyle = "#263021";
+  ctx.strokeStyle = "#81764b55";
+  ctx.lineWidth = 1.5;
+  drawRoundedRect(ctx, board.x - 10, board.y - 10, board.w + 20, board.h + 20, 3);
 
   for (let row = 0; row < level.rows; row += 1) {
     for (let col = 0; col < level.cols; col += 1) {
@@ -1090,15 +1096,12 @@ function drawGame(ctx, state, assets) {
       }
       const slowTile = level.slowTiles?.some(tile => tile.row === row && tile.col === col);
       if (slowTile) {
-        ctx.fillStyle = "#8deeff4a"; ctx.fillRect(x+3, y+3, board.tile-6, board.tile-6);
-        ctx.fillStyle = "#d6ffff"; ctx.font = "22px sans-serif"; ctx.textAlign = "center"; ctx.fillText("❄", x+board.tile/2, y+board.tile/2+8);
+        const sprite=assets.world['frost-path'];if(sprite)ctx.drawImage(sprite,x+1,y+1,board.tile-2,board.tile-2);
       }
       if(level.speedTiles?.some(tile=>tile.row===row&&tile.col===col)){
-        ctx.fillStyle='#e99c2540';ctx.fillRect(x+3,y+3,board.tile-6,board.tile-6);
         const index=level.track.findIndex(t=>t.row===row&&t.col===col),to=level.track[Math.min(index+1,level.track.length-1)];
-        ctx.save();ctx.translate(x+board.tile/2,y+board.tile/2);ctx.rotate(Math.atan2(to.row-row,to.col-col));
-        ctx.strokeStyle='#ffe39a';ctx.lineWidth=3;ctx.lineCap='round';
-        for(const cx of [-10,4]){ctx.beginPath();ctx.moveTo(cx-4,-9);ctx.lineTo(cx+5,0);ctx.lineTo(cx-4,9);ctx.stroke();}ctx.restore();
+        ctx.save();ctx.translate(x+board.tile/2,y+board.tile/2);ctx.rotate(Math.atan2(to.row-row,to.col-col)+Math.PI/2);
+        const sprite=assets.world['haste-path'];if(sprite)ctx.drawImage(sprite,-board.tile/2+1,-board.tile/2+1,board.tile-2,board.tile-2);ctx.restore();
       }
       const pad = level.pads?.find(tile => tile.row === row && tile.col === col);
       if (pad) {
@@ -1165,7 +1168,7 @@ function drawGame(ctx, state, assets) {
       const y = board.y + state.hoverTile.row * board.tile + board.tile / 2;
       const pad = level.pads?.find(tile => tile.row === state.hoverTile.row && tile.col === state.hoverTile.col);
       const aura=selected.support?0:Math.max(0,...state.towers.filter(t=>t.weapon.support&&Math.hypot(t.x-x,t.y-y)<=t.range).map(t=>.1+t.upgrades.tactical*.04));
-      drawWeaponRange(ctx, {x,y,weapon:selected,angle:state.buildAngle,tile:board.tile,range:selected.range*(pad?.type === "range" ? 1.18 : 1)*(1+aura)}, canPlace ? "rgba(116, 224, 108, 0.88)" : "rgba(255, 103, 125, 0.82)");
+      drawWeaponRange(ctx, {x,y,weapon:selected,angle:state.buildAngle,tile:board.tile,range:selected.range*(!selected.minelayer&&pad?.type === "range" ? 1.18 : 1)*(selected.minelayer?1:1+aura)}, canPlace ? "rgba(116, 224, 108, 0.88)" : "rgba(255, 103, 125, 0.82)");
       drawPlacementIndicator(ctx, board, state.hoverTile.row, state.hoverTile.col, canPlace);
       ctx.save();
       ctx.globalAlpha = canPlace ? .65 : .35;
@@ -1364,6 +1367,7 @@ export function createGame({ ui, levels }) {
   }
   function syncMenu() {
     ui.arsenalNextUnlock.textContent = nextArsenalUnlock(profile);
+    document.getElementById('menu-progression').innerHTML=renderProgressionGoals(profile,weapons);
     ui.menuSkillsButton.innerHTML = `<span>COMMANDER / LV ${profile.level}</span><strong>${profile.skillPoints} SP available ↗</strong><i style="--xp:${Math.round(profile.xp / xpNeeded(profile.level) * 100)}%"></i>`;
     const stars = Object.values(profile.missions).reduce((total, item) => total + item.stars, 0);
     ui.campaignProgress.textContent = `CAMPAIGN RECORD / ${stars} ★ of 54`;
@@ -1377,12 +1381,11 @@ export function createGame({ ui, levels }) {
     }).join("");
     const level = selectedLevel;
     const cleared = profile.missions[level.id]?.clears;
+    ui.missionBriefing.scrollTop=0;
     ui.missionBriefing.innerHTML = `<p class="eyebrow">MISSION ${missionLabel(level)} / BRIEFING</p><h2>${level.name}</h2><p>${level.description}</p>
       <p class="eyebrow">ALIEN INTEL / THIS MISSION</p>${enemyRoster(level)}<div class="brief-stats"><div><span>Starting funds</span><strong>$${level.startGold+skillRank(profile,'supplies')*25}</strong></div><div><span>Base integrity</span><strong>${level.lives} lives</strong></div><div><span>Recommended</span><strong>Lv ${level.recommendedLevel}+</strong></div><div><span>${cleared ? "Clear reward" : "First clear"}</span><strong>+${level.clearXp + (cleared ? 0 : level.firstClearXp)} XP</strong></div></div>
       <div class="brief-tip">${cleared ? "Improve your record: 3 stars for no leaks, 2 for 60%+ lives, 1 for surviving." : "Kills and completed waves earn permanent XP, even if you lose. Each level grants 10 skill points."}</div>`;
-    if(SLOT_REWARD_LEVELS.includes(level.id))ui.missionBriefing.insertAdjacentHTML('beforeend',`<div class="next-discovery">MISSION REWARD / <strong>${profile.slotRewards[level.id]?'CATEGORY SLOT CLAIMED':'+1 PERMANENT CATEGORY SLOT'}</strong><br>Awarded on victory · maximum six slots.</div>`);
-    const next=nextClassUnlock(profile),nextWeapon=weapons.find(w=>w.key===next?.[0]);
-    if(nextWeapon)ui.missionBriefing.insertAdjacentHTML('beforeend',`<div class="next-discovery">NEXT WEAPON / <strong>${nextWeapon.name}</strong><br>${campaignClears(profile)} / ${next[1]} different missions cleared.</div>`);
+    if(SLOT_REWARD_LEVELS.includes(level.id))ui.missionBriefing.insertAdjacentHTML('beforeend',`<div class="next-discovery">MISSION REWARD / <strong>${profile.slotRewards[level.id]?'CATEGORY SLOT CLAIMED':'+1 PERMANENT CATEGORY SLOT'}</strong><br>Awarded on victory · maximum ten slots.</div>`);
     ui.menuPlayButton.disabled = false;
     ui.menuPlayButton.textContent = `Deploy to ${missionLabel(level)} →`;
     syncHints();
@@ -1421,6 +1424,13 @@ export function createGame({ ui, levels }) {
 
   function syncHud() {
     if (!state) return;
+    if(!state.result&&loadoutCapacity(profile)>loadoutCapacity(state.arsenalProfile)){
+      const deployed=state.arsenalProfile;
+      deployed.level=profile.level;deployed.missions=structuredClone(profile.missions);deployed.slotRewards={...profile.slotRewards};
+      deployed.discoveredCategories=weapons.filter(w=>classUnlocked(profile,w.key)).map(w=>w.key);
+      deployed.skills.loadoutSlots=profile.skills.loadoutSlots;deployed.arsenal={loadout:loadoutKeys(deployed)};
+      renderWeaponBar();
+    }
     audio.sync(profile.settings.muted, state.isPaused || Boolean(state.result));
     ui.livesValue.textContent = Math.max(0, state.lives);
     const integrity = ui.livesValue.closest(".lives-chip");
@@ -1546,7 +1556,7 @@ export function createGame({ ui, levels }) {
     ui.towerSidebarCloseButton.classList.toggle("hidden", !tower && !state.selectedObstacle);
     if (tower) {
       ui.towerSidebarTitle.textContent = tower.weapon.name;
-      const overview = tower.weapon.economic?[["Earned",`$${tower.cashGenerated||0}`],["Payout",`$${tower.weapon.income}`],["Wave cap",`${tower.payouts||0}/${tower.weapon.payoutLimit}`]]:tower.weapon.support?[["Radius",tower.range],["Allies",state.towers.filter(t=>!t.weapon.support&&distance(t,tower)<=tower.range).length],["Damage boost",`+${Math.round((tower.weapon.auraDamage||0)*100)}%`]]:[["Damage",tower.weapon.directDamage.toLocaleString("en-US")],["Range",tower.range],["Kills",tower.kills||0]];
+      const overview = tower.weapon.economic?[["Earned",`$${tower.cashGenerated||0}`],["Payout",`$${tower.weapon.income}`],["Wave cap",`${tower.payouts||0}/${tower.weapon.payoutLimit}`]]:tower.weapon.support?[["Radius",tower.range],["Allies",state.towers.filter(t=>!t.weapon.support&&distance(t,tower)<=tower.range).length],["Damage boost",`+${Math.round((tower.weapon.auraDamage||0)*100)}%`]]:[["Damage",tower.weapon.directDamage.toLocaleString("en-US")],["Range",tower.weapon.minelayer?"8 SQMs":tower.range],["Kills",tower.kills||0]];
       setMarkup(ui.towerStatList,overview.map(([label,value])=>`<div class="weapon-stat-row"><span>${label}</span><strong>${value}</strong></div>`).join(''));
       // Keep controls mounted for the selected tower, including when gold/ammo changes
       // between pointerdown and pointerup. Only patch their text and availability.
@@ -1805,7 +1815,7 @@ export function createGame({ ui, levels }) {
     ui.resultTitle.textContent = state.freeplay ? "Free play complete" : won ? (state.level.stage === 6 ? "Sector secured" : "Mission complete") : "Regroup. Rebuild. Return.";
     ui.resultStars.textContent = won ? "★".repeat(state.reward.stars) + "☆".repeat(3 - state.reward.stars) : "↻";
     ui.resultCopy.textContent = won ? `${state.level.name} · ${state.lives}/${state.level.lives} lives protected.` : `${state.level.name} · ${state.waveIndex} waves completed. Your earned XP is safe.`;
-    ui.resultRewards.innerHTML = `${state.reward?.unlockedClasses?.map(key=>`<div class="next-discovery">NEW WEAPON TYPE / <strong>${weapons.find(w=>w.key===key).name}</strong><br>${loadoutKeys(profile).includes(key)?"Added to your loadout.":"Available in Change loadout."}</div>`).join('')||''}${state.reward?.slotReward?`<div class="next-discovery">+1 LOADOUT SLOT${state.reward.slotReward.refund?` · ${state.reward.slotReward.refund} SP returned`:""}</div>`:""}<span>${state.kills} kills recorded · ${loadoutCapacity(profile)}/6 category slots</span><strong>+${state.runXp} XP earned</strong><span>Commander Lv ${profile.level} · ${profile.skillPoints} SP available</span>${state.reward?.firstClear ? `<span>First-clear bonus included: +${state.level.firstClearXp} XP</span>` : ""}<p>${won ? "Replay for more stars, or advance to the next mission." : "Try crossfire at bends, upgrade key towers, and spend your skill points."}</p><span>${nextArsenalUnlock(profile)}</span>`;
+    ui.resultRewards.innerHTML = `${state.reward?.unlockedClasses?.map(key=>`<div class="next-discovery">NEW WEAPON TYPE / <strong>${weapons.find(w=>w.key===key).name}</strong><br>${loadoutKeys(profile).includes(key)?"Added to your loadout.":"Available in Change loadout."}</div>`).join('')||''}${state.reward?.slotsGained?`<div class="next-discovery">+${state.reward.slotsGained} LOADOUT SLOT${state.reward.slotsGained>1?'S':''}</div>`:""}<span>${state.kills} kills recorded · ${loadoutCapacity(profile)}/${MAX_LOADOUT_SLOTS} category slots</span><strong>+${state.runXp} XP earned</strong><span>Commander Lv ${profile.level} · ${profile.skillPoints} SP available</span>${state.reward?.firstClear ? `<span>First-clear bonus included: +${state.level.firstClearXp} XP</span>` : ""}<p>${won ? "Replay for more stars, or advance to the next mission." : "Try crossfire at bends, upgrade key towers, and spend your skill points."}</p><span>${nextArsenalUnlock(profile)}</span>`;
     document.getElementById("result-freeplay-button").classList.toggle("hidden",!won||state.freeplay);
     ui.resultNextButton.classList.toggle("hidden", !won || levels.indexOf(state.level) === levels.length - 1);
     ui.resultSkillsButton.textContent = `Commander skills · ${profile.skillPoints} SP`;
@@ -2102,7 +2112,7 @@ export function createGame({ ui, levels }) {
       else state.buildAngle=(state.buildAngle+Math.PI/2)%(Math.PI*2);
       syncHud();
     }
-    if (/^[1-6]$/.test(event.key)) ui.weaponBar.querySelectorAll(".weapon-card")[Number(event.key) - 1]?.click();
+    if (/^[0-9]$/.test(event.key)) ui.weaponBar.querySelectorAll(".weapon-card")[event.key==='0'?9:Number(event.key)-1]?.click();
     if (event.code === "Space") {
       event.preventDefault();
       ui.playPauseButton.click();
@@ -2184,7 +2194,7 @@ export function createGame({ ui, levels }) {
       pelletCount: tower.weapon.pelletCount,
       slowStrength: tower.weapon.slowStrength,
       slowDuration: tower.weapon.slow,
-      impactPoint:tower.impactPoint,cashGenerated:tower.cashGenerated,payouts:tower.payouts,gasActive:tower.gasActive,angle:tower.angle,aura:tower.aura,kills:tower.kills,pierce:tower.weapon.pierce,
+      impactPoint:tower.impactPoint,cashGenerated:tower.cashGenerated,payouts:tower.payouts,minesProduced:tower.minesProduced,gasActive:tower.gasActive,gasVisual:tower.gasVisual,angle:tower.angle,aura:tower.aura,kills:tower.kills,pierce:tower.weapon.pierce,
       upgrades: tower.upgrades,
       invested: tower.invested,
       targeting: tower.targeting,

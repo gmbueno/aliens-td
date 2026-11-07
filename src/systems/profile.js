@@ -1,4 +1,4 @@
-import { normalizeArsenal, classMilestones, classUnlocked, refundExcessSlots, missionSlotReward, SLOT_REWARD_LEVELS, loadoutKeys } from "../data/arsenal.js";
+import { normalizeArsenal, classMilestones, classUnlocked, refundExcessSlots, missionSlotReward, SLOT_REWARD_LEVELS, loadoutKeys,loadoutCapacity,campaignClears } from "../data/arsenal.js";
 import { PLAYER_PROFILE_KEY, createDefaultProfile, xpNeeded } from "../data/player.js";
 import { DEFAULT_EQUIPPED_ACTIVE_KEY, SP_PER_LEVEL, createDefaultSkills, isActiveAbilityKey, skillTree, spentSkillPoints, activeUnlocked, equippedPowerKeys } from "../data/skills.js";
 
@@ -35,9 +35,15 @@ export function normalizeProfile(rawProfile = {}) {
   if(profile.schemaVersion<4 && !profile.equippedActiveKey)profile.equippedActiveKey='chronoBreak';
   delete profile.salvage;delete profile.lootRolls;delete profile.lootMisses;
   profile.caches=Object.fromEntries(Object.entries(rawProfile.caches||{}).filter(([key,value])=>/^level_\d+$/.test(key)&&value).map(([key])=>[key,true]));
-  profile.arsenal = normalizeArsenal(rawProfile.arsenal, profile);
   const previousSchema=profile.schemaVersion;
-  profile.schemaVersion=7;
+  const oldClears=campaignClears(profile);
+  profile.schemaVersion=8;
+  // Existing players keep every previously earned category when requirements change.
+  profile.discoveredCategories=[...new Set([
+    ...(Array.isArray(rawProfile.discoveredCategories)?rawProfile.discoveredCategories.filter(k=>k in classMilestones):[]),
+    ...(previousSchema<8?Object.keys(classMilestones).filter(k=>oldClears>=classMilestones[k]):[]),
+  ])];
+  profile.arsenal=normalizeArsenal(rawProfile.arsenal,profile);
   if(previousSchema<7&&skills.chronoBreak>0&&rawProfile.skills.chronoCooldown===undefined)skills.chronoCooldown=skills.chronoBreak;
   profile.slotRewards=Object.fromEntries(SLOT_REWARD_LEVELS.filter(k=>rawProfile.slotRewards?.[k]||profile.caches[k]||(previousSchema<6&&profile.missions[k]?.clears)).map(k=>[k,true]));
   delete profile.caches;
@@ -89,6 +95,7 @@ export function missionStars(lives, maxLives) {
 }
 
 export function recordVictory(profile, level, lives) {
+  const beforeSlots=loadoutCapacity(profile);
   const known = new Set(Object.keys(classMilestones).filter(key=>classUnlocked(profile,key)));
   const previous = profile.missions[level.id] || { stars: 0, clears: 0, bestLives: 0 };
   const stars = missionStars(lives, level.lives);
@@ -100,7 +107,7 @@ export function recordVictory(profile, level, lives) {
   const slotReward=missionSlotReward(profile,level);
   profile.arsenal={loadout:loadoutKeys(profile)};
   const unlockedClasses=Object.keys(classMilestones).filter(key=>!known.has(key)&&classUnlocked(profile,key));
-  return { stars, firstClear, newStars, xp, unlockedClasses, slotReward };
+  return { stars, firstClear, newStars, xp, unlockedClasses, slotReward,slotsGained:loadoutCapacity(profile)-beforeSlots };
 }
 
 export function resetSkills(profile) {

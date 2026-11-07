@@ -9,6 +9,7 @@ export const targetModes=[
 ];
 export const targetingUnlocked=(profile,key)=>targetModes.some(m=>m.key===key)&&(key!=='weakest'||skillRank(profile,'weakest')>0)&&(key!=='fastest'||skillRank(profile,'fastest')>0);
 export function inWeaponRange(tower,enemy){
+ if(tower.weapon?.minelayer){const tile=tower.tile||77,c=Math.round((enemy.x-tower.x)/tile),r=Math.round((enemy.y-tower.y)/tile);return Math.max(Math.abs(r),Math.abs(c))===1;}
  if(!tower.weapon?.directional)return Math.hypot(tower.tile?Math.round((enemy.x-tower.x)/tower.tile)*tower.tile:enemy.x-tower.x,tower.tile?Math.round((enemy.y-tower.y)/tower.tile)*tower.tile:enemy.y-tower.y)<=tower.range;
  const a=tower.angle||0,dx=enemy.x-tower.x,dy=enemy.y-tower.y,along=dx*Math.cos(a)+dy*Math.sin(a),across=-dx*Math.sin(a)+dy*Math.cos(a);
  return along>=0&&along<=tower.range&&Math.abs(across)<=(tower.weapon.laneWidth||77)/2;

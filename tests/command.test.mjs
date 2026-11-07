@@ -15,23 +15,23 @@ const make=(raw={},key='magnum')=>{const p=profile({...raw,arsenal:{loadout:[key
 const enemy=(id,x,y=128,life=10000)=>({id,key:'alien_normal',x,y,life,maxLife:life,shield:0,armor:0,radius:10,speed:0,angle:0,segment:0,progress:0,burnTimer:0,burnDamage:0,slowTimer:0,stunTimer:0,gold:0,xp:0});
 const tick=(s,t)=>{for(let n=0;n<t*60;n++)stepState(s,1/60);};
 
-test('only categories remain, with 3 initial slots and a hard six-slot cap',()=>{
- const p=profile();assert.equal(loadoutCapacity(p),3);assert.equal(loadoutKeys(p).length,3);
+test('only categories remain, with three initial slots and no models or attachments',()=>{
+ const p=profile({schemaVersion:8,level:1,missions:{},skillPoints:100});assert.equal(loadoutCapacity(p),3);assert.equal(loadoutKeys(p).length,3);
  assert.ok(buySkill(p,'loadoutSlots'));assert.ok(buySkill(p,'loadoutSlots'));assert.equal(loadoutCapacity(p),5);assert.equal(buySkill(p,'loadoutSlots'),false);
- assert.ok(equipCategory(p,0,'laser'));assert.equal(loadoutKeys(p)[0],'laser');assert.equal(equipCategory(p,5,'sniper'),false);
+ assert.ok(equipCategory(p,0,'assault_rifle'));assert.equal(loadoutKeys(p)[0],'assault_rifle');assert.equal(equipCategory(p,5,'sniper'),false);
  for(const w of weapons){const effective=applyArsenal(w,p);assert.equal(effective.directDamage,w.directDamage);assert.equal(effective.attachments,undefined);assert.equal(effective.rarity,undefined);}
 });
-test('specific mission victories grant permanent slots once; overflow refunds trained slots without exceeding six',()=>{
+test('mission rewards combine with level, stars and research to reach ten permanent slots',()=>{
  const p=profile();buySkill(p,'loadoutSlots');buySkill(p,'loadoutSlots');
- const start=p.skillPoints;assert.equal(missionSlotReward(p,levels[3]).slot,true);assert.equal(loadoutCapacity(p),6);
+ const start=p.skillPoints;assert.equal(missionSlotReward(p,levels[3]).slot,true);assert.equal(loadoutCapacity(p),9);
  assert.equal(missionSlotReward(p,levels[3]),null);assert.equal(p.skillPoints,start);
- const reward=missionSlotReward(p,levels[9]);assert.equal(reward.refund,8);assert.equal(p.skills.loadoutSlots,1);assert.equal(loadoutCapacity(p),6);assert.equal(p.skillPoints,start+8);
- assert.equal(buySkill(p,'loadoutSlots'),false);const saved=normalizeProfile(JSON.parse(JSON.stringify(p)));assert.equal(saved.skillPoints,p.skillPoints);assert.equal(loadoutCapacity(saved),6);
- resetSkills(saved);assert.equal(loadoutCapacity(saved),5);
+ const reward=missionSlotReward(p,levels[9]);assert.equal(reward.refund,0);assert.equal(p.skills.loadoutSlots,2);assert.equal(loadoutCapacity(p),10);assert.equal(p.skillPoints,start);
+ assert.equal(buySkill(p,'loadoutSlots'),false);const saved=normalizeProfile(JSON.parse(JSON.stringify(p)));assert.equal(saved.skillPoints,p.skillPoints);assert.equal(loadoutCapacity(saved),10);
+ resetSkills(saved);assert.equal(loadoutCapacity(saved),8);
 });
 test('old models and attachments are removed and model-license SP returns exactly once',()=>{
  const old={schemaVersion:4,level:5,skillPoints:27,skills:{damage:1},arsenal:{spSpent:8,heavy:'laser',blueprints:{handgun:'legendary'},attachments:{handgun:['incendiary']}}};
- const p=normalizeProfile(old);assert.equal(p.schemaVersion,7);assert.deepEqual(Object.keys(p.arsenal),['loadout']);assert.ok(p.skillPoints>=35);
+ const p=normalizeProfile(old);assert.equal(p.schemaVersion,8);assert.deepEqual(Object.keys(p.arsenal),['loadout']);assert.ok(p.skillPoints>=35);
  const again=normalizeProfile(JSON.parse(JSON.stringify(p)));assert.equal(again.skillPoints,p.skillPoints);assert.equal(again.skills.damage,1);
 });
 test('two towers initially, five with research, and selling restores placement availability',()=>{

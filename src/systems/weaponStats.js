@@ -5,7 +5,7 @@ export function applySkillBonuses(weapon, profile) {
   const next = applyArsenal(weapon, profile);
   for (const skill of skillTree) {
     const rank = skillRank(profile,skill.key);
-    if (!rank || !skill.weaponEffect) continue;
+    if (!rank || !skill.weaponEffect || weapon.minelayer&&skill.weaponEffect.stat==='range') continue;
     const effect=skill.weaponEffect;
     const scaled=Math.max(effect.min ?? -Infinity,next[effect.stat]*(1+effect.perRank*rank));
     next[effect.stat]=effect.decimals === undefined ? Math.round(scaled) : Number(scaled.toFixed(effect.decimals));
@@ -25,7 +25,7 @@ export function applySupportBuffs(towers){
   if(tower.weapon.support)continue;
   const nearby=towers.filter(b=>b.weapon.support&&Math.hypot(b.x-tower.x,b.y-tower.y)<=b.range);
   const damage=Math.max(0,...nearby.map(b=>(b.upgrades.power||0)*.15)),boost=Math.max(0,...nearby.map(b=>.1+(b.upgrades.tactical||0)*.04));
-  tower.aura={damage,boost};tower.weapon.directDamage=Math.round(tower.weapon.directDamage*(1+damage));tower.weapon.atkSpeed=Number((tower.weapon.atkSpeed*(1+boost)).toFixed(2));tower.range=tower.weapon.range=Math.round(tower.weapon.range*(1+boost));
+  tower.aura={damage,boost};tower.weapon.directDamage=Math.round(tower.weapon.directDamage*(1+damage));tower.weapon.atkSpeed=Number((tower.weapon.atkSpeed*(1+boost)).toFixed(2));tower.range=tower.weapon.range=Math.round(tower.weapon.range*(tower.weapon.minelayer?1:1+boost));
  }
 }
 const path = (key,name,detail,multiplier=.75) => ({key,name,detail,multiplier});
@@ -75,7 +75,7 @@ export function applyTowerUpgrades(weapon,tower) {
   else if(weapon.key==='rocket_launcher') {next.splashRadius+=p*12;next.reloadSpeed*=1-c*.15;next.atkSpeed*=1+c*.12;next.projectileSpeed*=1+c*.2;}
   else {next.capacity+=c*3;next.atkSpeed*=1+c*.15;next.reloadSpeed*=1-c*.12;}
   next.directDamage=Math.round(next.directDamage*(tower.pad==='power'?1.15:1));
-  next.range=Math.round(next.range*(tower.pad==='range'?1.18:1));
+  next.range=Math.round(next.range*(!weapon.minelayer&&tower.pad==='range'?1.18:1));
   next.atkSpeed=Number(next.atkSpeed.toFixed(2));next.reloadSpeed=Number(Math.max(.3,next.reloadSpeed).toFixed(2));
   return next;
 }

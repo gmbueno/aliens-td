@@ -1,0 +1,61 @@
+{
+  "studio": "https://codevon-com.github.io/pixelforge/",
+  "date": "2026-11-07",
+  "license": "CC0-1.0",
+  "batches": [
+    {
+      "name": "field",
+      "size": 128,
+      "count": 4,
+      "keys": [
+        "missile",
+        "missile-flight",
+        "frost-path",
+        "haste-path"
+      ],
+      "prompt": "Strict 2 by 2 atlas of four professional hand-painted sci-fi military tower-defense game assets. Crisp high resolution, sophisticated olive gunmetal and worn brass, NOT pixel art, no text or numbers. Each object fully contained in its cell, no cell borders. Top left: TOP DOWN ORTHOGRAPHIC SIEGE MISSILE LAUNCHER turret, unmistakable large missile mounted lengthways on a compact olive armored launch cradle with four sturdy feet, nose points straight up, beautiful mechanically detailed weapon silhouette, transparent background. Top right: one isolated long olive and ivory military cruise missile PROJECTILE viewed from above, nose points straight up, four small fins, bright tiny amber engine glow at bottom, transparent background. Bottom left: a full square seamless frozen dirt PATH TILE for an alien outpost, packed earth with irregular translucent ice sheets and delicate frost fractures across it, pale cool cyan frost, no snowflake symbol, fills the entire square cell edge to edge, readable surface. Bottom right: a full square futuristic acceleration PATH TILE, packed dark dirt with recessed worn olive metal strips and amber luminous energy channels flowing upward, subtle built-in chevron tread, fills entire square cell edge to edge, no floating symbols. Consistent overhead light and scale.",
+      "model": "openai/gpt-image-2.5-flare",
+      "hash": "2989959ddec17410adf937ca09cd2056278dc119b9efc09e7c22fd0518fe205a",
+      "originalSize": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "interface",
+      "size": 128,
+      "count": 4,
+      "keys": [
+        "menu",
+        "loadout",
+        "power-swap",
+        "weapon-panel"
+      ],
+      "prompt": "Strict 2 by 2 atlas of four premium game UI assets for a worn military sci-fi tower defense. Sophisticated hand painted gunmetal, aged brass, olive armor, ivory details, high resolution NOT pixel art. No text, letters or numbers. Each asset fills its own cell without overlapping neighbors. Top left: isolated compact military command MENU ICON, a beautiful brass mechanical gear around a simple olive command insignia, clear chunky silhouette on transparent background, no outer button frame. Top right: isolated LOADOUT ICON, a small olive supply crate with two crossed ivory rifle silhouettes mounted on it, brass details, transparent background, no outer button frame. Bottom left: isolated CHANGE POWER ICON, a brass energy crystal surrounded by two ivory curved swapping arrows, clear simple chunky silhouette on transparent background, no outer button frame. Bottom right: a complete square EMPTY WEAPON CARD BACKGROUND, dark olive painted armored steel, subtle scratches, fine matte grain, narrow aged brass riveted edge, tiny diagonal hazard notches at corners, softly illuminated empty center, no weapon, no icon, no letters. Clean and understated, legibility first.",
+      "model": "openai/gpt-image-2.5-flare",
+      "hash": "a155a927ae920fea92dbca0e21be6777870c3a5b5bfcfc1c2ae0f131b1a963dd",
+      "originalSize": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "effects",
+      "size": 128,
+      "count": 4,
+      "keys": [
+        "gas-cloud-a",
+        "gas-cloud-b",
+        "gas-cloud-c",
+        "armor-panel"
+      ],
+      "prompt": "Strict 2 by 2 atlas of four military sci-fi game assets. High resolution hand painted, NOT pixel art. Each asset entirely inside its own cell. No text, numbers, frames around sheet or labels. Top left, top right, and bottom left: three DIFFERENT soft isolated puffs of PALE OLIVE TOXIC GAS on genuinely transparent alpha, translucent wispy flowing volumetric smoke, low opacity outer edge, uneven organic silhouette, subtle yellow-green highlights and dark olive interior, completely feathered edges fading into alpha, no hard circles, no rings, no bubbles or outlines. Same light and color palette across these three gas cloud variations for game animation over an existing battlefield. Bottom right: square dark olive rough military armor panel texture, understated fine scratches and matte grain, subtle seams at edge, no center ornament, no text, fills cell edge to edge. Professional restrained visual effects.",
+      "model": "openai/gpt-image-2.5-flare",
+      "hash": "42f57f401cd95f076298a0b7d6f218f7bc112494948a002dd46dfc40e20d63e7",
+      "originalSize": [
+        1024,
+        1024
+      ]
+    }
+  ]
+}

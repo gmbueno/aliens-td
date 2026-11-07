@@ -16,9 +16,9 @@ test('there is no cache or midpoint payout; milestone slots require victory and 
  const s=createInitialState(level,p,{width:1280,height:720});assert.equal('cache' in s,false);const gold=s.gold;launchWave(s);stepState(s,.02);assert.equal(loadoutCapacity(p),3);assert.equal(s.gold,gold+15,'only the normal flawless wave reward');assert.equal(p.slotRewards.level_4,undefined);
  assert.ok(recordVictory(p,levels[3],18).slotReward);assert.equal(loadoutCapacity(p),4);assert.equal(recordVictory(p,levels[3],18).slotReward,null);assert.equal(recordVictory(p,levels[0],18).slotReward,null);
 });
-test('legacy chest slots and completed milestones migrate once, preserving six-slot refunds and new loadout autofill',()=>{
+test('legacy chest slots and completed milestones migrate once, preserving paid ranks and new loadout autofill',()=>{
  const old={schemaVersion:5,level:10,skillPoints:74,skills:{loadoutSlots:2},caches:{level_4:true},missions:{level_10:{clears:1},level_2:{clears:1}},arsenal:{loadout:['handgun','assault_rifle','machine_pistol']}};
- const p=normalizeProfile(old);assert.equal(p.caches,undefined);assert.deepEqual(p.slotRewards,{level_4:true,level_10:true});assert.equal(p.skills.loadoutSlots,1);assert.equal(loadoutCapacity(p),6);assert.equal(p.skillPoints,82);assert.ok(p.arsenal.loadout.includes('shotgun'));assert.equal(normalizeProfile(JSON.parse(JSON.stringify(p))).skillPoints,82);
+ const p=normalizeProfile(old);assert.equal(p.caches,undefined);assert.deepEqual(p.slotRewards,{level_4:true,level_10:true});assert.equal(p.skills.loadoutSlots,2);assert.equal(loadoutCapacity(p),8);assert.equal(p.skillPoints,74);assert.ok(p.arsenal.loadout.includes('shotgun'));assert.equal(normalizeProfile(JSON.parse(JSON.stringify(p))).skillPoints,74);
 });
 test('learning flags survive refunds and reload; a failed purchase never counts as learned',()=>{
  const p=normalizeProfile();assert.equal(buySkill(p,'damage'),false);assert.equal(p.onboarding.researchSpent,false);

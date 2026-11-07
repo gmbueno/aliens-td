@@ -13,20 +13,11 @@ const make=()=>{const s=createInitialState({...levels[0],waves:[{name:'Energy en
 const tick=(s,time)=>{for(let n=0;n<time*60;n++)stepState(s,1/60);};
 function dummy(tower,id,x=100,y=0){return {...enemies.alien_normal,id,x:tower.x+x,y:tower.y+y,life:1e7,maxLife:1e7,shield:0,armor:0,speed:0,radius:15,segment:0,progress:0,burnTimer:0,slowTimer:0,stunTimer:0,angle:0};}
 
-test('fresh and high-level legacy saves start with exactly three types until distinct mission milestones',()=>{
- for(const raw of [{},{level:99,schemaVersion:3},{schemaVersion:4,level:50}]){
-  const p=normalizeProfile(raw);assert.deepEqual(weapons.filter(w=>classUnlocked(p,w.key)).map(w=>w.key),['handgun','assault_rifle','machine_pistol']);
- }
- const p=normalizeProfile();
- for(let i=0;i<10;i++){
-  const result=recordVictory(p,levels[i],18);
-  assert.deepEqual(result.unlockedClasses,Object.keys(classMilestones).filter(k=>classMilestones[k]===i+1));
-  const before=JSON.stringify(result.unlockedClasses);assert.ok(before);
-  assert.deepEqual(recordVictory(p,levels[i],18).unlockedClasses,[],'replays do not advance type progression');
- }
- assert.equal(classUnlocked(p,'laser'),true);assert.equal(classUnlocked(p,'flamethrower'),true);
- const s=createInitialState(levels[0],normalizeProfile(),{width:1280,height:720});s.gold=10000;
- assert.equal(placeTower(s,'laser',1,1),null);
+test('fresh players start with three types; level rewards and old earned categories are preserved',()=>{
+ const fresh=normalizeProfile();assert.deepEqual(weapons.filter(w=>classUnlocked(fresh,w.key)).map(w=>w.key),['handgun','assault_rifle','machine_pistol']);
+ const old=normalizeProfile({level:99,schemaVersion:3});for(const key of ['factory','minelayer','laser'])assert.ok(classUnlocked(old,key));assert.equal(classUnlocked(old,'shotgun'),false);
+ const earned=normalizeProfile({schemaVersion:7,missions:missionRecords(8,1)});assert.ok(classUnlocked(earned,'flamethrower'));
+ const s=createInitialState(levels[0],fresh,{width:1280,height:720});s.gold=10000;assert.equal(placeTower(s,'laser',1,1),null);
 });
 test('laser persists between ticks, overheats, stops damage while cooling, and automatically resumes',()=>{
  const s=make(),tower=placeTower(s,'laser',1,1),enemy=dummy(tower,'target');s.enemies=[enemy];launchWave(s);

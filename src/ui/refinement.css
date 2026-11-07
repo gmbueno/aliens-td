@@ -1,0 +1,145 @@
+/* Stable command surfaces: one frame, restrained grain, no moving modal edges. */
+#skill-tree-modal .skill-tree-card{
+ height:min(850px,96dvh);max-height:96dvh;display:grid;
+ grid-template-rows:auto auto minmax(0,1fr);overflow:hidden;
+}
+#skill-tree-modal .skill-tree-head{position:static}
+#skill-tree-nodes{height:100%;max-height:none;min-height:0;overflow:hidden}
+#skill-tree-nodes>.talent-workspace,#skill-tree-modal .node-inspector{
+ height:100%;max-height:100%;min-height:0;overflow:auto;
+ scrollbar-width:thin;scrollbar-color:#928054 #20271d;
+}
+#skill-tree-modal .node-inspector{background:linear-gradient(#263021df,#182217f2),url('../../assets/refinement/armor-panel.png') center/cover}
+
+/* The battlefield and equipment share a continuous outer armor enclosure. */
+#game-screen .arena-wrap{
+ border:1px solid #81764b;border-radius:8px;background:#263021;
+ box-shadow:0 12px 32px #0005,inset 0 0 0 3px #c5a65f16;overflow:hidden;
+}
+#game-screen #game-canvas{border-radius:7px 0 0 7px;background:#263021}
+#game-screen .tower-sidebar{
+ border:0;border-left:1px solid #81764b66;border-radius:0;padding:9px 9px 9px 8px;
+ background:linear-gradient(#30392af5,#1b241bf5),url('../../assets/refinement/armor-panel.png') center/cover;
+ box-shadow:inset 4px 0 12px #0002;overflow:hidden;
+}
+#game-screen #tower-inspector{height:100%;overflow-y:auto;padding:0 1px 0 2px;scrollbar-width:thin;scrollbar-color:#928054 #20271d}
+#deployment-panel{display:grid;height:100%;min-height:0;grid-template-rows:auto minmax(0,1fr) auto;gap:7px}
+#deployment-panel .weapon-bar{
+ --card-height:clamp(64px,calc((100cqh - 178px)/var(--weapon-rows,3)),114px);
+ align-content:start;grid-template-rows:none;grid-auto-rows:var(--card-height);overflow-y:auto;overflow-x:hidden;
+ min-height:0;padding:1px 2px 1px 1px;scrollbar-width:thin;scrollbar-color:#ac955d #212b1f;
+}
+#deployment-panel .weapon-card,#deployment-panel .empty-loadout-card{height:var(--card-height);min-height:0}
+#deployment-panel .weapon-card{
+ border:1px solid #95855788;border-radius:3px;
+ background:linear-gradient(#14201033,#101b1688),url('../../assets/refinement/weapon-panel.png') center/100% 100%;
+ box-shadow:0 2px 4px #0004,inset 0 0 0 1px #d6c1861a;
+}
+#deployment-panel .weapon-card.selected{border-color:#ffe096;background:linear-gradient(#a58b3022,#15200d55),url('../../assets/refinement/weapon-panel.png') center/100% 100%;box-shadow:inset 0 0 0 1px #f1ce77,0 0 8px #d8aa4933}
+#deployment-panel .weapon-select{grid-template-rows:16px minmax(0,1fr) 21px;padding:4px 7px;gap:0}
+#deployment-panel .weapon-art{height:calc(var(--card-height) - 43px);max-height:68px;filter:drop-shadow(0 3px 3px #0009)}
+#deployment-panel .weapon-nickname{font-size:11px;text-shadow:0 1px 2px #000}
+#deployment-panel .weapon-price{font-size:12px;text-shadow:0 1px 2px #000}
+#deployment-panel .weapon-info-button{top:1px;right:1px}
+#deployment-panel .deck-top{padding:0 0 6px;align-items:center;min-height:31px}
+.deck-top button,.power-label button,#menu-arsenal-button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.deck-top button{padding:2px 9px 2px 5px;min-height:29px;font-size:11px;background:#202b1c77}
+.deck-top button img,#menu-arsenal-button img{width:23px;height:23px;object-fit:contain}
+#deployment-panel .power-section{padding:6px 0 0;margin:0;border-top:1px solid #95855766}
+#deployment-panel .power-label{padding:0 3px 0 5px;margin:0 0 3px;min-height:28px}
+.power-label>span{display:flex;align-items:center;gap:6px;color:#d5c18d;font:700 10px 'Trebuchet MS',sans-serif;letter-spacing:1.6px}
+.power-label>span>img{width:20px;height:20px;object-fit:contain;opacity:.8}
+.power-label button{height:28px;width:32px;padding:2px;min-height:28px;background:#202b1c77}
+.power-label button img{width:23px;height:23px;object-fit:contain}
+#deployment-panel .ability-card.ability-illustrated{height:clamp(82px,20cqh,125px)}
+.hud-top .gear-button,.hud-top .gear-button:hover{
+ background:transparent url('../../assets/hud/icons/control-frame.svg') center/46px 46px no-repeat;
+ border:0;box-shadow:none;width:46px;flex-basis:46px;height:46px;padding:0;
+ filter:sepia(.45) hue-rotate(345deg) saturate(.75);
+}
+.hud-top .gear-button img{width:28px;height:28px;object-fit:contain;filter:drop-shadow(0 1px 1px #0009)}
+.hud-top .control-button:hover{filter:brightness(1.18)}
+.hud-top .gear-button:hover{filter:sepia(.45) hue-rotate(345deg) saturate(.75) brightness(1.18)}
+
+/* Bounded campaign layout: selection, deployment and navigation never overlap. */
+.main-menu{display:flex;align-items:center;justify-content:flex-start;padding:16px;overflow:auto}
+.menu-card{
+ width:min(1260px,100%);height:min(850px,calc(100dvh - 32px));max-height:none;
+ margin:0 auto;padding:20px 24px;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:12px;
+}
+.menu-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0;padding:0 0 12px}
+.sector-tabs{margin:0;grid-row:2}
+.campaign-body{grid-row:3;min-height:0;gap:18px;align-items:stretch}
+.level-grid{min-height:0;grid-template-rows:repeat(2,minmax(0,1fr));gap:10px}
+.level-tile{position:relative;min-height:0;justify-content:center;overflow:hidden}
+.level-tile.selected{border:2px solid #ffcf73;background:linear-gradient(140deg,#64502c,#343e25);box-shadow:0 0 0 2px #eec67555,inset 0 0 20px #e8b75b22}
+.level-tile.selected::after{content:'✓';position:absolute;bottom:7px;right:7px;display:grid;place-items:center;width:21px;height:21px;border-radius:50%;background:#e8bb60;color:#27301c;font:bold 14px 'Trebuchet MS',sans-serif;box-shadow:0 2px 5px #0006}
+.level-tile.selected>strong,.level-tile.selected .mission-number{color:#ffe4a5}
+.level-tile .map-preview{width:100%;height:clamp(58px,11dvh,105px);max-height:105px}
+.level-tile.selected .map-preview{outline:1px solid #f2cc7566}
+.mission-briefing{display:grid;grid-template-rows:auto minmax(0,1fr);padding:14px;border:1px solid #81764b66;border-radius:3px;min-height:0;overflow:hidden;gap:8px}
+.mission-briefing #menu-play-button{margin:0;position:static;min-height:44px}
+#mission-briefing{min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#928054 #20271d;padding-right:5px}
+.mission-briefing h2{font-size:25px;margin:8px 0 10px}
+.mission-briefing p:not(.eyebrow){font-size:12px;line-height:1.5}
+.brief-tip{position:static;font-size:11px;margin-top:12px;padding:9px}
+.menu-loadout{
+ position:static;grid-row:4;display:grid;grid-template-columns:minmax(0,1fr) auto auto;
+ align-items:center;gap:12px;margin:0;padding:12px 0 0;border:0;border-top:1px solid #81764b66;background:none;
+}
+.menu-loadout>div{display:block;min-width:0}
+.menu-loadout button{min-height:34px;padding:6px 12px;font-size:12px}
+.progression-goals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.progression-goal{display:grid;gap:4px;min-width:0;padding:8px 10px;border-left:2px solid #a68b50;background:linear-gradient(110deg,#65704922,transparent)}
+.progression-goal>span{font:8px monospace;letter-spacing:.7px;color:#b3b59a}
+.progression-goal>strong{font-size:13px;color:#edd39b;line-height:1.2}
+.progression-goal>small{font-size:10px;color:#c8cbb0;line-height:1.2}
+#arsenal-content .progression-goals{margin:18px 0}
+.loadout-slots{grid-template-columns:repeat(5,minmax(0,1fr))}
+.loadout-slots button{min-height:95px}.loadout-slots img{height:44px}
+.arsenal-card{scrollbar-width:thin;scrollbar-color:#928054 #20271d}
+.arsenal-restart-panel{
+ position:sticky;bottom:-26px;z-index:5;display:grid;grid-template-columns:35px minmax(0,1fr) auto;align-items:center;gap:12px;
+ margin:20px -26px -26px;padding:16px 26px;background:linear-gradient(#293520f5,#1c271bf8),url('../../assets/refinement/armor-panel.png') center/cover;
+ border:0;border-top:1px solid #a68b50;box-shadow:0 -8px 20px #0005;border-radius:0;
+}
+.arsenal-restart-panel>img{width:35px;height:35px;object-fit:contain}
+.arsenal-restart-panel strong{font-size:14px;color:#ead7a5}
+.arsenal-restart-panel p{font-size:11px;line-height:1.4;color:#bdc1a6;margin:4px 0 0}
+.arsenal-restart-panel .primary-button{min-height:40px;padding:8px 16px;font-size:12px;max-width:none;min-width:150px;width:auto;white-space:nowrap}
+.arsenal-restart-panel .primary-button:disabled{background:#35412d;color:#92987d;border-color:#69704f;opacity:.7;cursor:default}
+@media(max-width:1100px){.menu-card{padding:16px 18px}.campaign-body{grid-template-columns:minmax(0,1fr) 255px;gap:12px}.progression-goal{padding:7px}.progression-goal>small{font-size:9px}}
+@media(max-height:650px) and (min-width:761px){.menu-card{padding:12px 16px;gap:8px}.menu-head{padding-bottom:8px}.menu-head h1{font-size:29px}.menu-head .commander-button{min-height:44px}.level-tile .map-preview{height:55px}.level-tile .enemy-roster{display:none}.mission-briefing{padding:10px}.menu-loadout{padding-top:7px}.progression-goal{padding:5px 7px}.hud-top .gear-button,.hud-top .gear-button:hover{background-size:36px 36px;width:36px;flex-basis:36px}.hud-top .gear-button img{width:23px;height:23px}}
+@media(max-height:480px) and (min-width:761px){
+ .menu-head .commander-button{padding:6px 12px;min-height:40px;gap:4px}.menu-head .commander-button strong{font-size:13px}.menu-head .commander-button>span{font-size:8px}
+ .level-tile{padding:5px;gap:3px}.level-tile .map-preview{height:30px;max-height:30px}.level-tile>span:last-child{display:none}.level-tile>strong{font-size:11px}.mission-number{font-size:9px}
+ .hud-top .control-button{width:36px;flex-basis:36px;height:36px;min-height:36px}.hud-top .control-sprite{width:36px;height:36px}
+}
+@media(max-width:760px) and (min-height:581px),(max-width:720px) and (max-height:580px){
+ #game-screen .arena-wrap{overflow:visible}
+ #game-screen #game-canvas{border-radius:7px 7px 0 0}
+ #game-screen .tower-sidebar{height:auto;max-height:none;padding:12px;border-top:1px solid #81764b66;overflow:visible;border-left:0;border-radius:0 0 7px 7px}
+ #game-screen #tower-inspector{height:auto;overflow:visible}
+ #deployment-panel{height:auto;grid-template-rows:auto auto auto}
+ #deployment-panel .weapon-bar{--card-height:104px;overflow:visible;grid-auto-rows:104px}
+ #deployment-panel .weapon-art{height:58px}
+ #deployment-panel .ability-card.ability-illustrated{height:120px}
+}
+@media(max-width:760px){
+ .main-menu{padding:8px}.menu-card{display:flex;flex-direction:column;height:auto;min-height:calc(100dvh - 16px);padding:14px 12px;gap:12px}
+ .menu-head{flex-wrap:wrap;gap:10px}.menu-head h1{font-size:30px}.menu-head .commander-button{min-height:44px}
+ .campaign-body{display:flex;flex-direction:column-reverse;gap:12px}.level-grid{grid-template-rows:repeat(2,auto);gap:7px}
+ .level-tile .map-preview{height:65px}.level-tile.selected::after{width:17px;height:17px;right:3px;bottom:3px;font-size:12px}
+ .mission-briefing{display:block;padding:10px}.mission-briefing #menu-play-button{margin:0 0 9px}#mission-briefing{overflow:visible}
+ .mission-briefing .brief-tip{display:none}.mission-briefing h2{margin-bottom:0}.mission-briefing #mission-briefing .brief-stats{margin:8px 0 0}
+ .menu-loadout{display:grid;grid-template-columns:1fr 1fr;padding-top:12px}.menu-loadout>div{grid-column:1/-1}.menu-loadout button{width:100%}
+ .progression-goals{gap:4px}.progression-goal{padding:6px}.progression-goal>span{font-size:7px;letter-spacing:0}.progression-goal>strong{font-size:12px}.progression-goal>small{font-size:9px}
+}
+@media(max-width:700px){
+ #skill-tree-modal .skill-tree-card{height:96dvh;grid-template-rows:auto auto minmax(0,1fr)}
+ #skill-tree-nodes{display:block;height:100%;overflow-y:auto;scrollbar-width:thin}
+ #skill-tree-nodes>.talent-workspace,#skill-tree-modal .node-inspector{height:auto;max-height:none;overflow:visible}
+ #skill-tree-modal .node-inspector{margin-top:16px}
+ .arsenal-restart-panel{bottom:-17px;margin:16px -17px -17px;padding:12px 17px;grid-template-columns:26px minmax(0,1fr);gap:8px}.arsenal-restart-panel>img{width:26px;height:26px}.arsenal-restart-panel .primary-button{grid-column:1/-1}
+ .loadout-slots{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.loadout-slots button{padding:5px;min-height:78px}.loadout-slots strong{font-size:8px}.loadout-slots img{height:31px}.loadout-slots small{font-size:7px}
+}

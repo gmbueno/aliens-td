@@ -1,18 +1,17 @@
 import { assets } from './assets.js';
 import { skillRank } from './skills.js';
+import {MAX_LOADOUT_SLOTS,STARTING_SLOTS,SLOT_REWARD_LEVELS,bonusSlots,classUnlockRules,ruleMet,ruleLabel,campaignClears} from './progression.js';
+export {MAX_LOADOUT_SLOTS,STARTING_SLOTS,SLOT_REWARD_LEVELS,campaignClears} from './progression.js';
 
-export const MAX_LOADOUT_SLOTS = 6;
-export const STARTING_SLOTS = 3;
-export const SLOT_REWARD_LEVELS = ['level_4', 'level_10'];
+// Retained only to recognize categories already earned under the old save rules.
 export const classMilestones = {handgun:0,assault_rifle:0,machine_pistol:0,shotgun:1,beacon:2,magnum:3,sniper:4,rocket_launcher:6,flamethrower:8,laser:10,factory:2,missile:5,minelayer:4,gas:7};
 const originalArt={handgun:assets.slots.weapons.handgun,assault_rifle:assets.slots.weapons.assaultRifle,machine_pistol:assets.slots.weapons.machinePistol,magnum:assets.slots.weapons.magnum,shotgun:assets.slots.weapons.shotgun,sniper:assets.slots.weapons.sniper};
-export const weaponArt = key => ['factory','missile','minelayer','gas','rocket_launcher','flamethrower','laser'].includes(key)?`assets/tactics/${key}.png`:key==='beacon'?'assets/command/beacon-common.png':originalArt[key] || `assets/frontier/weapons/${key}-common.png`;
-export const campaignClears = profile => Object.values(profile.missions || {}).filter(m => m.clears > 0).length;
-export function classUnlocked(profile,key) { return key in classMilestones && campaignClears(profile) >= classMilestones[key]; }
-export function classRequirement(key) { const n=classMilestones[key];return n===1?'Complete your first mission':n?`Complete ${n} different missions`:'Starter weapon'; }
-export function nextClassUnlock(profile) { const cleared=campaignClears(profile);return Object.entries(classMilestones).filter(([,n])=>n>cleared).sort((a,b)=>a[1]-b[1])[0] || null; }
+export const weaponArt = key => key==='missile'?'assets/refinement/missile.png':['factory','minelayer','gas','rocket_launcher','flamethrower','laser'].includes(key)?`assets/tactics/${key}.png`:key==='beacon'?'assets/command/beacon-common.png':originalArt[key] || `assets/frontier/weapons/${key}-common.png`;
+export function classUnlocked(profile,key) { return key in classUnlockRules && (profile.discoveredCategories?.includes(key)||ruleMet(profile,classUnlockRules[key])); }
+export function classRequirement(key) { return classUnlockRules[key]?ruleLabel(classUnlockRules[key]):'Unavailable'; }
+export function nextClassUnlock(profile) { const key=Object.keys(classUnlockRules).find(key=>!classUnlocked(profile,key));return key?{key,requirement:classRequirement(key)}:null; }
 export function missionSlots(profile) { return SLOT_REWARD_LEVELS.filter(key=>(profile.slotRewards?.[key] || profile.caches?.[key])).length; }
-export function loadoutCapacity(profile) { return Math.min(MAX_LOADOUT_SLOTS, STARTING_SLOTS + skillRank(profile,'loadoutSlots') + missionSlots(profile)); }
+export function loadoutCapacity(profile) { return Math.min(MAX_LOADOUT_SLOTS, STARTING_SLOTS + skillRank(profile,'loadoutSlots') + missionSlots(profile) + bonusSlots(profile)); }
 export function placementLimit(profile) { return 2 + Math.min(3,skillRank(profile,'duplicates')); }
 export function defaultArsenal() { return { loadout: [] }; }
 export function loadoutKeys(profile) {
@@ -38,9 +37,9 @@ export function applyArsenal(weapon) {
     fireMode:weapon.economic?'Production':weapon.fixedAim?'Fixed point':weapon.minelayer?'Path traps':weapon.gas?'Radial gas':weapon.support?'Support aura':weapon.continuous==='laser'?'Continuous beam':weapon.continuous==='flame'?'Flame cone':weapon.pelletCount?'Pellet spread':weapon.pierce?'Piercing shot':weapon.atkSpeed>=5?'Automatic':'Single shot'};
 }
 export function equippedWeapons(weapons,profile) { return loadoutKeys(profile).map(key=>weapons.find(w=>w.key===key)).filter(Boolean); }
-// Mission slots replace redundant slot training at the six-slot cap, with a full SP refund.
+// Preserve the refund guard for imported profiles with excess slot training.
 export function refundExcessSlots(profile) {
-  const excess=Math.max(0,STARTING_SLOTS+missionSlots(profile)+skillRank(profile,'loadoutSlots')-MAX_LOADOUT_SLOTS);
+  const excess=Math.max(0,STARTING_SLOTS+missionSlots(profile)+bonusSlots(profile)+skillRank(profile,'loadoutSlots')-MAX_LOADOUT_SLOTS);
   if(excess){profile.skills.loadoutSlots-=excess;profile.skillPoints+=excess*8;}
   return excess*8;
 }

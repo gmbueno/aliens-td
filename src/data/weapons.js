@@ -132,7 +132,7 @@ export const weapons = [
   } ,
   {
     key: "rocket_launcher", name: "Rocket Launcher", nickname: "RPG",
-    description: "Homing rockets deal blast damage. Unlock after six different mission clears, then add to your loadout.",
+    description: "Homing rockets deal blast damage. Complete mission 1-6 to unlock.",
     role: "Area demolition", price: 320, level: 1, range: 245, atkSpeed: .65,
     capacity: 3, reloadSpeed: 3, directDamage: 3300, projectileSpeed: 290,
     splashRadius: 72, armorPierce: .5, accent: "#f1ba61",
@@ -151,10 +151,10 @@ weapons.push({key:'beacon',name:'Radar Beacon',nickname:'Radar',description:'Boo
 weapons.push(
  {key:'factory',name:'Credit Factory',nickname:'Factory',description:'Produces $15 every 8 combat seconds, up to four payouts per wave. Pauses between waves. Upgrade output or automation.',role:'Passive income',economic:true,price:260,range:0,atkSpeed:0,capacity:1,reloadSpeed:0,directDamage:0,projectileSpeed:0,accent:'#dfbe6e'},
  {key:'missile',name:'Siege Missile',nickname:'Missile',description:'Bombards your chosen point, without following enemies. Set or move the impact point from its inspector.',role:'Fixed-point bombardment',fixedAim:true,price:380,range:420,atkSpeed:.6,capacity:3,reloadSpeed:4,directDamage:4200,splashRadius:85,projectileSpeed:0,accent:'#e7b15b'},
- {key:'minelayer',name:'Mine Foundry',nickname:'Mine Foundry',description:'Places persistent mines on nearby path tiles. Mines hit ground aliens; maximum 6 active per foundry.',role:'Persistent path traps',minelayer:true,price:240,range:175,atkSpeed:.25,capacity:1,reloadSpeed:0,directDamage:1700,splashRadius:50,projectileSpeed:0,accent:'#c7c478'},
+ {key:'minelayer',name:'Mine Foundry',nickname:'Mine Foundry',description:'Produces mines from mission start on path tiles among its 8 neighbors. Fixed reach; maximum 6 active mines before upgrades.',role:'Persistent path traps',minelayer:true,price:240,range:109,atkSpeed:.25,capacity:1,reloadSpeed:0,directDamage:1700,splashRadius:50,projectileSpeed:0,accent:'#c7c478'},
  {key:'gas',name:'Gas Emitter',nickname:'Gas',description:'Continuously damages every ground alien in its radius. Refills after sustained use; cannot hit flying aliens.',role:'Radial area denial',gas:true,price:280,range:150,atkSpeed:4,capacity:32,reloadSpeed:3,directDamage:240,projectileSpeed:0,accent:'#b2c77a'}
 );
-for(const w of weapons.filter(w=>['factory','missile','minelayer','gas'].includes(w.key))){w.level=1;w.asset=w.placedAsset=w.hudAsset=`assets/tactics/${w.key}.png`;w.slotCardAsset=assets.slots.cards[0];}
+for(const w of weapons.filter(w=>['factory','missile','minelayer','gas'].includes(w.key))){w.level=1;w.asset=w.placedAsset=w.hudAsset=w.key==='missile'?'assets/refinement/missile.png':`assets/tactics/${w.key}.png`;w.slotCardAsset=assets.slots.cards[0];}
 
 export function getWeapon(key) {
   return weapons.find((weapon) => weapon.key === key);

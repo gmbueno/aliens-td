@@ -1,3 +1,4 @@
+import {MAX_LOADOUT_SLOTS,STARTING_SLOTS,SLOT_REWARD_LEVELS,bonusSlots} from './progression.js';
 export const SP_PER_LEVEL=10;
 export const DEFAULT_EQUIPPED_ACTIVE_KEY='chronoBreak';
 const node=(key,name,description,maxRank,cost,branch,x,y,parent=null,extra={})=>({key,name,description,maxRank,cost,branch,x,y,type:'utility',requires:parent?{key:parent,rank:1}:null,...extra});
@@ -9,7 +10,7 @@ export const skillTree=[
  node('weakest','Finish the Weak','Unlock Weakest targeting: aim at the alien with the least health and shields.',1,7,'armament',210,445,'fireRate'),
  node('fastest','Rapid Intercept','Unlock Fastest targeting for towers and drones.',1,7,'armament',310,445,'range'),
  node('focusTarget','Priority Mark','Mark one inspected alien. Eligible towers and drones focus it until cancelled or defeated.',1,10,'armament',210,595,'weakest'),
- node('loadoutSlots','Extra Loadout Slot','+1 weapon slot per rank, up to 6 total. Missions 1-4 and 2-4 also award a slot.',2,8,'logistics',110,145),
+ node('loadoutSlots','Extra Loadout Slot','+1 weapon slot per rank. Reach 10 through training, missions, Commander level and campaign stars.',2,8,'logistics',110,145),
  node('duplicates','Extra Emplacements','Start with 2 per category. Train to deploy 3, 4, then 5.',3,10,'logistics',110,295,'loadoutSlots'),
  node('salvage','Clearance Crew','Clearing obstacles costs 15% less per rank.',3,4,'logistics',310,145),
  node('supplies','Supply Lines','Start each mission with $25 extra per rank.',3,5,'logistics',310,295,'salvage'),
@@ -44,7 +45,7 @@ export const prerequisiteMet=(profile,skill)=>!skill.requires||skillRank(profile
 export const activeUnlocked=(profile,key)=>isActiveAbilityKey(key);
 export const spentSkillPoints=profile=>skillTree.reduce((n,s)=>n+skillRank(profile,s.key)*s.cost,0);
 export function canBuySkill(profile,skill){
- if(skill.key==='loadoutSlots'&&3+skillRank(profile,'loadoutSlots')+['level_4','level_10'].filter(k=>(profile.slotRewards?.[k]||profile.caches?.[k])).length>=6)return false;
+ if(skill.key==='loadoutSlots'&&STARTING_SLOTS+skillRank(profile,'loadoutSlots')+bonusSlots(profile)+SLOT_REWARD_LEVELS.filter(k=>(profile.slotRewards?.[k]||profile.caches?.[k])).length>=MAX_LOADOUT_SLOTS)return false;
  return skillRank(profile,skill.key)<skill.maxRank&&profile.skillPoints>=skill.cost&&(skillRank(profile,skill.key)>0||prerequisiteMet(profile,skill));
 }
 export function buySkill(profile,key){const s=skillTree.find(s=>s.key===key);if(!s||!canBuySkill(profile,s))return false;profile.skills[key]=skillRank(profile,key)+1;profile.skillPoints-=s.cost;if(s.active&&!profile.equippedActiveKey)profile.equippedActiveKey=s.active;return true;}
