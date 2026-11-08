@@ -29,7 +29,7 @@ for(const [index,level] of levels.entries()){
 // Optional risk/reward positions appear after the training missions.
 for(const [index,level] of levels.entries()){
  if(index>=3){
-  const occupied=t=>[...level.track,...level.blockers,...level.pads,...(level.water||[])].some(p=>p.row===t.row&&p.col===t.col);
+  const occupied=t=>[...level.track,...level.blockers,...(level.water||[])].some(p=>p.row===t.row&&p.col===t.col);
   const available=[];for(let row=1;row<level.rows-1;row++)for(let col=1;col<level.cols-1;col++){const t={row,col};if(!occupied(t))available.push(t);}
   level.blockers.push(...available.filter((_,i)=>i%13===4).slice(0,2).map(t=>({...t,kind:'infested',encounter:true,cost:0})));
  }

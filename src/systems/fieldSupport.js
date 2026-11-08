@@ -7,7 +7,7 @@ export function reservedTile(state,preferEnd=false){
  const cols=Array.from({length:state.level.cols},(_,i)=>preferEnd?state.level.cols-1-i:i);
  for(const row of rows)for(const col of cols){
   const k=key(row,col);
-  if(state.tileSets.path.has(k)||state.tileSets.blockers.has(k)||state.tileSets.water.has(k)||state.level.pads.some(t=>t.row===row&&t.col===col)||state.drones?.some(d=>d.base.row===row&&d.base.col===col))continue;
+  if(state.tileSets.path.has(k)||state.tileSets.blockers.has(k)||state.tileSets.water.has(k)||state.drones?.some(d=>d.base.row===row&&d.base.col===col))continue;
   return {row,col,x:state.board.x+(col+.5)*state.board.tile,y:state.board.y+(row+.5)*state.board.tile};
  }
  return null;

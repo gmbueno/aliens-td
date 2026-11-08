@@ -29,12 +29,11 @@ export function invest(state) {
         const key=`${row}:${col}`;
         if(state.tileSets.path.has(key)||state.tileSets.blockers.has(key)||state.towers.some(t=>t.row===row&&t.col===col)||state.tileSets.water.has(key)||(state.drone?.base.row===row&&state.drone.base.col===col))continue;
         const point={x:state.board.x+(col+.5)*state.board.tile,y:state.board.y+(row+.5)*state.board.tile};
-        const pad=state.level.pads.find(p=>p.row===row&&p.col===col);
         const range=effective.range;
         const angles=weapon.directional?[0,Math.PI/2,Math.PI,Math.PI*1.5]:[0];
         const scored=angles.map(angle=>({angle,covered:path.reduce((sum,p,i)=>sum+(inWeaponRange({...point,range,weapon,angle},p)?importance[i]:0),0)})).sort((a,b)=>b.covered-a.covered)[0];const {covered,angle}=scored;
         const dps=effective.directDamage*effective.atkSpeed*(effective.pelletCount||1)/(1+effective.atkSpeed*effective.reloadSpeed/effective.capacity);
-        const score=covered*dps/weapon.price*(pad?.type==='power'?1.15:1)*(weapon.armorPierce?1.12:1);
+        const score=covered*dps/weapon.price*(weapon.armorPierce?1.12:1);
         if(!best||score>best.score) best={score,weapon,row,col,angle};
       }
     }

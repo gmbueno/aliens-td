@@ -15,7 +15,7 @@ try{
    if((await read(p)).mobileView.collapsed)await p.click('#mobile-deck-toggle');
    await p.click(`[data-weapon-key="${key}"] .weapon-select`);await tile(p,row,col);
   }
-  assert.ok((await read(p)).pads.every(t=>t.type!=='range'));
+  assert.deepEqual((await read(p)).pads,[]);
   await autoStart(p);await advance(p,6000);await p.click('#play-pause-button');
   for(const t of (await read(p)).towers){
    assert.ok(t.damageDealt>0);await tile(p,t.row,t.col);
@@ -28,7 +28,7 @@ try{
   }
   const texts=await p.evaluate(()=>{window.__fieldTexts=[];window.__captureFieldText=true;window.advanceTime(0);window.__captureFieldText=false;return window.__fieldTexts;});
   assert.ok(texts.every(t=>!/^\$\d+$|FREE|^UAV|^\d+\s*[×x]$/.test(t)),`no overhead obstacle/drone/kill labels: ${JSON.stringify(texts)}`);
-  assert.ok(!(await p.evaluate(()=>performance.getEntriesByType('resource').map(e=>e.name))).some(n=>/\/range-pad\.png/.test(n)));
+  assert.ok(!(await p.evaluate(()=>performance.getEntriesByType('resource').map(e=>e.name))).some(n=>/\/(range|power)-pad\.png/.test(n)));
   await h.shot(p,`quiet-map-${viewport.width}`);
   await tile(p,3,6);assert.equal(await p.locator('[data-clear]').innerText(),'Clear obstacle · $70');await p.click('#tower-sidebar-close-button');
   await tile(p,3,7);assert.match(await p.locator('[data-clear]').innerText(),/FREE/);await p.click('#tower-sidebar-close-button');
@@ -36,5 +36,5 @@ try{
   assert.equal(await p.locator('[data-stat="dmg-dealt"] strong').innerText(),Math.floor(drone.damageDealt).toLocaleString('en-US'));
   await h.shot(p,`drone-${viewport.width}`);await p.context().close();
  }
- h.finish();console.log('PASS: quiet map/no range pads, genuine weapon and UAV contribution, kills on selection, accurate totals, upgrade/pause retention and clearance prices on inspection at desktop/notebook/mobile sizes.');
+ h.finish();console.log('PASS: quiet map/no bonus pads, genuine weapon and UAV contribution, kills on selection, accurate totals, upgrade/pause retention and clearance prices on inspection at desktop/notebook/mobile sizes.');
 }finally{await h.browser.close();}

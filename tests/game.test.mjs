@@ -66,9 +66,9 @@ test('obstacle clearance charges once and opens a usable position',()=>{
   assert.equal(clearObstacle(state,state.level.blockers[0]),false);
 });
 
-test('tower upgrades and meta skills compose without range pads; refund preserves accounting',()=>{
+test('tower upgrades and meta skills compose without bonus pads; refund preserves accounting',()=>{
   const state=make(undefined,{level:8,skillPoints:70,settings:{muted:true}});state.gold=10000;
-  assert.ok(levels.every(l=>l.pads.every(p=>p.type!=='range')));const tower=placeTower(state,'handgun',5,3);
+  assert.ok(levels.every(l=>l.pads.length===0));const tower=placeTower(state,'handgun',5,3);
   assert.equal(tower.range,170);
   const before=state.gold,cost=towerUpgradeCost(tower,'power');
   assert.ok(upgradeTower(state,tower,'power'));assert.equal(state.gold,before-cost);

@@ -2,7 +2,7 @@
 const level7 = {
   "id": "level_7",
   "name": "Frostline",
-  "description": "Blue frost tiles slow aliens by 25%. Cover them with your towers. Water tiles accept weapons after Pontoon Engineering (+$35 per raft).",
+  "description": "Long bends reward overlapping fields of fire. Water tiles accept weapons after Pontoon Engineering (+$35 per raft).",
   "sector": 2,
   "stage": 1,
   "biome": "frost",

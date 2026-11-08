@@ -2,11 +2,11 @@
 const level13 = {
   "id": "level_13",
   "name": "Spore Fields",
-  "description": "Amber reactor pads boost tower damage. Alien growth blocks the best bends.",
+  "description": "Alien growth blocks the best bends.",
   "sector": 3,
   "stage": 1,
   "biome": "hive",
-  "rule": "Power pads",
+  "rule": "Alien growth",
   "recommendedLevel": 12,
   "cols": 16,
   "rows": 9,
@@ -114,18 +114,7 @@ const level13 = {
       "cost": 70
     }
   ],
-  "pads": [
-    {
-      "row": 3,
-      "col": 4,
-      "type": "power"
-    },
-    {
-      "row": 1,
-      "col": 6,
-      "type": "power"
-    }
-  ],
+  "pads": [],
   "track": [
     {
       "col": 0,

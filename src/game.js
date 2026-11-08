@@ -49,7 +49,7 @@ function createAssetStore() {
     loaded: false,
   };
   Promise.all([
-    ...['power-pad','exit-mine'].map(key=>loadImage(`assets/pads/${key}.png`).then(image=>store.world[key]=image)),
+    ...['exit-mine'].map(key=>loadImage(`assets/pads/${key}.png`).then(image=>store.world[key]=image)),
     ...['missile-flight','gas-cloud-a','gas-cloud-b','gas-cloud-c'].map(key=>loadImage(`assets/refinement/${key}.png`).then(image=>store.world[key]=image)),
     ...['mine','infested'].map(key=>loadImage(`assets/tactics/${key}.png`).then(image=>store.world[key]=image)),
     ...['drone','uavBase'].map(key=>loadImage(`assets/command/${key}.png`).then(image=>store.world[key]=image)),
@@ -687,7 +687,6 @@ export function placeTower(state, weaponKey, row, col) {
     y: state.board.y + row * state.board.tile + state.board.tile / 2,
     tile: state.board.tile, range: weapon.range, cooldown: 0, ammo: weapon.capacity, reloadTimer: 0, angle: weapon.directional?(state.buildAngle||0):0,
     kills:0, damageDealt:0, upgrades: { power: 0, tactical: 0 }, invested: weapon.price+platform, platform, targeting: "first",
-    pad: state.level.pads?.find(pad => pad.row === row && pad.col === col)?.type,
   };
   tower.weapon = applyTowerUpgrades(weapon, tower);
   tower.range = tower.weapon.range;
@@ -1092,11 +1091,6 @@ function drawGame(ctx, state, assets) {
         ctx.fillStyle = level.biome === "frost" ? (isPath ? "#61c7e04a" : "#367c9c30") : (isPath ? "#a8ba3433" : "#73844325");
         ctx.fillRect(x + 1, y + 1, board.tile - 2, board.tile - 2);
       }
-      const pad = level.pads?.find(tile => tile.row === row && tile.col === col);
-      if (pad) {
-        const overlay=pad.type==='power'?assets.world['power-pad']:null;
-        if(overlay)ctx.drawImage(overlay,x+3,y+3,board.tile-6,board.tile-6);
-      }
       if (isBlocked) {
         const obstacle = level.blockers.find(tile => tile.row === row && tile.col === col);
         drawObstacle(ctx, x, y, board.tile, obstacle, state.selectedObstacle === obstacle,assets.world[obstacle.kind]);
@@ -1340,7 +1334,6 @@ export function createGame({ ui, levels }) {
       ${(level.water||[]).map(tile=>`<rect x="${tile.col*10+1}" y="${tile.row*10+1}" width="8" height="8" fill="#4eabc2" opacity=".6"/>`).join("")}
       ${level.blockers.map(tile => `<rect x="${tile.col * 10 + 2}" y="${tile.row * 10 + 2}" width="6" height="6" rx="1" fill="${color}" opacity=".25"/>`).join("")}
       <polyline points="${level.track.map(tile => `${tile.col * 10 + 5},${tile.row * 10 + 5}`).join(" ")}" fill="none" stroke="${color}" stroke-width="5" stroke-linejoin="round" opacity=".85"/>
-      ${level.pads.map(tile => `<circle cx="${tile.col * 10 + 5}" cy="${tile.row * 10 + 5}" r="2.8" fill="#ffc24c"/>`).join("")}
       <circle cx="${level.track[0].col * 10 + 5}" cy="${level.track[0].row * 10 + 5}" r="4" fill="#ff806f"/>
       <circle cx="${level.track.at(-1).col * 10 + 5}" cy="${level.track.at(-1).row * 10 + 5}" r="4" fill="#d0f7b0"/>
     </svg>`;
@@ -2190,7 +2183,6 @@ export function createGame({ ui, levels }) {
       upgrades: tower.upgrades,
       invested: tower.invested,
       targeting: tower.targeting,
-      pad: tower.pad,
     })) || [],
     projectiles: state?.projectiles.map(projectile => ({
       id: projectile.id, weapon: projectile.weaponKey, ballistic: projectile.ballistic,

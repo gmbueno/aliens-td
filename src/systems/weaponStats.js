@@ -74,7 +74,7 @@ export function applyTowerUpgrades(weapon,tower) {
   else if(weapon.key==='assault_rifle') {next.armorPierce=Math.min(1,(weapon.armorPierce||0)+p*.02);next.capacity+=c*15;next.reloadSpeed*=1-c*.12;next.atkSpeed*=1+c*.1;}
   else if(weapon.key==='rocket_launcher') {next.splashRadius+=p*12;next.reloadSpeed*=1-c*.15;next.atkSpeed*=1+c*.12;next.projectileSpeed*=1+c*.2;}
   else {next.capacity+=c*3;next.atkSpeed*=1+c*.15;next.reloadSpeed*=1-c*.12;}
-  next.directDamage=Math.round(next.directDamage*(tower.pad==='power'?1.15:1));
+  next.directDamage=Math.round(next.directDamage);
   next.range=Math.round(next.range);
   next.atkSpeed=Number(next.atkSpeed.toFixed(2));next.reloadSpeed=Number(Math.max(.3,next.reloadSpeed).toFixed(2));
   return next;

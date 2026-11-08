@@ -2,7 +2,7 @@
 const level6 = {
   "id": "level_6",
   "name": "Outpost Siege",
-  "description": "The Overseer leads the assault. Set heavy weapons to Strongest. Amber overdrive tiles make aliens 35% faster. Cover their exits.",
+  "description": "The Overseer leads the assault. Set heavy weapons to Strongest.",
   "sector": 1,
   "stage": 6,
   "biome": "outpost",

@@ -12,7 +12,7 @@ Ninja Kiwi's [Bloons TD 6 description](https://store.steampowered.com/app/960090
 - Double the campaign from 9 to 18 missions, with 3 sectors and 6 missions per sector. Each route and spawn schedule lives explicitly in its owning file.
 - Use fixed mission strength instead of scaling enemies to the player's level. The player should feel the benefit of investing points and returning to a difficult mission.
 - Start with readable scout waves, then add fast enemies, armor, shields, and bosses. The first missions of each biome provide breathing room before later spikes.
-- Obstacles constrain placement rather than line of sight. Some can be removed for gold; sensor and reactor pads reward positional planning. Ice affects enemies on specific route tiles.
+- Obstacles constrain placement rather than line of sight. Some can be removed for gold. Routes and build tiles have no special speed, range or damage modifiers.
 - Make weapon roles mechanical: suppression slows; heavy rounds pierce armor; shotgun pellets distribute over a cluster. Homing shots respect selected targets and avoid unreliable collision misses at 2x.
 - Offer Firepower (+40% damage/rank) and Control (+12% range, +15% fire rate/rank). Four upgrades total, maximum three per branch, creates a meaningful specialization tradeoff.
 - Reward kills, completed waves, surviving, first clears, and better star records. Permanent training is free to redistribute. Do not introduce paid continues, idle waiting, or a mandatory grind gate.

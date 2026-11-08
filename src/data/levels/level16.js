@@ -126,18 +126,7 @@ const level16 = {
       "cost": 70
     }
   ],
-  "pads": [
-    {
-      "row": 5,
-      "col": 1,
-      "type": "power"
-    },
-    {
-      "row": 3,
-      "col": 3,
-      "type": "power"
-    }
-  ],
+  "pads": [],
   "track": [
     {
       "col": 0,
